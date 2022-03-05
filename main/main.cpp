@@ -150,6 +150,9 @@ int main()
             orientationY += deltaTime * spin_speed;
         }
 
+        GLint fragColorLocation = glGetUniformLocation(shader.Program, "colorIn");
+        glUniform3fv(fragColorLocation, 1, myColor);
+
         glUniformMatrix4fv(
             glGetUniformLocation(shader.Program, "projectionMatrix"),
             1,
