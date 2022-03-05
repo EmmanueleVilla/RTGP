@@ -153,6 +153,12 @@ int main()
         GLint fragColorLocation = glGetUniformLocation(shader.Program, "colorIn");
         glUniform3fv(fragColorLocation, 1, myColor);
 
+        GLint weightLocation = glGetUniformLocation(shader.Program, "weight");
+        glUniform1f(weightLocation, weight);
+
+        GLint timerLocation = glGetUniformLocation(shader.Program, "timer");
+        glUniform1f(timerLocation, currentFrame * speed);
+
         glUniformMatrix4fv(
             glGetUniformLocation(shader.Program, "projectionMatrix"),
             1,
