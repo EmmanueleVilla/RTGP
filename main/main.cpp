@@ -140,6 +140,16 @@ int main()
         // Clear the colorbuffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        if(wireframe) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        } else {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
+        if(spinning) {
+            orientationY += deltaTime * spin_speed;
+        }
+
         glUniformMatrix4fv(
             glGetUniformLocation(shader.Program, "projectionMatrix"),
             1,
@@ -183,6 +193,15 @@ int main()
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
+    }
+
+    if(key == GLFW_KEY_S  && action == GLFW_PRESS) {
+        spinning = !spinning;
+    }
+
+    if(key == GLFW_KEY_W  && action == GLFW_PRESS) {
+        wireframe = !wireframe;
+    }
 }
