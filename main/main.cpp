@@ -164,9 +164,28 @@ int main()
             glm::value_ptr(view)
         );
 
+        sphereModelMatrix = glm::mat4(1.0f);
+        sphereNormalMatrix = glm::mat3(1.0f);
+        sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(-3.0f, 0.0f, 0.0f));
+        sphereModelMatrix = glm::rotate(sphereModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
+        sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
+        sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view * sphereModelMatrix));
+        glUniformMatrix4fv(
+            glGetUniformLocation(shader.Program, "modelMatrix"),
+            1,
+            GL_FALSE,
+            glm::value_ptr(sphereModelMatrix)
+        );
+        glUniformMatrix4fv(
+            glGetUniformLocation(shader.Program, "normalMatrix"),
+            1,
+            GL_FALSE,
+            glm::value_ptr(sphereNormalMatrix)
+        );
+        sphereModel.Draw();
+
         cubeModelMatrix = glm::mat4(1.0f);
         cubeNormalMatrix = glm::mat3(1.0f);
-
         cubeModelMatrix = glm::translate(cubeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
         cubeModelMatrix = glm::rotate(cubeModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
         cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
@@ -183,8 +202,27 @@ int main()
             GL_FALSE,
             glm::value_ptr(cubeNormalMatrix)
         );
-
         cubeModel.Draw();
+
+        bunnyModelMatrix = glm::mat4(1.0f);
+        bunnyNormalMatrix = glm::mat3(1.0f);
+        bunnyModelMatrix = glm::translate(bunnyModelMatrix, glm::vec3(3.0f, 0.0f, 0.0f));
+        bunnyModelMatrix = glm::rotate(bunnyModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
+        bunnyModelMatrix = glm::scale(bunnyModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));
+        bunnyNormalMatrix = glm::inverseTranspose(glm::mat3(view * bunnyModelMatrix));
+        glUniformMatrix4fv(
+            glGetUniformLocation(shader.Program, "modelMatrix"),
+            1,
+            GL_FALSE,
+            glm::value_ptr(bunnyModelMatrix)
+        );
+        glUniformMatrix4fv(
+            glGetUniformLocation(shader.Program, "normalMatrix"),
+            1,
+            GL_FALSE,
+            glm::value_ptr(bunnyNormalMatrix)
+        );
+        bunnyModel.Draw();
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
