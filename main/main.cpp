@@ -170,12 +170,18 @@ int main()
         cubeModelMatrix = glm::translate(cubeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
         cubeModelMatrix = glm::rotate(cubeModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
         cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
-
+        cubeNormalMatrix = glm::inverseTranspose(glm::mat3(view * cubeModelMatrix));
         glUniformMatrix4fv(
             glGetUniformLocation(shader.Program, "modelMatrix"),
             1,
             GL_FALSE,
             glm::value_ptr(cubeModelMatrix)
+        );
+        glUniformMatrix4fv(
+            glGetUniformLocation(shader.Program, "normalMatrix"),
+            1,
+            GL_FALSE,
+            glm::value_ptr(cubeNormalMatrix)
         );
 
         cubeModel.Draw();
