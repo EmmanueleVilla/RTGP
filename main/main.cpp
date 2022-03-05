@@ -16,6 +16,11 @@
 // GLFW
 #include <glfw/glfw3.h>
 
+// we load the GLM classes used in the application
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // confirm that GLAD didn't include windows.h
 #ifdef _WINDOWS_
@@ -25,6 +30,27 @@
 
 #include<utils/shader_v1.h>
 #include<utils/model_v1.h>
+
+// parameters for time calculation (for animations)
+GLfloat deltaTime = 0.0f;
+GLfloat lastFrame = 0.0f;
+
+// rotation angle on Y axis
+GLfloat orientationY = 0.0f;
+// rotation speed on Y axis
+GLfloat spin_speed = 30.0f;
+// boolean to start/stop animated rotation on Y angle
+GLboolean spinning = GL_TRUE;
+
+// boolean to activate/deactivate wireframe rendering
+GLboolean wireframe = GL_FALSE;
+
+// Uniforms to pass to shaders
+// color to be passed to Fullcolor and Flatten shaders
+GLfloat myColor[] = {1.0f,0.0f,0.0f};
+// weight and velocity for the animation of Wave shader
+GLfloat weight = 0.2f;
+GLfloat speed = 5.0f;
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -44,6 +70,9 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
+    float screenWidth = 800.0f;
+    float screenHeight = 600.0f;
 
     // Create a GLFWwindow object that we can use for GLFW's functions
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Work01", nullptr, nullptr);
@@ -75,18 +104,69 @@ int main()
     Shader shader("base.vert", "base.frag");
 
     Model cubeModel("../models/cube.obj");
+    Model sphereModel("../models/sphere.obj");
+    Model bunnyModel("../models/bunny_lp.obj");
 
     shader.Use();
+
+    // we set projection and view matrices
+    // N.B.) in this case, the camera is fixed -> we set it up outside the rendering loop
+    // Projection matrix: FOV angle, aspect ratio, near and far planes
+    glm::mat4 projection = glm::perspective(45.0f, screenWidth/screenHeight, 0.1f, 10000.0f);
+    // View matrix (=camera): position, view direction, camera "up" vector
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    // Model and Normal transformation matrices for the objects in the scene: we set to identity
+    glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
+    glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 cubeModelMatrix = glm::mat4(1.0f);
+    glm::mat3 cubeNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 bunnyModelMatrix = glm::mat4(1.0f);
+    glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
 
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
+        // we determine the time passed from the beginning
+        // and we calculate time difference between current frame rendering and the previous one
+        GLfloat currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
         // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
 
         // Render
         // Clear the colorbuffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glUniformMatrix4fv(
+            glGetUniformLocation(shader.Program, "projectionMatrix"),
+            1,
+            GL_FALSE,
+            glm::value_ptr(projection)
+        );
+
+        glUniformMatrix4fv(
+            glGetUniformLocation(shader.Program, "viewMatrix"),
+            1,
+            GL_FALSE,
+            glm::value_ptr(view)
+        );
+
+        cubeModelMatrix = glm::mat4(1.0f);
+        cubeNormalMatrix = glm::mat3(1.0f);
+
+        cubeModelMatrix = glm::translate(cubeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+        cubeModelMatrix = glm::rotate(cubeModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
+        cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
+
+        glUniformMatrix4fv(
+            glGetUniformLocation(shader.Program, "modelMatrix"),
+            1,
+            GL_FALSE,
+            glm::value_ptr(cubeModelMatrix)
+        );
 
         cubeModel.Draw();
 
