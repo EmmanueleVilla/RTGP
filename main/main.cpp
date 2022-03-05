@@ -171,20 +171,13 @@ int main()
         sphereNormalMatrix = glm::mat3(1.0f);
         sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(-3.0f, 0.0f, 0.0f));
         sphereModelMatrix = glm::rotate(sphereModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
-        sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view * sphereModelMatrix));
-        glUniformMatrix4fv(
-            glGetUniformLocation(shader.Program, "modelMatrix"),
-            1,
-            GL_FALSE,
-            glm::value_ptr(sphereModelMatrix)
-        );
-        glUniformMatrix4fv(
-            glGetUniformLocation(shader.Program, "normalMatrix"),
-            1,
-            GL_FALSE,
-            glm::value_ptr(sphereNormalMatrix)
-        );
+        sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));	// It's a bit too big for our scene, so scale it down
+        // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
+        sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view*sphereModelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereModelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereNormalMatrix));
+
+        // we render the sphere
         sphereModel.Draw();
 
         cubeModelMatrix = glm::mat4(1.0f);
