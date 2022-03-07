@@ -222,7 +222,7 @@ int main()
         // We "install" the noise_shader Shader Program as part of the current rendering process
         base_shader.Use();
         // we search inside the Shader Program the name of the subroutine currently selected, and we get the numerical index
-        GLuint index = glGetSubroutineIndex(base_shader.Program, GL_FRAGMENT_SHADER, shaders[current_subroutine].c_str());
+        GLuint index = glGetSubroutineIndex(base_shader.Program, GL_FRAGMENT_SHADER, "redColor");
         // we activate the subroutine using the index (this is where shaders swapping happens)
         glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
 
@@ -255,6 +255,11 @@ int main()
         // we render the model
         sphereModel.Draw();
 
+
+        index = glGetSubroutineIndex(base_shader.Program, GL_FRAGMENT_SHADER, "greenColor");
+        // we activate the subroutine using the index (this is where shaders swapping happens)
+        glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
+
         //CUBE
         // we create the transformation matrix and the normals transformation matrix
         // we reset to identity at each frame
@@ -269,6 +274,11 @@ int main()
 
         // we render the cube
         cubeModel.Draw();
+
+
+        index = glGetSubroutineIndex(base_shader.Program, GL_FRAGMENT_SHADER, "redColor");
+        // we activate the subroutine using the index (this is where shaders swapping happens)
+        glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
 
         //BUNNY
         // we create the transformation matrix and the normals transformation matrix
@@ -360,26 +370,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
   GLuint new_subroutine;
   
   // if ESC is pressed, we close the application
-  if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+  if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
       glfwSetWindowShouldClose(window, GL_TRUE);
-
-    // pressing a key number, we change the shader applied to the models
-    // if the key is between 1 and 9, we proceed and check if the pressed key corresponds to
-    // a valid subroutine
-    if((key >= GLFW_KEY_1 && key <= GLFW_KEY_9) && action == GLFW_PRESS)
-    {
-        // "1" to "9" -> ASCII codes from 49 to 59
-        // we subtract 48 (= ASCII CODE of "0") to have integers from 1 to 9
-        // we subtract 1 to have indices from 0 to 8
-        new_subroutine = (key-'0'-1);
-        // if the new index is valid ( = there is a subroutine with that index in the shaders vector),
-        // we change the value of the current_subroutine variable
-        // NB: we can just check if the new index is in the range between 0 and the size of the shaders vector, 
-        // avoiding to use the std::find function on the vector
-        if (new_subroutine<shaders.size())
-        {
-            current_subroutine = new_subroutine;
-            PrintCurrentShader(current_subroutine);
-        }
-    }
+  }
 }
