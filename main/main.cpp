@@ -1,36 +1,73 @@
 #include <iostream>
 
-// THIS IS OPTIONAL AND NOT REQUIRED, ONLY USE THIS IF YOU DON'T WANT GLAD TO INCLUDE windows.h
-// GLAD will include windows.h for APIENTRY if it was not previously defined.
-// Make sure you have the correct definition for APIENTRY for platforms which define _WIN32 but don't use __stdcall
 #ifdef _WIN32
     #define APIENTRY __stdcall
 #endif
 
-// GLEW
-//#define GLEW_STATIC
-//#include <glew/glew.h>
-
 #include <glad/glad.h>
-
-// GLFW
 #include <glfw/glfw3.h>
-
-// we load the GLM classes used in the application
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// confirm that GLAD didn't include windows.h
 #ifdef _WINDOWS_
     #error windows.h was included!
 #endif
 
-
 #include<utils/shader_v1.h>
 #include<utils/model_v1.h>
 #include<utils/camera.h>
+
+#pragma region
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+
+void setup_shader(int shared_program);
+
+void apply_camera_movements();
+
+#pragma endregion Functions prototypes
+
+#pragma region
+
+void setup_shader(int shader_program) {
+    int maxSub. maxSubU, countActiveSU;
+    GLchar name[256];
+    int len, numCompS;
+
+    glGetIntegerv(GL_MAX_SUBROUTINES, &maxSub);
+    glGetInteger(GL_MAX_SUBROUTINE_UNIFORM_LOCATIONS, &maxSubU);
+    glGetProgramStageiv(shader_program, GL_FRAGMENT_SHADER, GL_ACTIVE_SUBROUTINE_UNIFORMS, &countActiveSU);
+
+    for (int i = 0; i < countActiveSU; i++) {
+
+        glGetActiveSubroutineUniformName(program, GL_FRAGMENT_SHADER, i, 256, &len, name);
+        std::cout << "Subroutine Uniform: " << i << " - name: " << name << std::endl;
+        glGetActiveSubroutineUniformiv(program, GL_FRAGMENT_SHADER, i, GL_NUM_COMPATIBLE_SUBROUTINES, &numCompS);
+        int *s =  new int[numCompS];
+        glGetActiveSubroutineUniformiv(program, GL_FRAGMENT_SHADER, i, GL_COMPATIBLE_SUBROUTINES, s);
+        std::cout << "Compatible Subroutines:" << std::endl;
+        for (int j=0; j < numCompS; ++j) {
+            glGetActiveSubroutineName(program, GL_FRAGMENT_SHADER, s[j], 256, &len, name);
+            std::cout << "\t" << s[j] << " - " << name << "\n";
+            shaders.push_back(name);
+        }
+    std::cout << std::endl;
+    delete[] s;
+}
+
+#pragma endregion implementations
+
+#pragma region
+
+GLuint current_subroutine = 0;
+
+vector<std::string> shaders;
+
+#pragma endregion Shader handling
 
 // parameters for time calculation (for animations)
 GLfloat deltaTime = 0.0f;
@@ -48,18 +85,12 @@ GLfloat myColor[] = {1.0f,0.0f,0.0f};
 GLfloat weight = 0.2f;
 GLfloat speed = 5.0f;
 
-// if one of the WASD keys is pressed, we call the corresponding method of the Camera class
-void apply_camera_movements();
-
 
 GLfloat cameraX = 0.0f;
 GLfloat cameraY = 0.0f;
 GLfloat cameraZ = 7.0f;
 // we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells that we want a camera "anchored" to the ground
 Camera camera(glm::vec3(cameraX, cameraY, cameraZ), GL_TRUE);
-
-// Function prototypes
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
@@ -70,6 +101,7 @@ GLfloat planeMaterial[] = {0.0f,0.5f,0.0f};
 // The MAIN function, from here we start the application and run the game loop
 int main()
 {
+
     std::cout << "Starting GLFW context" << std::endl;
     // Init GLFW
     glfwInit();
@@ -116,6 +148,8 @@ int main()
     Model planeModel("../models/plane.obj");
 
     shader.Use();
+
+    Shaders shaders(shader.Program);
 
     // we set projection and view matrices
     // N.B.) in this case, the camera is fixed -> we set it up outside the rendering loop
@@ -167,19 +201,15 @@ int main()
         GLint timerLocation = glGetUniformLocation(shader.Program, "timer");
         glUniform1f(timerLocation, currentFrame * speed);
 
-        glUniformMatrix4fv(
-            glGetUniformLocation(shader.Program, "projectionMatrix"),
-            1,
-            GL_FALSE,
-            glm::value_ptr(projection)
-        );
+        GLint projectionMatrixLocation = glGetUniformLocation(shader.Program, "projectionMatrix");
+        glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
-        glUniformMatrix4fv(
-            glGetUniformLocation(shader.Program, "viewMatrix"),
-            1,
-            GL_FALSE,
-            glm::value_ptr(view)
-        );
+        GLint viewMatrixLocation = glGetUniformLocation(shader.Program, "viewMatrix");
+
+        glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
+
+        GLuint index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "greenColor");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
 
         // we create the transformation matrix
         // we reset to identity at each frame
@@ -193,6 +223,9 @@ int main()
 
         // we render the plane
         planeModel.Draw();
+
+        index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "redColor");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
 
         robotModelMatrix = glm::mat4(1.0f);
         robotNormalMatrix = glm::mat3(1.0f);
@@ -250,3 +283,4 @@ void apply_camera_movements()
     if(keys[GLFW_KEY_D])
         camera.ProcessKeyboard(RIGHT, deltaTime);
 }
+

@@ -2,12 +2,20 @@
 
 out vec4 color;
 
-uniform vec3 colorIn;
+subroutine vec3 fragshader();
 
-in vec3 N;
-in vec2 interp_UV;
+subroutine uniform fragshader fragShaderImpl;
+
+subroutine(fragshader)
+vec3 redColor() {
+    return vec3(1.0f, 0.0f, 0.0f);
+}
+
+subroutine(fragshader)
+vec3 greenColor() {
+    return vec3(1.0f, 0.0f, 0.0f);
+}
 
 void main() {
-    //color = vec4(colorIn, 1.0f);
-    color = vec4(colorIn, 1.0f);
+    color = vec4(fragShaderImpl(), 1.0f);
 }
