@@ -13,7 +13,7 @@ vec3 redColor() {
 
 subroutine(fragshader)
 vec3 greenColor() {
-    return vec3(1.0f, 0.0f, 0.0f);
+    return vec3(0.0f, 1.0f, 0.0f);
 }
 
 void main() {
