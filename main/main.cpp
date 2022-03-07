@@ -35,8 +35,6 @@
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-// rotation angle on Y axis
-GLfloat orientationY = 0.0f;
 // rotation speed on Y axis
 GLfloat spin_speed = 30.0f;
 // boolean to start/stop animated rotation on Y angle
@@ -99,13 +97,11 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
-    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
 
     Shader shader("base.vert", "base.frag");
 
-    Model cubeModel("../models/cube.obj");
-    Model sphereModel("../models/sphere.obj");
-    Model bunnyModel("../models/bunny_lp.obj");
+    Model warriorModel("../models/robot.obj");
 
     shader.Use();
 
@@ -117,12 +113,8 @@ int main()
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
-    glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 cubeModelMatrix = glm::mat4(1.0f);
-    glm::mat3 cubeNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 bunnyModelMatrix = glm::mat4(1.0f);
-    glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 warriorModelMatrix = glm::mat4(1.0f);
+    glm::mat3 warriorNormalMatrix = glm::mat3(1.0f);
 
     // Game loop
     while (!glfwWindowShouldClose(window))
@@ -144,10 +136,6 @@ int main()
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         } else {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-
-        if(spinning) {
-            orientationY += deltaTime * spin_speed;
         }
 
         GLint fragColorLocation = glGetUniformLocation(shader.Program, "colorIn");
@@ -173,58 +161,18 @@ int main()
             glm::value_ptr(view)
         );
 
-        sphereModelMatrix = glm::mat4(1.0f);
-        sphereNormalMatrix = glm::mat3(1.0f);
-        sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(-3.0f, 0.0f, 0.0f));
-        sphereModelMatrix = glm::rotate(sphereModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));	// It's a bit too big for our scene, so scale it down
+        warriorModelMatrix = glm::mat4(1.0f);
+        warriorNormalMatrix = glm::mat3(1.0f);
+        warriorModelMatrix = glm::translate(warriorModelMatrix, glm::vec3(0.0f, -2.0f, 4.0f));
+        warriorModelMatrix = glm::rotate(warriorModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        warriorModelMatrix = glm::scale(warriorModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));	// It's a bit too big for our scene, so scale it down
         // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
-        sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view*sphereModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereNormalMatrix));
+        warriorNormalMatrix = glm::inverseTranspose(glm::mat3(view*warriorModelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(warriorModelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(warriorNormalMatrix));
 
-        // we render the sphere
-        sphereModel.Draw();
-
-        cubeModelMatrix = glm::mat4(1.0f);
-        cubeNormalMatrix = glm::mat3(1.0f);
-        cubeModelMatrix = glm::translate(cubeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-        cubeModelMatrix = glm::rotate(cubeModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
-        cubeNormalMatrix = glm::inverseTranspose(glm::mat3(view * cubeModelMatrix));
-        glUniformMatrix4fv(
-            glGetUniformLocation(shader.Program, "modelMatrix"),
-            1,
-            GL_FALSE,
-            glm::value_ptr(cubeModelMatrix)
-        );
-        glUniformMatrix4fv(
-            glGetUniformLocation(shader.Program, "normalMatrix"),
-            1,
-            GL_FALSE,
-            glm::value_ptr(cubeNormalMatrix)
-        );
-        cubeModel.Draw();
-
-        bunnyModelMatrix = glm::mat4(1.0f);
-        bunnyNormalMatrix = glm::mat3(1.0f);
-        bunnyModelMatrix = glm::translate(bunnyModelMatrix, glm::vec3(3.0f, 0.0f, 0.0f));
-        bunnyModelMatrix = glm::rotate(bunnyModelMatrix, glm::radians(orientationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        bunnyModelMatrix = glm::scale(bunnyModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));
-        bunnyNormalMatrix = glm::inverseTranspose(glm::mat3(view * bunnyModelMatrix));
-        glUniformMatrix4fv(
-            glGetUniformLocation(shader.Program, "modelMatrix"),
-            1,
-            GL_FALSE,
-            glm::value_ptr(bunnyModelMatrix)
-        );
-        glUniformMatrix4fv(
-            glGetUniformLocation(shader.Program, "normalMatrix"),
-            1,
-            GL_FALSE,
-            glm::value_ptr(bunnyNormalMatrix)
-        );
-        bunnyModel.Draw();
+        // we render the warrior
+        warriorModel.Draw();
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
