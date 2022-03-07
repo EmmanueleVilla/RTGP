@@ -64,6 +64,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
 
+// color to be passed as uniform to the shader of the plane
+GLfloat planeMaterial[] = {0.0f,0.5f,0.0f};
+
 // The MAIN function, from here we start the application and run the game loop
 int main()
 {
@@ -109,7 +112,8 @@ int main()
 
     Shader shader("base.vert", "base.frag");
 
-    Model warriorModel("../models/robot.obj");
+    Model robotModel("../models/robot.obj");
+    Model planeModel("../models/plane.obj");
 
     shader.Use();
 
@@ -122,8 +126,11 @@ int main()
     glm::mat4 view = glm::mat4(1.0f);
 
     // Model and Normal transformation matrices for the objects in the scene: we set to identity
-    glm::mat4 warriorModelMatrix = glm::mat4(1.0f);
-    glm::mat3 warriorNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 robotModelMatrix = glm::mat4(1.0f);
+    glm::mat3 robotNormalMatrix = glm::mat3(1.0f);
+
+    glm::mat4 planeModelMatrix = glm::mat4(1.0f);
+    glm::mat3 planeNormalMatrix = glm::mat3(1.0f);
 
     // Game loop
     while (!glfwWindowShouldClose(window))
@@ -174,21 +181,34 @@ int main()
             glm::value_ptr(view)
         );
 
-        warriorModelMatrix = glm::mat4(1.0f);
-        warriorNormalMatrix = glm::mat3(1.0f);
+        // we create the transformation matrix
+        // we reset to identity at each frame
+        planeModelMatrix = glm::mat4(1.0f);
+        planeNormalMatrix = glm::mat3(1.0f);
+        planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
+        planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(10.0f, 1.0f, 10.0f));
+        planeNormalMatrix = glm::inverseTranspose(glm::mat3(view*planeModelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(planeNormalMatrix));
+
+        // we render the plane
+        planeModel.Draw();
+
+        robotModelMatrix = glm::mat4(1.0f);
+        robotNormalMatrix = glm::mat3(1.0f);
         GLfloat diffX = camera.Position.x - cameraX;
         GLfloat diffY = camera.Position.y - cameraY;
         GLfloat diffZ = camera.Position.z - cameraZ;
-        warriorModelMatrix = glm::translate(warriorModelMatrix, glm::vec3(0.0f+diffX, -2.0f+diffY, 4.0f+diffZ));
-        warriorModelMatrix = glm::rotate(warriorModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        warriorModelMatrix = glm::scale(warriorModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));	// It's a bit too big for our scene, so scale it down
+        robotModelMatrix = glm::translate(robotModelMatrix, glm::vec3(0.0f+diffX, -2.0f+diffY, 4.0f+diffZ));
+        robotModelMatrix = glm::rotate(robotModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        robotModelMatrix = glm::scale(robotModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));	// It's a bit too big for our scene, so scale it down
         // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
-        warriorNormalMatrix = glm::inverseTranspose(glm::mat3(view*warriorModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(warriorModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(warriorNormalMatrix));
+        robotNormalMatrix = glm::inverseTranspose(glm::mat3(view*robotModelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(robotModelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(robotNormalMatrix));
 
-        // we render the warrior
-        warriorModel.Draw();
+        // we render the robot
+        robotModel.Draw();
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
