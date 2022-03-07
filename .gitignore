@@ -1,3 +1,11 @@
 main/main.out.dSYM
 main/main.out
 libs/
+main/glad.obj
+main/main.exe
+main/main.exp
+main/main.ilk
+main/main.lib
+main/main.obj
+main/main.pdb
+main/vc140.pdb
