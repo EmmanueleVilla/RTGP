@@ -218,15 +218,28 @@ int main()
         /* USE SHADER */
         shader.Use();
 
+        /* SHADER LOCATIONS */
+        GLint projectionMatrixLocation = glGetUniformLocation(shader.Program, "projectionMatrix");
+        GLint viewMatrixLocation = glGetUniformLocation(shader.Program, "viewMatrix");
+        GLint textureLocation = glGetUniformLocation(shader.Program, "texture");
+        GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
+        GLint modelMatrixLocation = glGetUniformLocation(shader.Program, "modelMatrix");
+
+        /* SET PLANE TEXTURE */
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, textureId[0]);
+
         /* PASS VALUES TO SHADER */
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
+        glUniform1i(textureLocation, 1);
+        glUniform1f(repeatLocation, 80.0);
 
         /*  SET PLANE MATRICES */
         planeModelMatrix = glm::mat4(1.0f);
         planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
         planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(10.0f, 1.0f, 10.0f));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
 
         /*  DRAW PLANE */
         planeModel.Draw();

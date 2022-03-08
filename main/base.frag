@@ -7,13 +7,8 @@ subroutine vec3 fragshader();
 subroutine uniform fragshader fragShaderImpl;
 
 subroutine(fragshader)
-vec3 redColor() {
+vec3 textured() {
     return vec3(1.0f, 0.0f, 0.0f);
-}
-
-subroutine(fragshader)
-vec3 greenColor() {
-    return vec3(0.0f, 1.0f, 0.0f);
 }
 
 void main() {
