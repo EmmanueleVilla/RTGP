@@ -8,7 +8,7 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 uniform mat3 normalMatrix;
-uniform mat4 modelMatrixes[100];
+uniform mat4 modelMatrixes[250];
 
 uniform float weight;
 uniform float timer;

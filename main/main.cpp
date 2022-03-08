@@ -109,8 +109,8 @@ GLfloat rotationY = 180.0f;
 GLfloat rotationSpeed = 2.0f;
 
 /*** TREES ***/
-#define treesCount 25
-#define spreadRange 15
+#define treesCount 250
+#define spreadRange 50
 
 /////////////////// MAIN function ///////////////////////
 int main()
