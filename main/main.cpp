@@ -109,7 +109,7 @@ GLfloat rotationY = 180.0f;
 GLfloat rotationSpeed = 2.0f;
 
 /*** TREES ***/
-#define treesCount 5000
+#define treesCount 100
 #define spreadRange 5
 
 /////////////////// MAIN function ///////////////////////
@@ -181,7 +181,7 @@ int main()
         float randX = (rand() % (2*spreadRange) - spreadRange) * 1.0f;
         float randZ = (rand() % (2*spreadRange) - spreadRange) * 1.0f;
         modelMatrixes[i] = glm::mat4(1.0f);
-        modelMatrixes[i] = glm::translate(modelMatrixes[i], glm::vec3(randX, 0.0f, randZ));
+        modelMatrixes[i] = glm::translate(modelMatrixes[i], glm::vec3(i, 0.0f, -i));
         modelMatrixes[i] = glm::scale(modelMatrixes[i], glm::vec3(1.25f, 1.25f, 1.25f));
     }
 
@@ -258,7 +258,7 @@ int main()
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(treeModelMatrix));
 
         /***  DRAW TREE ***/
-        treeModel.DrawInstanced(spreadRange);
+        treeModel.DrawInstanced(treesCount);
 
         /*** SWAP BUFFERS ***/
         glfwSwapBuffers(window);
