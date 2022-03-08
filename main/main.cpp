@@ -154,10 +154,12 @@ int main()
     /***  LOAD MODELS ***/
     Model planeModel("../models/plane.obj");
     Model playerModel("../models/player.obj");
+    Model treeModel("../models/tree.obj");
 
     /*** LOAD TEXTURES ***/
     textureId.push_back(LoadTexture("../textures/plane.jpg"));
     textureId.push_back(LoadTexture("../textures/player.png"));
+    textureId.push_back(LoadTexture("../textures/tree.jpg"));
 
     /***  INIT CAMERA ***/
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
@@ -166,8 +168,7 @@ int main()
     /***  INIT MATRICES ***/
     glm::mat4 planeModelMatrix = glm::mat4(1.0f);
     glm::mat4 playerModelMatrix = glm::mat4(1.0f);
-    glm::mat3 playerNormalMatrix = glm::mat3(1.0f);
-    
+    glm::mat4 treeModelMatrix = glm::mat4(1.0f);    
 
     while(!glfwWindowShouldClose(window))
     {
@@ -225,8 +226,22 @@ int main()
         playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.15f, 0.15f, 0.15f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
 
-        /***  DRAW PLANE ***/
+        /***  DRAW PLAYER ***/
         playerModel.Draw();
+
+        /*** SET TREE TEXTURE ***/
+        glBindTexture(GL_TEXTURE_2D, textureId[2]);
+        glUniform1f(repeatLocation, 1.0);
+
+        /***  SET TREE MATRICES ***/
+        treeModelMatrix = glm::mat4(1.0f);
+        treeModelMatrix = glm::translate(treeModelMatrix, glm::vec3(0.0f, 0.0f, -2.0f));
+        treeModelMatrix = glm::rotate(treeModelMatrix, glm::radians(23.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        treeModelMatrix = glm::scale(treeModelMatrix, glm::vec3(1.25f, 1.25f, 1.25f));
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(treeModelMatrix));
+
+        /***  DRAW TREE ***/
+        treeModel.Draw();
 
         /*** SWAP BUFFERS ***/
         glfwSwapBuffers(window);
