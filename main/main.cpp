@@ -98,24 +98,20 @@ GLfloat lastFrame = 0.0f;
 // color to be passed as uniform to the shader of the plane
 GLfloat planeColor[] = {0.0,0.5,0.0};
 
+GLfloat deltaY;
+
 /////////////////// MAIN function ///////////////////////
 int main()
 {
-  // Initialization of OpenGL context using GLFW
-  glfwInit();
-  // We set OpenGL specifications required for this application
-  // In this case: 4.1 Core
-  // If not supported by your graphics HW, the context will not be created and the application will close
-  // N.B.) creating GLAD code to load extensions, try to take into account the specifications and any extensions you want to use,
-  // in relation also to the values indicated in these GLFW commands
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  // we set if the window is resizable
-  glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    /*  INIT GLFW */
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-  // we create the application's window
+    /*  INIT WINDOW */
     GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "The switcher", nullptr, nullptr);
     if (!window)
     {
@@ -124,58 +120,44 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
-
-    // we put in relation the window and the callbacks
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, key_callback);
 
-    // we disable the mouse cursor
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    // GLAD tries to load the context set by GLFW
+    /*  INIT CONTEXT */
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
         std::cout << "Failed to initialize OpenGL context" << std::endl;
-        return -1;
+        return false;
     }
 
-    // we define the viewport dimensions
+    /*  INIT VIEWPORT */
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
-
-    // we enable Z test
     glEnable(GL_DEPTH_TEST);
-
-    //the "clear" color for the frame buffer
     glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 
-    // we create the Shader Program used for the plane
+    /*  INIT SHADERS */
     Shader plane_shader("plane.vert", "plane.frag");
-
-    // we create the Shader Program used for objects (which presents different subroutines we can switch)
     Shader base_shader = Shader("base.vert", "base.frag");
-    // we parse the Shader Program to search for the number and names of the subroutines. 
-    // the names are placed in the shaders vector
     SetupShader(base_shader.Program);
-    // we print on console the name of the first subroutine used
     PrintCurrentShader(current_subroutine);
     
-    // we load the model(s) (code of Model class is in include/utils/model_v1.h)
-    Model cubeModel("../models/cube.obj");
+    /*  LOAD MODELS */
+    Model femaleModel("../models/female.obj");
     Model sphereModel("../models/sphere.obj");
     Model bunnyModel("../models/bunny_lp.obj");
     Model planeModel("../models/plane.obj");
 
-    // Projection matrix: FOV angle, aspect ratio, near and far planes
+    /*  INIT CAMERA */
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
-    // View matrix (=camera): position, view direction, camera "up" vector
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    // Model and Normal transformation matrices for the objects in the scene: we set to identity
+    /*  INIT MATRICES */
     glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
     glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 cubeModelMatrix = glm::mat4(1.0f);
-    glm::mat3 cubeNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 femaleModelMatrix = glm::mat4(1.0f);
+    glm::mat3 femaleNormalMatrix = glm::mat3(1.0f);
     glm::mat4 bunnyModelMatrix = glm::mat4(1.0f);
     glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
     glm::mat4 planeModelMatrix = glm::mat4(1.0f);
@@ -260,20 +242,20 @@ int main()
         // we activate the subroutine using the index (this is where shaders swapping happens)
         glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
 
-        //CUBE
+        //female
         // we create the transformation matrix and the normals transformation matrix
         // we reset to identity at each frame
-        cubeModelMatrix = glm::mat4(1.0f);
-        cubeNormalMatrix = glm::mat3(1.0f);
-        cubeModelMatrix = glm::translate(cubeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-        cubeModelMatrix = glm::rotate(cubeModelMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));	// It's a bit too big for our scene, so scale it down
-        cubeNormalMatrix = glm::inverseTranspose(glm::mat3(view*cubeModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(base_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(cubeModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(base_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(cubeNormalMatrix));
+        femaleModelMatrix = glm::mat4(1.0f);
+        femaleNormalMatrix = glm::mat3(1.0f);
+        femaleModelMatrix = glm::translate(femaleModelMatrix, glm::vec3(0.0f, -0.75f, 5.5f));
+        femaleModelMatrix = glm::rotate(femaleModelMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        femaleModelMatrix = glm::scale(femaleModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));	// It's a bit too big for our scene, so scale it down
+        femaleNormalMatrix = glm::inverseTranspose(glm::mat3(view*femaleModelMatrix));
+        glUniformMatrix4fv(glGetUniformLocation(base_shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(femaleModelMatrix));
+        glUniformMatrix3fv(glGetUniformLocation(base_shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(femaleNormalMatrix));
 
-        // we render the cube
-        cubeModel.Draw();
+        // we render the female
+        femaleModel.Draw();
 
 
         index = glGetSubroutineIndex(base_shader.Program, GL_FRAGMENT_SHADER, "redColor");
