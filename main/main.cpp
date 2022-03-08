@@ -221,7 +221,7 @@ int main()
         /* SHADER LOCATIONS */
         GLint projectionMatrixLocation = glGetUniformLocation(shader.Program, "projectionMatrix");
         GLint viewMatrixLocation = glGetUniformLocation(shader.Program, "viewMatrix");
-        GLint textureLocation = glGetUniformLocation(shader.Program, "texture");
+        GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
         GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
         GLint modelMatrixLocation = glGetUniformLocation(shader.Program, "modelMatrix");
 
