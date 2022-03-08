@@ -320,11 +320,6 @@ void process_keys(GLFWwindow* window) {
         deltaX -= sin(glm::radians(rotationY)) * speed * deltaTime;
         deltaZ -= cos(glm::radians(rotationY)) * speed * deltaTime;
     }
-    /*
-    if(keys[GLFW_KEY_A] || keys[GLFW_KEY_D]) {
-        deltaX += sin(glm::radians(rotationY)) * speed * deltaTime;
-    }
-    */
 
     if(keys[GLFW_MOUSE_BUTTON_RIGHT]) {
         double xPos, unused;
