@@ -24,5 +24,5 @@ void main() {
     vec4 surfaceColor = texture(tex, repeatedUV);
     vec3 test = fragShaderImpl();
     //color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-    color = vec4(0.0f, sin(interp_UV.x * interp_UV.y), 0.0f, 1.0f);
+    color = vec4(surfaceColor);
 }
