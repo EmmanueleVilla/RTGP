@@ -8,6 +8,7 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 uniform mat3 normalMatrix;
+uniform mat4 modelMatrixes[10];
 
 uniform float weight;
 uniform float timer;
@@ -19,8 +20,11 @@ void main() {
 
     interp_UV = UV;
     
-    //save normals as out
     N = normalize(normalMatrix * normal);
 
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+    if(gl_InstanceID > 0) {
+        gl_Position = projectionMatrix * viewMatrix * modelMatrixes[gl_InstanceID] * vec4(position, 1.0);
+    } else {
+        gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+    }
 }

@@ -82,6 +82,12 @@ public:
             this->meshes[i].Draw();
     }
 
+    void DrawInstanced(int instances)
+    {
+        for(GLuint i = 0; i < this->meshes.size(); i++)
+            this->meshes[i].DrawInstanced(instances);
+    }
+
     //////////////////////////////////////////
 
 

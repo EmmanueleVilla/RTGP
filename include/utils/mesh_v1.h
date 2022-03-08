@@ -137,12 +137,12 @@ public:
         glBindVertexArray(0);
     }
 
-    void DrawInstanced()
+    void DrawInstanced(int instances)
     {
         // VAO is made "active"
         glBindVertexArray(this->VAO);
         // rendering of data in the VAO
-        glDrawElementsInstanced(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, 0, 10);
+        glDrawElementsInstanced(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, 0, instances);
         // VAO is "detached"
         glBindVertexArray(0);
     }

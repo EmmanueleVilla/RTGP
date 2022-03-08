@@ -108,6 +108,10 @@ GLfloat speed = 2.0f;
 GLfloat rotationY = 180.0f;
 GLfloat rotationSpeed = 2.0f;
 
+/*** TREES ***/
+#define treesCount 5000
+#define spreadRange 5
+
 /////////////////// MAIN function ///////////////////////
 int main()
 {
@@ -170,6 +174,17 @@ int main()
     glm::mat4 playerModelMatrix = glm::mat4(1.0f);
     glm::mat4 treeModelMatrix = glm::mat4(1.0f);    
 
+    /*** INIT TREES RANDOM OFFSETS ***/
+    srand (time(NULL));
+    glm::mat4 modelMatrixes[treesCount];
+    for(int i=0; i<treesCount; i++) {
+        float randX = (rand() % (2*spreadRange) - spreadRange) * 1.0f;
+        float randZ = (rand() % (2*spreadRange) - spreadRange) * 1.0f;
+        modelMatrixes[i] = glm::mat4(1.0f);
+        modelMatrixes[i] = glm::translate(modelMatrixes[i], glm::vec3(randX, 0.0f, randZ));
+        modelMatrixes[i] = glm::scale(modelMatrixes[i], glm::vec3(1.25f, 1.25f, 1.25f));
+    }
+
     while(!glfwWindowShouldClose(window))
     {
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -195,6 +210,7 @@ int main()
         GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
         GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
         GLint modelMatrixLocation = glGetUniformLocation(shader.Program, "modelMatrix");
+        GLint modelMatrixesLocation = glGetUniformLocation(shader.Program, "modelMatrixes");
 
         /*** SET PLANE TEXTURE ***/
         glActiveTexture(GL_TEXTURE1);
@@ -205,7 +221,8 @@ int main()
         glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
         glUniform1i(textureLocation, 1);
         glUniform1f(repeatLocation, 80.0);
-
+        glUniformMatrix4fv(modelMatrixesLocation, spreadRange, GL_FALSE, glm::value_ptr(modelMatrixes[0]));
+        
         /***  SET PLANE MATRICES ***/
         planeModelMatrix = glm::mat4(1.0f);
         planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
@@ -235,13 +252,13 @@ int main()
 
         /***  SET TREE MATRICES ***/
         treeModelMatrix = glm::mat4(1.0f);
-        treeModelMatrix = glm::translate(treeModelMatrix, glm::vec3(0.0f, 0.0f, -2.0f));
-        treeModelMatrix = glm::rotate(treeModelMatrix, glm::radians(23.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        treeModelMatrix = glm::translate(treeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+        treeModelMatrix = glm::rotate(treeModelMatrix, 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
         treeModelMatrix = glm::scale(treeModelMatrix, glm::vec3(1.25f, 1.25f, 1.25f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(treeModelMatrix));
 
         /***  DRAW TREE ***/
-        treeModel.Draw();
+        treeModel.DrawInstanced(spreadRange);
 
         /*** SWAP BUFFERS ***/
         glfwSwapBuffers(window);
