@@ -82,6 +82,11 @@ GLuint screenWidth = 800, screenHeight = 600;
 
 /*** INPUT KEY CALLBACK ***/
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+//void mouse_position_callback(GLFWwindow* window, double xpos, double ypos);
+void process_keys(GLFWwindow* window);
+bool keys[1024];
+double mouseXPos;
 
 /*** SHADERS SUBROUTINES ***/
 GLuint current_subroutine = 0;
@@ -95,6 +100,13 @@ GLfloat lastFrame = 0.0f;
 /*** TEXTURES ***/
 vector<GLint> textureId;
 GLint LoadTexture(const char* path);
+
+/*** MOVEMENT ***/
+GLfloat deltaZ = 0.0f;
+GLfloat deltaX = 0.0f;
+GLfloat speed = 2.0f;
+GLfloat rotationY = 180.0f;
+GLfloat rotationSpeed = 2.0f;
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -118,6 +130,8 @@ int main()
     glfwMakeContextCurrent(window);
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    //glfwSetCursorPosCallback(window, mouse_position_callback);
 
     /***  INIT CONTEXT ***/
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
@@ -166,6 +180,7 @@ int main()
 
         /***  CHECK INPUT EVENTS ***/
         glfwPollEvents();
+        process_keys(window);
 
         /***  CLEAR ***/
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -205,8 +220,8 @@ int main()
 
         /***  SET PLAYER MATRICES ***/
         playerModelMatrix = glm::mat4(1.0f);
-        playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(0.0f, 0.0f, 2.5f));
-        playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, 2.5f + deltaZ));
+        playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
         playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.15f, 0.15f, 0.15f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
 
@@ -280,10 +295,43 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
   GLuint new_subroutine;
   
-  // if ESC is pressed, we close the application
-  if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-      glfwSetWindowShouldClose(window, GL_TRUE);
-  }
+    // if ESC is pressed, we close the application
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+            glfwSetWindowShouldClose(window, GL_TRUE);
+    }
+
+    if(action == GLFW_PRESS) {
+        keys[key] = true;
+    }
+
+    if(action == GLFW_RELEASE) {
+        keys[key] = false;
+    }
+}
+
+void process_keys(GLFWwindow* window) {
+    if(keys[GLFW_KEY_W]) {
+        deltaZ -= speed * deltaTime;
+    }
+
+    if(keys[GLFW_KEY_S]) {
+        deltaZ += speed * deltaTime;
+    }
+
+    if(keys[GLFW_KEY_A]) {
+        deltaX -= speed * deltaTime;
+    }
+
+    if(keys[GLFW_KEY_D]) {
+        deltaX += speed * deltaTime;
+    }
+
+    if(keys[GLFW_MOUSE_BUTTON_RIGHT]) {
+        double xPos, unused;
+        glfwGetCursorPos(window, &xPos, &unused);
+        double diff = mouseXPos - xPos;
+        rotationY = 180 + diff * rotationSpeed;
+    }
 }
 
 GLint LoadTexture(const char* path)
@@ -318,4 +366,20 @@ GLint LoadTexture(const char* path)
     glBindTexture(GL_TEXTURE_2D, 0);
 
     return textureImage;
+}
+
+///////////////////////////////////////
+// callback for mouse click
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    if(action == GLFW_PRESS) {
+        keys[button] = true;
+    }
+    if(action == GLFW_RELEASE) {
+        keys[button] = false;
+    }
+
+    if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+        double unused;
+        glfwGetCursorPos(window, &mouseXPos, &unused);
+    }
 }
