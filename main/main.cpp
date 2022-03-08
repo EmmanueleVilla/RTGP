@@ -1,4 +1,4 @@
-/*
+/***
 Es02b: Procedural shaders 1 (random patterns)
 - procedural shaders for noise patterns, pressing keys from 1 to 7
 
@@ -22,9 +22,9 @@ author: Davide Gadia
 Real-Time Graphics Programming - a.a. 2020/2021
 Master degree in Computer Science
 Universita' degli Studi di Milano
-*/
+***/
 
-/*
+/***
 OpenGL coordinate system (right-handed)
 positive X axis points right
 positive Y axis points up
@@ -39,7 +39,7 @@ positive Z axis points "outside" the screen
                             /
                            /
                           Z
-*/
+***/
 
 // Std. Includes
 #include <string>
@@ -77,31 +77,24 @@ positive Z axis points "outside" the screen
 #define STB_IMAGE_IMPLEMENTATION
 #include<stb_image/stb_image.h>
 
-// dimensions of application's window
+/*** APPLICATION WINDOW ***/
 GLuint screenWidth = 800, screenHeight = 600;
 
-// callback function for keyboard events
+/*** INPUT KEY CALLBACK ***/
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 
-// index of the current shader subroutine (= 0 in the beginning)
+/*** SHADERS SUBROUTINES ***/
 GLuint current_subroutine = 0;
-// a vector for all the shader subroutines names used and swapped in the application
 vector<std::string> shaders;
-
-// the name of the subroutines are searched in the shaders, and placed in the shaders vector (to allow shaders swapping)
 void SetupShader(int shader_program);
 
-// print on console the name of current shader subroutine
-void PrintCurrentShader(int subroutine);
-
-// parameters for time computation
+/*** TIME ***/
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
+/*** TEXTURES ***/
 vector<GLint> textureId;
 
-//////////////////////////////////////////
-// we load the image from disk and we create an OpenGL texture
 GLint LoadTexture(const char* path)
 {
     GLuint textureImage;
@@ -139,7 +132,7 @@ GLint LoadTexture(const char* path)
 /////////////////// MAIN function ///////////////////////
 int main()
 {
-    /*  INIT GLFW */
+    /***  INIT GLFW ***/
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
@@ -147,7 +140,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    /*  INIT WINDOW */
+    /***  INIT WINDOW ***/
     GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "The switcher", nullptr, nullptr);
     if (!window)
     {
@@ -159,38 +152,37 @@ int main()
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, key_callback);
 
-    /*  INIT CONTEXT */
+    /***  INIT CONTEXT ***/
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
         std::cout << "Failed to initialize OpenGL context" << std::endl;
         return false;
     }
 
-    /*  INIT VIEWPORT */
+    /***  INIT VIEWPORT ***/
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 
-    /*  INIT SHADERS */
+    /***  INIT SHADERS ***/
     Shader shader = Shader("base.vert", "base.frag");
     SetupShader(shader.Program);
-    PrintCurrentShader(current_subroutine);
     
-    /*  LOAD MODELS */
+    /***  LOAD MODELS ***/
     Model planeModel("../models/plane.obj");
     Model playerModel("../models/player.obj");
 
-    /* LOAD TEXTURES */
+    /*** LOAD TEXTURES ***/
     textureId.push_back(LoadTexture("../textures/plane.jpg"));
     textureId.push_back(LoadTexture("../textures/player.png"));
 
-    /*  INIT CAMERA */
+    /***  INIT CAMERA ***/
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
-    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 3.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 2.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    /*  INIT MATRICES */
+    /***  INIT MATRICES ***/
     glm::mat4 planeModelMatrix = glm::mat4(1.0f);
     glm::mat4 playerModelMatrix = glm::mat4(1.0f);
     glm::mat3 playerNormalMatrix = glm::mat3(1.0f);
@@ -200,61 +192,61 @@ int main()
     {
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-        /*  UPDATE TIME */
+        /***  UPDATE TIME ***/
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        /*  CHECK INPUT EVENTS */
+        /***  CHECK INPUT EVENTS ***/
         glfwPollEvents();
 
-        /*  CLEAR */
+        /***  CLEAR ***/
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        /* USE SHADER */
+        /*** USE SHADER ***/
         shader.Use();
 
-        /* SHADER LOCATIONS */
+        /*** SHADER LOCATIONS ***/
         GLint projectionMatrixLocation = glGetUniformLocation(shader.Program, "projectionMatrix");
         GLint viewMatrixLocation = glGetUniformLocation(shader.Program, "viewMatrix");
         GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
         GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
         GLint modelMatrixLocation = glGetUniformLocation(shader.Program, "modelMatrix");
 
-        /* SET PLANE TEXTURE */
+        /*** SET PLANE TEXTURE ***/
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, textureId[0]);
 
-        /* PASS VALUES TO SHADER */
+        /*** PASS VALUES TO SHADER ***/
         glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
         glUniform1i(textureLocation, 1);
         glUniform1f(repeatLocation, 80.0);
 
-        /*  SET PLANE MATRICES */
+        /***  SET PLANE MATRICES ***/
         planeModelMatrix = glm::mat4(1.0f);
         planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
         planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(10.0f, 1.0f, 10.0f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
 
-        /*  DRAW PLANE */
+        /***  DRAW PLANE ***/
         planeModel.Draw();
 
-        /* SET PLAYER TEXTURE */
+        /*** SET PLAYER TEXTURE ***/
         glBindTexture(GL_TEXTURE_2D, textureId[1]);
         glUniform1f(repeatLocation, 1.0);
 
-        /*  SET PLAYER MATRICES */
+        /***  SET PLAYER MATRICES ***/
         playerModelMatrix = glm::mat4(1.0f);
         playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(0.0f, 0.0f, 2.5f));
         playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.15f, 0.15f, 0.15f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
 
-        /*  DRAW PLANE */
+        /***  DRAW PLANE ***/
         playerModel.Draw();
 
-        /* SWAP BUFFERS */
+        /*** SWAP BUFFERS ***/
         glfwSwapBuffers(window);
     }
 
@@ -313,13 +305,6 @@ void SetupShader(int program)
         
         delete[] s;
     }
-}
-
-//////////////////////////////////////////
-// we print on console the name of the currently used shader subroutine
-void PrintCurrentShader(int subroutine)
-{
-    std::cout << "Current shader subroutine: " << shaders[subroutine]  << std::endl;
 }
 
 //////////////////////////////////////////
