@@ -19,17 +19,8 @@ void main() {
 
     interp_UV = UV;
     
-    //float displacement = weight * sin(timer) + weight;
-    //vec3 newPos = position + displacement * normal;
-    //flatten the model
-    /*
-    vec3 flattened = position;
-    flattened.z = 0.0f;
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix* vec4(flattened, 1.0);
-    */
-
     //save normals as out
     N = normalize(normalMatrix * normal);
 
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix* vec4(position, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
 }
