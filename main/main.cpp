@@ -179,26 +179,22 @@ int main()
     PrintCurrentShader(current_subroutine);
     
     /*  LOAD MODELS */
-    Model femaleModel("../models/female.obj");
-    Model sphereModel("../models/sphere.obj");
-    Model bunnyModel("../models/bunny_lp.obj");
     Model planeModel("../models/plane.obj");
+    Model playerModel("../models/player.obj");
 
     /* LOAD TEXTURES */
-    textureId.push_back(LoadTexture("../textures/floor_wood.jpg"));
+    textureId.push_back(LoadTexture("../textures/plane.jpg"));
+    textureId.push_back(LoadTexture("../textures/player.png"));
 
     /*  INIT CAMERA */
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
-    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 7.0f), glm::vec3(0.0f, 0.0f, -7.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 3.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     /*  INIT MATRICES */
-    glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
-    glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 femaleModelMatrix = glm::mat4(1.0f);
-    glm::mat3 femaleNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 bunnyModelMatrix = glm::mat4(1.0f);
-    glm::mat3 bunnyNormalMatrix = glm::mat3(1.0f);
     glm::mat4 planeModelMatrix = glm::mat4(1.0f);
+    glm::mat4 playerModelMatrix = glm::mat4(1.0f);
+    glm::mat3 playerNormalMatrix = glm::mat3(1.0f);
+    
 
     while(!glfwWindowShouldClose(window))
     {
@@ -244,88 +240,22 @@ int main()
         /*  DRAW PLANE */
         planeModel.Draw();
 
+        /* SET PLAYER TEXTURE */
+        glBindTexture(GL_TEXTURE_2D, textureId[1]);
+        glUniform1f(repeatLocation, 1.0);
+
+        /*  SET PLAYER MATRICES */
+        playerModelMatrix = glm::mat4(1.0f);
+        playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(0.0f, 0.0f, 2.5f));
+        playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.15f, 0.15f, 0.15f));
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
+
+        /*  DRAW PLANE */
+        playerModel.Draw();
+
         /* SWAP BUFFERS */
         glfwSwapBuffers(window);
-
-        continue;
-
-
-        /////////////////// OBJECTS ////////////////////////////////////////////////
-        // We "install" the noise_shader Shader Program as part of the current rendering process
-        shader.Use();
-        // we search inside the Shader Program the name of the subroutine currently selected, and we get the numerical index
-        GLuint index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "redColor");
-        // we activate the subroutine using the index (this is where shaders swapping happens)
-        glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
-
-        // we pass projection and view matrices to the Shader Program
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
-
-        // SPHERE
-        /*
-          we create the transformation matrix
-
-          N.B.) the last defined is the first applied
-
-          We need also the matrix for normals transformation, which is the inverse of the transpose of the 3x3 submatrix (upper left) of the modelview. We do not consider the 4th column because we do not need translations for normals.
-          An explanation (where XT means the transpose of X, etc):
-            "Two column vectors X and Y are perpendicular if and only if XT.Y=0. If We're going to transform X by a matrix M, we need to transform Y by some matrix N so that (M.X)T.(N.Y)=0. Using the identity (A.B)T=BT.AT, this becomes (XT.MT).(N.Y)=0 => XT.(MT.N).Y=0. If MT.N is the identity matrix then this reduces to XT.Y=0. And MT.N is the identity matrix if and only if N=(MT)-1, i.e. N is the inverse of the transpose of M.
-
-        */
-        // we reset to identity at each frame
-        sphereModelMatrix = glm::mat4(1.0f);
-        sphereNormalMatrix = glm::mat3(1.0f);
-        sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(-3.0f, 0.0f, 0.0f));
-        sphereModelMatrix = glm::rotate(sphereModelMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
-        // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
-        sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view*sphereModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(sphereModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(sphereNormalMatrix));
-
-        // we render the model
-        sphereModel.Draw();
-
-
-        index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "greenColor");
-        // we activate the subroutine using the index (this is where shaders swapping happens)
-        glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
-
-        //female
-        // we create the transformation matrix and the normals transformation matrix
-        // we reset to identity at each frame
-        femaleModelMatrix = glm::mat4(1.0f);
-        femaleNormalMatrix = glm::mat3(1.0f);
-        femaleModelMatrix = glm::translate(femaleModelMatrix, glm::vec3(0.0f, -0.75f, 5.5f));
-        femaleModelMatrix = glm::rotate(femaleModelMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        femaleModelMatrix = glm::scale(femaleModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));	// It's a bit too big for our scene, so scale it down
-        femaleNormalMatrix = glm::inverseTranspose(glm::mat3(view*femaleModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(femaleModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(femaleNormalMatrix));
-
-        // we render the female
-        femaleModel.Draw();
-
-
-        index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "redColor");
-        // we activate the subroutine using the index (this is where shaders swapping happens)
-        glUniformSubroutinesuiv( GL_FRAGMENT_SHADER, 1, &index);
-
-        //BUNNY
-        // we create the transformation matrix and the normals transformation matrix
-        // we reset to identity at each frame
-        bunnyModelMatrix = glm::mat4(1.0f);
-        bunnyNormalMatrix = glm::mat3(1.0f);
-        bunnyModelMatrix = glm::translate(bunnyModelMatrix, glm::vec3(3.0f, 0.0f, 0.0f));
-        bunnyModelMatrix = glm::rotate(bunnyModelMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        bunnyModelMatrix = glm::scale(bunnyModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));	// It's a bit too big for our scene, so scale it down
-        bunnyNormalMatrix = glm::inverseTranspose(glm::mat3(view*bunnyModelMatrix));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "modelMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyModelMatrix));
-        glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normalMatrix"), 1, GL_FALSE, glm::value_ptr(bunnyNormalMatrix));
-
-        // Swapping back and front buffers
-        bunnyModel.Draw();
     }
 
     // when I exit from the graphics loop, it is because the application is closing
