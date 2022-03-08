@@ -310,21 +310,21 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void process_keys(GLFWwindow* window) {
+
     if(keys[GLFW_KEY_W]) {
-        deltaZ -= speed * deltaTime;
+        deltaX += sin(glm::radians(rotationY)) * speed * deltaTime;
+        deltaZ += cos(glm::radians(rotationY)) * speed * deltaTime;
     }
 
     if(keys[GLFW_KEY_S]) {
-        deltaZ += speed * deltaTime;
+        deltaX -= sin(glm::radians(rotationY)) * speed * deltaTime;
+        deltaZ -= cos(glm::radians(rotationY)) * speed * deltaTime;
     }
-
-    if(keys[GLFW_KEY_A]) {
-        deltaX -= speed * deltaTime;
+    /*
+    if(keys[GLFW_KEY_A] || keys[GLFW_KEY_D]) {
+        deltaX += sin(glm::radians(rotationY)) * speed * deltaTime;
     }
-
-    if(keys[GLFW_KEY_D]) {
-        deltaX += speed * deltaTime;
-    }
+    */
 
     if(keys[GLFW_MOUSE_BUTTON_RIGHT]) {
         double xPos, unused;
