@@ -325,7 +325,8 @@ void process_keys(GLFWwindow* window) {
         double xPos, unused;
         glfwGetCursorPos(window, &xPos, &unused);
         double diff = mouseXPos - xPos;
-        rotationY = 180 + diff * rotationSpeed;
+        mouseXPos = xPos;
+        rotationY += diff * rotationSpeed;
     }
 }
 
