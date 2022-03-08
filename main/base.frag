@@ -15,14 +15,11 @@ subroutine vec3 fragshader();
 subroutine uniform fragshader fragShaderImpl;
 
 subroutine(fragshader)
-vec3 red() {
-    return vec3(1.0f, 0.0f, 0.0f);
+vec3 textured() {
+    vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
+    return vec3(texture(tex, repeatedUV).xyz);
 }
 
 void main() {
-    vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
-    vec4 surfaceColor = texture(tex, repeatedUV);
-    vec3 test = fragShaderImpl();
-    //color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-    color = vec4(surfaceColor);
+    color = vec4(fragShaderImpl(), 1.0f);
 }
