@@ -8,7 +8,10 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 uniform mat3 normalMatrix;
-uniform mat4 modelMatrixes[250];
+layout (std140) uniform Matrices
+{
+    mat4 modelMatrices[1000];
+};
 
 uniform float weight;
 uniform float timer;
@@ -23,7 +26,7 @@ void main() {
     N = normalize(normalMatrix * normal);
 
     if(gl_InstanceID > 0) {
-        gl_Position = projectionMatrix * viewMatrix * modelMatrixes[gl_InstanceID] * vec4(position, 1.0);
+        gl_Position = projectionMatrix * viewMatrix * modelMatrices[gl_InstanceID] * vec4(position, 1.0);
     } else {
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
     }

@@ -109,7 +109,7 @@ GLfloat rotationY = 180.0f;
 GLfloat rotationSpeed = 2.0f;
 
 /*** TREES ***/
-#define treesCount 250
+#define treesCount 1000
 #define spreadRange 50
 
 /////////////////// MAIN function ///////////////////////
@@ -174,7 +174,7 @@ int main()
     glm::mat4 playerModelMatrix = glm::mat4(1.0f);
     glm::mat4 treeModelMatrix = glm::mat4(1.0f);    
 
-    /*** INIT TREES RANDOM OFFSETS ***/
+    //*** INIT TREES RANDOM OFFSETS ***/
     srand (time(NULL));
     glm::mat4 modelMatrixes[treesCount];
     for(int i=0; i<treesCount; i++) {
@@ -184,6 +184,22 @@ int main()
         modelMatrixes[i] = glm::translate(modelMatrixes[i], glm::vec3(randX, 0.0f, randZ));
         modelMatrixes[i] = glm::scale(modelMatrixes[i], glm::vec3(1.25f, 1.25f, 1.25f));
     }
+
+    //** INIT UNIFORM BUFFER **/
+    GLint uniformTreesMatrixBlockLocation = glGetUniformBlockIndex(shader.Program, "Matrices");
+    glUniformBlockBinding(shader.Program, uniformTreesMatrixBlockLocation, 0);
+
+    GLuint uboTreesMatrixBlock;
+    glGenBuffers(1, &uboTreesMatrixBlock);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
+    glBufferData(GL_UNIFORM_BUFFER, treesCount * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboTreesMatrixBlock, 0, treesCount * sizeof(glm::mat4));
+
+    //** FILL UNIFORM BUFFER **//
+    glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, treesCount * sizeof(glm::mat4), glm::value_ptr(modelMatrixes[0]));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     while(!glfwWindowShouldClose(window))
     {
