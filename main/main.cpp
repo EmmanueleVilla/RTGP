@@ -204,8 +204,8 @@ int main()
         /** UPDATE CAMERA POSITION TO FOLLOW PLAYER **/
         GLfloat distX = sin(glm::radians(rotationY)) * 2.5f;
         GLfloat distZ = cos(glm::radians(rotationY)) * 2.5f;
-        cout << distX << ":" << distZ << endl;
         view = glm::lookAt(glm::vec3(deltaX - distX, 2.0f, 2.5f + deltaZ + distZ * -1.0f), glm::vec3(deltaX + distX, 0.0f, 2.5f + deltaZ + distZ), glm::vec3(0.0f, 1.0f, 0.0f));
+        
         /*** USE SHADER ***/
         shader.Use();
 
@@ -230,7 +230,7 @@ int main()
         
         /***  SET PLANE MATRICES ***/
         planeModelMatrix = glm::mat4(1.0f);
-        planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(0.0f, -1.0f, 0.0f));
+        planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
         planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(10.0f, 1.0f, 10.0f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
 
