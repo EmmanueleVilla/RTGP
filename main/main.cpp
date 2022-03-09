@@ -78,7 +78,7 @@ positive Z axis points "outside" the screen
 #include<stb_image/stb_image.h>
 
 /*** APPLICATION WINDOW ***/
-GLuint screenWidth = 800, screenHeight = 600;
+GLuint screenWidth = 1280, screenHeight = 720;
 
 /*** INPUT KEY CALLBACK ***/
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
