@@ -201,6 +201,11 @@ int main()
         /***  CLEAR ***/
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        /** UPDATE CAMERA POSITION TO FOLLOW PLAYER **/
+        GLfloat distX = sin(glm::radians(rotationY)) * 2.5f;
+        GLfloat distZ = cos(glm::radians(rotationY)) * 2.5f;
+        cout << distX << ":" << distZ << endl;
+        view = glm::lookAt(glm::vec3(deltaX - distX, 2.0f, 2.5f + deltaZ + distZ * -1.0f), glm::vec3(deltaX + distX, 0.0f, 2.5f + deltaZ + distZ), glm::vec3(0.0f, 1.0f, 0.0f));
         /*** USE SHADER ***/
         shader.Use();
 
