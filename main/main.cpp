@@ -134,9 +134,7 @@ int main()
 
     //---  INIT MATRICES 
     glm::mat4 coinModelMatrix = glm::mat4(1.0f);
-    glm::mat4 planeModelMatrix = glm::mat4(1.0f);
     glm::mat4 playerModelMatrix = glm::mat4(1.0f);
-    glm::mat4 treeModelMatrix = glm::mat4(1.0f);
     glm::mat4 cartModelMatrix = glm::mat4(1.0f);
 
     //--- COIN DATA
@@ -187,8 +185,9 @@ int main()
     //--- KEEP TRACK OF THE CURRENT ROW TO LOAD ONE ROW PER RENDER LOOP
     int current = 0;
 
-    //--- INIT TREES RANDOM OFFSETS 
+    //--- INIT MATRIXES FOR INSTANCED DRAWING 
     vector<glm::mat4> treesMatrixes;
+    vector<glm::mat4> planesMatrixes;
 
     cout << "Starting loading loop" << endl;
 
@@ -224,6 +223,12 @@ int main()
                     cartX = current * 2;
                     cartZ = position * 2;
                 }
+                //if(*i == "P") {
+                    glm::mat4 planeMatrix = glm::mat4(1.0f);
+                    planeMatrix = glm::translate(planeMatrix, glm::vec3(current * 2, 0.0f, position * 2));
+                    planeMatrix = glm::scale(planeMatrix, glm::vec3(0.25f, 1.0f, 0.25f));
+                    planesMatrixes.push_back(planeMatrix);
+                //}
             }
         } else {
             appState = AppStates::Loaded;
@@ -346,16 +351,12 @@ int main()
         glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
         glUniform1i(textureLocation, 1);
         glUniform1f(repeatLocation, 80.0);
-        glUniformMatrix4fv(modelMatrixesLocation, treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
         
         //---  SET PLANE MATRICES 
-        planeModelMatrix = glm::mat4(1.0f);
-        planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(-planeDeltaX, 0.0f, -planeDeltaZ));
-        planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(planeSizeX, 1.0f, planeSizeZ));
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
+        glUniformMatrix4fv(modelMatrixesLocation, planesMatrixes.size(), GL_FALSE, glm::value_ptr(planesMatrixes[0]));
 
         //---  DRAW PLANE 
-        planeModel.Draw();
+        planeModel.DrawInstanced(planesMatrixes.size());
 
         //--- SET PLAYER TEXTURE 
         glBindTexture(GL_TEXTURE_2D, textureId[playerTextureIndex]);
@@ -376,10 +377,7 @@ int main()
         glUniform1f(repeatLocation, 1.0);
 
         //---  SET TREE MATRICES 
-        treeModelMatrix = glm::mat4(1.0f);
-        treeModelMatrix = glm::translate(treeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-        treeModelMatrix = glm::scale(treeModelMatrix, glm::vec3(1.25f, 1.25f, 1.25f));
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(treeModelMatrix));
+        glUniformMatrix4fv(modelMatrixesLocation, treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
 
         //---  DRAW TREE
         treeModel.DrawInstanced(treesMatrixes.size());
