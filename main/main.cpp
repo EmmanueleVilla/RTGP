@@ -56,13 +56,9 @@ GLint LoadTexture(const char* path);
 //---  MOVEMENT 
 GLfloat deltaZ = 0.0f;
 GLfloat deltaX = 0.0f;
-GLfloat speed = 2.0f;
+GLfloat speed = 20.0f;
 GLfloat rotationY = 180.0f;
 GLfloat rotationSpeed = 2.0f;
-
-//---  TREES 
-#define treesCount 1000
-#define spreadRange 50
 
 //---  APP_STATE 
 enum class AppStates { Loading, Loaded };
@@ -124,6 +120,7 @@ int main()
     Model planeModel("../models/plane.obj");
     Model playerModel("../models/player.obj");
     Model treeModel("../models/tree.obj");
+    Model cartModel("../models/tree.obj");
 
     //--- LOAD TEXTURES 
     int coinTextureIndex = 0;
@@ -140,10 +137,16 @@ int main()
     glm::mat4 planeModelMatrix = glm::mat4(1.0f);
     glm::mat4 playerModelMatrix = glm::mat4(1.0f);
     glm::mat4 treeModelMatrix = glm::mat4(1.0f);
+    glm::mat4 cartModelMatrix = glm::mat4(1.0f);
 
     //--- COIN DATA
     float coinRotationY = 0.0f;
     float coinRotationSpeed = 20.0f;
+
+    //--- CART DATA
+    float cartX = 0.0f;
+    float cartZ = 0.0f;
+    GLfloat cartColor[] = { 0.65f, 0.16f, 0.16f };
     
     //---  INIT CAMERA 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
@@ -176,8 +179,10 @@ int main()
     row.shrink_to_fit();
 
     //--- EACH CSV CELL IS A 0.5f X 0.5f SQUARE
-    int planeSizeX = content[0].size() * 2;
-    int planeSizeY = content.size() * 2;
+    float planeSizeZ = content[0].size() / 4;
+    float planeSizeX = content.size() / 4;
+    float planeDeltaX = planeSizeX / 2;
+    float planeDeltaZ = planeSizeZ / 2;
 
     //--- KEEP TRACK OF THE CURRENT ROW TO LOAD ONE ROW PER RENDER LOOP
     int current = 0;
@@ -214,6 +219,10 @@ int main()
                 if(*i == "S") {
                     deltaX = current * 2;
                     deltaZ = position * 2;
+                }
+                if(*i == "C") {
+                    cartX = current * 2;
+                    cartZ = position * 2;
                 }
             }
         } else {
@@ -282,13 +291,13 @@ int main()
     GLuint uboTreesMatrixBlock;
     glGenBuffers(1, &uboTreesMatrixBlock);
     glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
-    glBufferData(GL_UNIFORM_BUFFER, treesCount * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, treesMatrixes.size() * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboTreesMatrixBlock, 0, treesCount * sizeof(glm::mat4));
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboTreesMatrixBlock, 0, treesMatrixes.size() * sizeof(glm::mat4));
 
     //---  FILL UNIFORM BUFFER
     glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, treesCount * sizeof(glm::mat4), glm::value_ptr(treesMatrixes[0]));
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, treesMatrixes.size() * sizeof(glm::mat4), glm::value_ptr(treesMatrixes[0]));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     cout << "Starting game loop" << endl;
@@ -316,6 +325,9 @@ int main()
         //--- USE SHADER 
         shader.Use();
 
+        GLuint subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+
         //--- SHADER LOCATIONS 
         GLint projectionMatrixLocation = glGetUniformLocation(shader.Program, "projectionMatrix");
         GLint viewMatrixLocation = glGetUniformLocation(shader.Program, "viewMatrix");
@@ -323,6 +335,7 @@ int main()
         GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
         GLint modelMatrixLocation = glGetUniformLocation(shader.Program, "modelMatrix");
         GLint modelMatrixesLocation = glGetUniformLocation(shader.Program, "modelMatrixes");
+        GLint colorInLocation = glGetUniformLocation(shader.Program, "colorIn");
 
         //--- SET PLANE TEXTURE 
         glActiveTexture(GL_TEXTURE1);
@@ -333,12 +346,12 @@ int main()
         glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
         glUniform1i(textureLocation, 1);
         glUniform1f(repeatLocation, 80.0);
-        glUniformMatrix4fv(modelMatrixesLocation, treesCount, GL_FALSE, glm::value_ptr(treesMatrixes[0]));
+        glUniformMatrix4fv(modelMatrixesLocation, treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
         
         //---  SET PLANE MATRICES 
         planeModelMatrix = glm::mat4(1.0f);
-        planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-        planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(10.0f, 1.0f, 10.0f));
+        planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(-planeDeltaX, 0.0f, -planeDeltaZ));
+        planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(planeSizeX, 1.0f, planeSizeZ));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
 
         //---  DRAW PLANE 
@@ -365,12 +378,26 @@ int main()
         //---  SET TREE MATRICES 
         treeModelMatrix = glm::mat4(1.0f);
         treeModelMatrix = glm::translate(treeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-        treeModelMatrix = glm::rotate(treeModelMatrix, 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
         treeModelMatrix = glm::scale(treeModelMatrix, glm::vec3(1.25f, 1.25f, 1.25f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(treeModelMatrix));
 
         //---  DRAW TREE
-        treeModel.DrawInstanced(treesCount);
+        treeModel.DrawInstanced(treesMatrixes.size());
+
+        GLuint index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
+
+        //--- SET CART COLOR
+        glUniform3fv(colorInLocation, 1, cartColor);
+
+        //---  SET CART MATRICES 
+        cartModelMatrix = glm::mat4(1.0f);
+        cartModelMatrix = glm::translate(cartModelMatrix, glm::vec3(cartX, 0.0f, cartZ));
+        cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(2.0f, 1.0f, 2.0f));
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
+
+        //---  DRAW CART 
+        cartModel.Draw();
 
         //--- SWAP BUFFERS
         glfwSwapBuffers(window);
