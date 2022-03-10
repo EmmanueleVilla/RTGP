@@ -73,6 +73,12 @@ public:
         this->loadModel(path);
     }
 
+    ~Model()
+    {
+        meshes.clear();
+        meshes.shrink_to_fit();
+    }
+
     //////////////////////////////////////////
 
     // model rendering: calls rendering methods of each instance of Mesh class in the vector

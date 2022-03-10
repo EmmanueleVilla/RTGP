@@ -65,7 +65,7 @@ GLfloat rotationSpeed = 2.0f;
 #define spreadRange 50
 
 //---  APP_STATE 
-enum class AppStates { Loading };
+enum class AppStates { Loading, Loaded };
 AppStates appState = AppStates::Loading;
 
 //--- SHOW WIREFRAME BOOLEAN
@@ -74,6 +74,11 @@ bool showWireframe = false;
 /////////////////// MAIN function ///////////////////////
 int main()
 {
+    cout << "Initializing app" << endl;
+
+    //--- INIT RANDOM SEED
+    srand (time(NULL));
+
     //---  INIT GLFW 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -100,7 +105,7 @@ int main()
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
         std::cout << "Failed to initialize OpenGL context" << std::endl;
-        return false;
+        return -1;
     }
 
     //---  INIT VIEWPORT 
@@ -116,19 +121,71 @@ int main()
     
     //---  LOAD MODELS 
     Model coinModel("../models/coin.obj");
+    Model planeModel("../models/plane.obj");
+    Model playerModel("../models/player.obj");
+    Model treeModel("../models/tree.obj");
 
     //--- LOAD TEXTURES 
     int coinTextureIndex = 0;
+    int planeTextureIndex = 1;
+    int playerTextureIndex = 2;
+    int treeTextureIndex = 3;
     textureId.push_back(LoadTexture("../textures/coin.jpeg"));
+    textureId.push_back(LoadTexture("../textures/plane.jpg"));
+    textureId.push_back(LoadTexture("../textures/player.png"));
+    textureId.push_back(LoadTexture("../textures/tree.jpg"));
 
     //---  INIT MATRICES 
     glm::mat4 coinModelMatrix = glm::mat4(1.0f);
+    glm::mat4 planeModelMatrix = glm::mat4(1.0f);
+    glm::mat4 playerModelMatrix = glm::mat4(1.0f);
+    glm::mat4 treeModelMatrix = glm::mat4(1.0f);
+
+    //--- COIN DATA
     float coinRotationY = 0.0f;
     float coinRotationSpeed = 20.0f;
     
     //---  INIT CAMERA 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    //--- LOAD DATA FILE
+    cout << "Loading map file" << endl;
+	vector<vector<string>> content;
+	vector<string> row;
+	string line, word;
+	fstream file ("../data/map.csv", ios::in);
+	if(file.is_open()) {
+		while(getline(file, line))
+		{
+			row.clear();
+ 
+			stringstream str(line);
+ 
+			while(getline(str, word, ',')) {
+				row.push_back(word);
+            }
+			content.push_back(row);
+		}
+	} else {
+		std::cout << "Failed to load level data" << std::endl;
+        return -1;
+    }
+
+    row.clear();
+    row.shrink_to_fit();
+
+    //--- EACH CSV CELL IS A 0.5f X 0.5f SQUARE
+    int planeSizeX = content[0].size() * 2;
+    int planeSizeY = content.size() * 2;
+
+    //--- KEEP TRACK OF THE CURRENT ROW TO LOAD ONE ROW PER RENDER LOOP
+    int current = 0;
+
+    //--- INIT TREES RANDOM OFFSETS 
+    vector<glm::mat4> treesMatrixes;
+
+    cout << "Starting loading loop" << endl;
 
     //--- LOADING RENDER LOOP
     while(appState == AppStates::Loading)
@@ -138,6 +195,31 @@ int main()
             glfwTerminate();
             return 0;
         }
+
+        //--- CONTINUE LOADING THE LEVEL
+        if(current < content.size()) {
+            for (auto i=content[current].begin(); i!=content[current].end(); ++i) {
+                float position = i-content[current].begin();
+                if(*i == "T") {
+                    //--- TREES ARE RANDOMLY DISPLACED FROM THEIR 0.5x0.5 cell by a random value between -0.5f and 0.5f
+                    float randX = (rand() % 10 - 5) / 10.f;
+                    float randZ = (rand() % 10 - 5) / 10.f;
+                    //--- TREES ARE RANDOMLY SCALED FROM 100% TO 150%
+                    float randomScale = (100 + (rand() % 50)) / 100.f;
+                    glm::mat4 treeMatrix = glm::mat4(1.0f);
+                    treeMatrix = glm::translate(treeMatrix, glm::vec3(current * 2 + randX, 0.0f, position * 2 + randZ));
+                    treeMatrix = glm::scale(treeMatrix, glm::vec3(randomScale, randomScale, randomScale));
+                    treesMatrixes.push_back(treeMatrix);
+                }
+                if(*i == "S") {
+                    deltaX = current * 2;
+                    deltaZ = position * 2;
+                }
+            }
+        } else {
+            appState = AppStates::Loaded;
+        }
+        current++;
 
         if(showWireframe) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -189,33 +271,9 @@ int main()
         glfwSwapBuffers(window);
     }
 
-    /*
+    cout << "Loading ended, binding new loop values" << endl;
 
-    //---  LOAD MODELS 
-    Model planeModel("../models/plane.obj");
-    Model playerModel("../models/player.obj");
-    Model treeModel("../models/tree.obj");
-
-    //--- LOAD TEXTURES 
-    textureId.push_back(LoadTexture("../textures/plane.jpg"));
-    textureId.push_back(LoadTexture("../textures/player.png"));
-    textureId.push_back(LoadTexture("../textures/tree.jpg"));
-
-    //---  INIT MATRICES 
-    glm::mat4 planeModelMatrix = glm::mat4(1.0f);
-    glm::mat4 playerModelMatrix = glm::mat4(1.0f);
-    glm::mat4 treeModelMatrix = glm::mat4(1.0f);    
-
-    //--- INIT TREES RANDOM OFFSETS 
-    srand (time(NULL));
-    glm::mat4 modelMatrixes[treesCount];
-    for(int i=0; i<treesCount; i++) {
-        float randX = (rand() % (2*spreadRange) - spreadRange) * 1.0f;
-        float randZ = (rand() % (2*spreadRange) - spreadRange) * 1.0f;
-        modelMatrixes[i] = glm::mat4(1.0f);
-        modelMatrixes[i] = glm::translate(modelMatrixes[i], glm::vec3(randX, 0.0f, randZ));
-        modelMatrixes[i] = glm::scale(modelMatrixes[i], glm::vec3(1.25f, 1.25f, 1.25f));
-    }
+    delete &coinModel;
 
     //---  INIT UNIFORM BUFFER
     GLint uniformTreesMatrixBlockLocation = glGetUniformBlockIndex(shader.Program, "Matrices");
@@ -230,8 +288,10 @@ int main()
 
     //---  FILL UNIFORM BUFFER
     glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, treesCount * sizeof(glm::mat4), glm::value_ptr(modelMatrixes[0]));
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, treesCount * sizeof(glm::mat4), glm::value_ptr(treesMatrixes[0]));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    cout << "Starting game loop" << endl;
 
     while(!glfwWindowShouldClose(window))
     {
@@ -266,14 +326,14 @@ int main()
 
         //--- SET PLANE TEXTURE 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, textureId[0]);
+        glBindTexture(GL_TEXTURE_2D, textureId[planeTextureIndex]);
 
         //--- PASS VALUES TO SHADER 
         glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
         glUniform1i(textureLocation, 1);
         glUniform1f(repeatLocation, 80.0);
-        glUniformMatrix4fv(modelMatrixesLocation, treesCount, GL_FALSE, glm::value_ptr(modelMatrixes[0]));
+        glUniformMatrix4fv(modelMatrixesLocation, treesCount, GL_FALSE, glm::value_ptr(treesMatrixes[0]));
         
         //---  SET PLANE MATRICES 
         planeModelMatrix = glm::mat4(1.0f);
@@ -285,7 +345,7 @@ int main()
         planeModel.Draw();
 
         //--- SET PLAYER TEXTURE 
-        glBindTexture(GL_TEXTURE_2D, textureId[1]);
+        glBindTexture(GL_TEXTURE_2D, textureId[playerTextureIndex]);
         glUniform1f(repeatLocation, 1.0);
 
         //---  SET PLAYER MATRICES 
@@ -299,7 +359,7 @@ int main()
         playerModel.Draw();
 
         //--- SET TREE TEXTURE 
-        glBindTexture(GL_TEXTURE_2D, textureId[2]);
+        glBindTexture(GL_TEXTURE_2D, textureId[treeTextureIndex]);
         glUniform1f(repeatLocation, 1.0);
 
         //---  SET TREE MATRICES 
@@ -315,13 +375,13 @@ int main()
         //--- SWAP BUFFERS
         glfwSwapBuffers(window);
     }
-    */
 
-    // when I exit from the graphics loop, it is because the application is closing
-    // we delete the Shader Programs
+    //--- DELETE USED SHADERS
     shader.Delete();
-    // we close and delete the created context
+    
+    //--- CLOSE AND DELETE CONTEXT
     glfwTerminate();
+
     return 0;
 }
 
