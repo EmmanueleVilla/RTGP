@@ -65,8 +65,11 @@ GLfloat rotationSpeed = 2.0f;
 #define spreadRange 50
 
 //---  APP_STATE 
-enum AppStates { Loading }
-AppStates appState = AppStates.Loading;
+enum class AppStates { Loading };
+AppStates appState = AppStates::Loading;
+
+//--- SHOW WIREFRAME BOOLEAN
+bool showWireframe = false;
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -105,12 +108,89 @@ int main()
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     //---  INIT SHADERS 
     Shader shader = Shader("base.vert", "base.frag");
     SetupShader(shader.Program);
     
+    //---  LOAD MODELS 
+    Model coinModel("../models/coin.obj");
+
+    //--- LOAD TEXTURES 
+    int coinTextureIndex = 0;
+    textureId.push_back(LoadTexture("../textures/coin.jpeg"));
+
+    //---  INIT MATRICES 
+    glm::mat4 coinModelMatrix = glm::mat4(1.0f);
+    float coinRotationY = 0.0f;
+    float coinRotationSpeed = 20.0f;
+    
+    //---  INIT CAMERA 
+    glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    //--- LOADING RENDER LOOP
+    while(appState == AppStates::Loading)
+    {
+        if(glfwWindowShouldClose(window)) {
+            shader.Delete();
+            glfwTerminate();
+            return 0;
+        }
+
+        if(showWireframe) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        } else {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
+        //---  UPDATE TIME 
+        GLfloat currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        coinRotationY += coinRotationSpeed * deltaTime;
+
+        glfwPollEvents();
+
+        //---  CLEAR 
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        shader.Use();
+
+        //--- SHADER LOCATIONS 
+        GLint projectionMatrixLocation = glGetUniformLocation(shader.Program, "projectionMatrix");
+        GLint viewMatrixLocation = glGetUniformLocation(shader.Program, "viewMatrix");
+        GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
+        GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
+        GLint modelMatrixLocation = glGetUniformLocation(shader.Program, "modelMatrix");
+
+        //--- SET COIN TEXTURE 
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, textureId[coinTextureIndex]);
+
+        //--- PASS VALUES TO SHADER 
+        glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
+        glUniform1i(textureLocation, 1);
+        glUniform1f(repeatLocation, 1.0);
+        
+        //---  SET COIN MATRICES 
+        coinModelMatrix = glm::mat4(1.0f);
+        coinModelMatrix = glm::translate(coinModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+        coinModelMatrix = glm::rotate(coinModelMatrix, glm::radians(coinRotationY), glm::vec3(0.0f, 1.0f, 0.0f));
+        coinModelMatrix = glm::scale(coinModelMatrix, glm::vec3(0.08f, 0.08f, 0.08f));
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(coinModelMatrix));
+
+        //---  DRAW COIN 
+        coinModel.Draw();
+
+        glfwSwapBuffers(window);
+    }
+
+    /*
+
     //---  LOAD MODELS 
     Model planeModel("../models/plane.obj");
     Model playerModel("../models/player.obj");
@@ -120,10 +200,6 @@ int main()
     textureId.push_back(LoadTexture("../textures/plane.jpg"));
     textureId.push_back(LoadTexture("../textures/player.png"));
     textureId.push_back(LoadTexture("../textures/tree.jpg"));
-
-    //---  INIT CAMERA 
-    glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
-    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 2.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     //---  INIT MATRICES 
     glm::mat4 planeModelMatrix = glm::mat4(1.0f);
@@ -159,7 +235,6 @@ int main()
 
     while(!glfwWindowShouldClose(window))
     {
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         //---  UPDATE TIME 
         GLfloat currentFrame = glfwGetTime();
@@ -240,6 +315,7 @@ int main()
         //--- SWAP BUFFERS
         glfwSwapBuffers(window);
     }
+    */
 
     // when I exit from the graphics loop, it is because the application is closing
     // we delete the Shader Programs
@@ -319,32 +395,38 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void process_keys(GLFWwindow* window) {
 
-    if(keys[GLFW_KEY_W]) {
-        deltaX += sin(glm::radians(rotationY)) * speed * deltaTime;
-        deltaZ += cos(glm::radians(rotationY)) * speed * deltaTime;
+    if(keys[GLFW_KEY_P]) {
+        showWireframe = !showWireframe;
     }
 
-    if(keys[GLFW_KEY_S]) {
-        deltaX -= sin(glm::radians(rotationY)) * speed * deltaTime;
-        deltaZ -= cos(glm::radians(rotationY)) * speed * deltaTime;
-    }
+    if(appState != AppStates::Loading) {
+        if(keys[GLFW_KEY_W]) {
+            deltaX += sin(glm::radians(rotationY)) * speed * deltaTime;
+            deltaZ += cos(glm::radians(rotationY)) * speed * deltaTime;
+        }
 
-    if(keys[GLFW_KEY_A]) {
-        deltaX += cos(glm::radians(rotationY)) * speed * deltaTime;
-        deltaZ -= sin(glm::radians(rotationY)) * speed * deltaTime;
-    }
+        if(keys[GLFW_KEY_S]) {
+            deltaX -= sin(glm::radians(rotationY)) * speed * deltaTime;
+            deltaZ -= cos(glm::radians(rotationY)) * speed * deltaTime;
+        }
 
-    if(keys[GLFW_KEY_D]) {
-        deltaX -= cos(glm::radians(rotationY)) * speed * deltaTime;
-        deltaZ += sin(glm::radians(rotationY)) * speed * deltaTime;
-    }
+        if(keys[GLFW_KEY_A]) {
+            deltaX += cos(glm::radians(rotationY)) * speed * deltaTime;
+            deltaZ -= sin(glm::radians(rotationY)) * speed * deltaTime;
+        }
 
-    if(keys[GLFW_MOUSE_BUTTON_RIGHT]) {
-        double xPos, unused;
-        glfwGetCursorPos(window, &xPos, &unused);
-        double diff = mouseXPos - xPos;
-        mouseXPos = xPos;
-        rotationY += diff * rotationSpeed;
+        if(keys[GLFW_KEY_D]) {
+            deltaX -= cos(glm::radians(rotationY)) * speed * deltaTime;
+            deltaZ += sin(glm::radians(rotationY)) * speed * deltaTime;
+        }
+
+        if(keys[GLFW_MOUSE_BUTTON_RIGHT]) {
+            double xPos, unused;
+            glfwGetCursorPos(window, &xPos, &unused);
+            double diff = mouseXPos - xPos;
+            mouseXPos = xPos;
+            rotationY += diff * rotationSpeed;
+        }
     }
 }
 
