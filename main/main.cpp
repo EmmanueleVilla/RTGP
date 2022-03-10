@@ -1,74 +1,26 @@
-/***
-Es02b: Procedural shaders 1 (random patterns)
-- procedural shaders for noise patterns, pressing keys from 1 to 7
-
-N.B. 1) 
-In this example we use Shaders Subroutines to do shader swapping:
-http://www.geeks3d.com/20140701/opengl-4-shader-subroutines-introduction-3d-programming-tutorial/
-https://www.lighthouse3d.com/tutorials/glsl-tutorial/subroutines/
-https://www.khronos.org/opengl/wiki/Shader_Subroutine
-
-In other cases, an alternative could be to consider Separate Shader Objects:
-https://www.informit.com/articles/article.aspx?p=2731929&seqNum=7
-https://www.khronos.org/opengl/wiki/Shader_Compilation#Separate_programs
-https://riptutorial.com/opengl/example/26979/load-separable-shader-in-cplusplus
-
-N.B. 2) no texturing in this version of the classes
-
-N.B. 3) to test different parameters of the shaders, it is convenient to use some GUI library, like e.g. Dear ImGui (https://github.com/ocornut/imgui)
-
-author: Davide Gadia
-
-Real-Time Graphics Programming - a.a. 2020/2021
-Master degree in Computer Science
-Universita' degli Studi di Milano
-***/
-
-/***
-OpenGL coordinate system (right-handed)
-positive X axis points right
-positive Y axis points up
-positive Z axis points "outside" the screen
-
-
-                              Y
-                              |
-                              |
-                              |________X
-                             /
-                            /
-                           /
-                          Z
-***/
-
-// Std. Includes
+//---  Std. Includes
 #include <string>
 
-// Loader estensions OpenGL
-// http://glad.dav1d.de/
-// THIS IS OPTIONAL AND NOT REQUIRED, ONLY USE THIS IF YOU DON'T WANT GLAD TO INCLUDE windows.h
-// GLAD will include windows.h for APIENTRY if it was not previously defined.
-// Make sure you have the correct definition for APIENTRY for platforms which define _WIN32 but don't use __stdcall
+//---  Loader estensions OpenGL
 #ifdef _WIN32
     #define APIENTRY __stdcall
 #endif
 
 #include <glad/glad.h>
 
-// GLFW library to create window and to manage I/O
+//---  GLFW library to create window and to manage I/O
 #include <glfw/glfw3.h>
 
-// another check related to OpenGL loader
-// confirm that GLAD didn't include windows.h
+//---  confirm that GLAD didn't include windows.h
 #ifdef _WINDOWS_
     #error windows.h was included!
 #endif
 
-// classes developed during lab lectures to manage shaders and to load models
+//---  classes developed during lab lectures to manage shaders and to load models
 #include <utils/shader_v1.h>
 #include <utils/model_v1.h>
 
-// we load the GLM classes used in the application
+//---  we load the GLM classes used in the application
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
@@ -77,10 +29,10 @@ positive Z axis points "outside" the screen
 #define STB_IMAGE_IMPLEMENTATION
 #include<stb_image/stb_image.h>
 
-/*** APPLICATION WINDOW ***/
+//---  APPLICATION WINDOW 
 GLuint screenWidth = 1280, screenHeight = 720;
 
-/*** INPUT KEY CALLBACK ***/
+//---  INPUT KEY CALLBACK 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 //void mouse_position_callback(GLFWwindow* window, double xpos, double ypos);
@@ -88,34 +40,38 @@ void process_keys(GLFWwindow* window);
 bool keys[1024];
 double mouseXPos;
 
-/*** SHADERS SUBROUTINES ***/
+//---  SHADERS SUBROUTINES 
 GLuint current_subroutine = 0;
 vector<std::string> shaders;
 void SetupShader(int shader_program);
 
-/*** TIME ***/
+//---  TIME 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-/*** TEXTURES ***/
+//---  TEXTURES 
 vector<GLint> textureId;
 GLint LoadTexture(const char* path);
 
-/*** MOVEMENT ***/
+//---  MOVEMENT 
 GLfloat deltaZ = 0.0f;
 GLfloat deltaX = 0.0f;
 GLfloat speed = 2.0f;
 GLfloat rotationY = 180.0f;
 GLfloat rotationSpeed = 2.0f;
 
-/*** TREES ***/
+//---  TREES 
 #define treesCount 1000
 #define spreadRange 50
+
+//---  APP_STATE 
+enum AppStates { Loading }
+AppStates appState = AppStates.Loading;
 
 /////////////////// MAIN function ///////////////////////
 int main()
 {
-    /***  INIT GLFW ***/
+    //---  INIT GLFW 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
@@ -123,7 +79,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    /***  INIT WINDOW ***/
+    //---  INIT WINDOW 
     GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "The switcher", nullptr, nullptr);
     if (!window)
     {
@@ -137,44 +93,44 @@ int main()
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     //glfwSetCursorPosCallback(window, mouse_position_callback);
 
-    /***  INIT CONTEXT ***/
+    //---  INIT CONTEXT 
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
         std::cout << "Failed to initialize OpenGL context" << std::endl;
         return false;
     }
 
-    /***  INIT VIEWPORT ***/
+    //---  INIT VIEWPORT 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 
-    /***  INIT SHADERS ***/
+    //---  INIT SHADERS 
     Shader shader = Shader("base.vert", "base.frag");
     SetupShader(shader.Program);
     
-    /***  LOAD MODELS ***/
+    //---  LOAD MODELS 
     Model planeModel("../models/plane.obj");
     Model playerModel("../models/player.obj");
     Model treeModel("../models/tree.obj");
 
-    /*** LOAD TEXTURES ***/
+    //--- LOAD TEXTURES 
     textureId.push_back(LoadTexture("../textures/plane.jpg"));
     textureId.push_back(LoadTexture("../textures/player.png"));
     textureId.push_back(LoadTexture("../textures/tree.jpg"));
 
-    /***  INIT CAMERA ***/
+    //---  INIT CAMERA 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 2.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    /***  INIT MATRICES ***/
+    //---  INIT MATRICES 
     glm::mat4 planeModelMatrix = glm::mat4(1.0f);
     glm::mat4 playerModelMatrix = glm::mat4(1.0f);
     glm::mat4 treeModelMatrix = glm::mat4(1.0f);    
 
-    //*** INIT TREES RANDOM OFFSETS ***/
+    //--- INIT TREES RANDOM OFFSETS 
     srand (time(NULL));
     glm::mat4 modelMatrixes[treesCount];
     for(int i=0; i<treesCount; i++) {
@@ -185,7 +141,7 @@ int main()
         modelMatrixes[i] = glm::scale(modelMatrixes[i], glm::vec3(1.25f, 1.25f, 1.25f));
     }
 
-    //** INIT UNIFORM BUFFER **/
+    //---  INIT UNIFORM BUFFER
     GLint uniformTreesMatrixBlockLocation = glGetUniformBlockIndex(shader.Program, "Matrices");
     glUniformBlockBinding(shader.Program, uniformTreesMatrixBlockLocation, 0);
 
@@ -196,7 +152,7 @@ int main()
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboTreesMatrixBlock, 0, treesCount * sizeof(glm::mat4));
 
-    //** FILL UNIFORM BUFFER **//
+    //---  FILL UNIFORM BUFFER
     glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, treesCount * sizeof(glm::mat4), glm::value_ptr(modelMatrixes[0]));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -205,27 +161,27 @@ int main()
     {
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-        /***  UPDATE TIME ***/
+        //---  UPDATE TIME 
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        /***  CHECK INPUT EVENTS ***/
+        //---  CHECK INPUT EVENTS 
         glfwPollEvents();
         process_keys(window);
 
-        /***  CLEAR ***/
+        //---  CLEAR 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        /** UPDATE CAMERA POSITION TO FOLLOW PLAYER **/
+        //** UPDATE CAMERA POSITION TO FOLLOW PLAYER
         GLfloat distX = sin(glm::radians(rotationY)) * 2.5f;
         GLfloat distZ = cos(glm::radians(rotationY)) * 2.5f;
         view = glm::lookAt(glm::vec3(deltaX - distX, 2.0f, 2.5f + deltaZ + distZ * -1.0f), glm::vec3(deltaX + distX, 0.0f, 2.5f + deltaZ + distZ), glm::vec3(0.0f, 1.0f, 0.0f));
         
-        /*** USE SHADER ***/
+        //--- USE SHADER 
         shader.Use();
 
-        /*** SHADER LOCATIONS ***/
+        //--- SHADER LOCATIONS 
         GLint projectionMatrixLocation = glGetUniformLocation(shader.Program, "projectionMatrix");
         GLint viewMatrixLocation = glGetUniformLocation(shader.Program, "viewMatrix");
         GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
@@ -233,61 +189,60 @@ int main()
         GLint modelMatrixLocation = glGetUniformLocation(shader.Program, "modelMatrix");
         GLint modelMatrixesLocation = glGetUniformLocation(shader.Program, "modelMatrixes");
 
-        /*** SET PLANE TEXTURE ***/
+        //--- SET PLANE TEXTURE 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, textureId[0]);
 
-        /*** PASS VALUES TO SHADER ***/
+        //--- PASS VALUES TO SHADER 
         glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
         glUniform1i(textureLocation, 1);
         glUniform1f(repeatLocation, 80.0);
         glUniformMatrix4fv(modelMatrixesLocation, treesCount, GL_FALSE, glm::value_ptr(modelMatrixes[0]));
         
-        /***  SET PLANE MATRICES ***/
+        //---  SET PLANE MATRICES 
         planeModelMatrix = glm::mat4(1.0f);
         planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
         planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(10.0f, 1.0f, 10.0f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
 
-        /***  DRAW PLANE ***/
+        //---  DRAW PLANE 
         planeModel.Draw();
 
-        /*** SET PLAYER TEXTURE ***/
+        //--- SET PLAYER TEXTURE 
         glBindTexture(GL_TEXTURE_2D, textureId[1]);
         glUniform1f(repeatLocation, 1.0);
 
-        /***  SET PLAYER MATRICES ***/
+        //---  SET PLAYER MATRICES 
         playerModelMatrix = glm::mat4(1.0f);
         playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, 2.5f + deltaZ));
         playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
         playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.15f, 0.15f, 0.15f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
 
-        /***  DRAW PLAYER ***/
+        //---  DRAW PLAYER 
         playerModel.Draw();
 
-        /*** SET TREE TEXTURE ***/
+        //--- SET TREE TEXTURE 
         glBindTexture(GL_TEXTURE_2D, textureId[2]);
         glUniform1f(repeatLocation, 1.0);
 
-        /***  SET TREE MATRICES ***/
+        //---  SET TREE MATRICES 
         treeModelMatrix = glm::mat4(1.0f);
         treeModelMatrix = glm::translate(treeModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
         treeModelMatrix = glm::rotate(treeModelMatrix, 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
         treeModelMatrix = glm::scale(treeModelMatrix, glm::vec3(1.25f, 1.25f, 1.25f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(treeModelMatrix));
 
-        /***  DRAW TREE ***/
+        //---  DRAW TREE
         treeModel.DrawInstanced(treesCount);
 
-        /*** SWAP BUFFERS ***/
+        //--- SWAP BUFFERS
         glfwSwapBuffers(window);
     }
 
     // when I exit from the graphics loop, it is because the application is closing
     // we delete the Shader Programs
-    shader.Delete();
     shader.Delete();
     // we close and delete the created context
     glfwTerminate();
