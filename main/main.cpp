@@ -57,7 +57,7 @@ GLint LoadTexture(const char* path);
 GLfloat deltaZ = 0.0f;
 GLfloat deltaX = 0.0f;
 GLfloat speed = 20.0f;
-GLfloat rotationY = 180.0f;
+GLfloat rotationY = 90.0f;
 GLfloat rotationSpeed = 2.0f;
 
 //---  APP_STATE 
@@ -144,6 +144,9 @@ int main()
     planeModelMatrix = glm::rotate(planeModelMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(2.0f, 2.0f, 2.0f));
 
+    //--- PLANE PATH DATA
+    vector<glm::vec2> paths;
+
     //--- COIN DATA
     float coinRotationY = 0.0f;
     float coinRotationSpeed = 20.0f;
@@ -212,7 +215,7 @@ int main()
                     //--- TREES ARE RANDOMLY SCALED FROM 100% TO 150%
                     float randomScale = (100 + (rand() % 50)) / 100.f;
                     glm::mat4 treeMatrix = glm::mat4(1.0f);
-                    treeMatrix = glm::translate(treeMatrix, glm::vec3(current * 2 + randX, 0.0f, position * 2 + randZ));
+                    treeMatrix = glm::translate(treeMatrix, glm::vec3(current * 2 + 0.5 + randX, 0.0f, position * 2 + 0.5f + randZ));
                     treeMatrix = glm::scale(treeMatrix, glm::vec3(randomScale, randomScale, randomScale));
                     treesMatrixes.push_back(treeMatrix);
                 }
@@ -223,6 +226,9 @@ int main()
                 if(*i == "C") {
                     cartX = current * 2;
                     cartZ = position * 2;
+                }
+                if(*i == "P") {
+                    paths.push_back(glm::vec2(current-16, position-16));
                 }
             }
         } else {
@@ -284,21 +290,41 @@ int main()
 
     //delete &coinModel;
 
-    //---  INIT UNIFORM BUFFER
+    //---  INIT UNIFORM BUFFER FOR TREES
     GLint uniformTreesMatrixBlockLocation = glGetUniformBlockIndex(shader.Program, "Matrices");
     glUniformBlockBinding(shader.Program, uniformTreesMatrixBlockLocation, 0);
 
     GLuint uboTreesMatrixBlock;
     glGenBuffers(1, &uboTreesMatrixBlock);
     glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
-    glBufferData(GL_UNIFORM_BUFFER, treesMatrixes.size() * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, treesMatrixes.size() * sizeof(glm::mat4) + paths.size() * sizeof(glm::vec2), NULL, GL_STATIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboTreesMatrixBlock, 0, treesMatrixes.size() * sizeof(glm::mat4));
+
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboTreesMatrixBlock, 0, treesMatrixes.size() * sizeof(glm::mat4) + paths.size() * sizeof(glm::vec2));
 
     //---  FILL UNIFORM BUFFER
     glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, treesMatrixes.size() * sizeof(glm::mat4), glm::value_ptr(treesMatrixes[0]));
+    glBufferSubData(GL_UNIFORM_BUFFER, 1024 * sizeof(glm::mat4), paths.size() * sizeof(glm::vec2), glm::value_ptr(paths[0]));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    /*
+    //--- INIT UNIFORM BUFFER FOR PATHS
+    GLint uniformPathBlockLocation = glGetUniformBlockIndex(shader.Program, "Paths");
+    glUniformBlockBinding(shader.Program, uniformPathBlockLocation, 0);
+
+    GLuint uboPathLocationBlock;
+    glGenBuffers(1, &uboPathLocationBlock);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboPathLocationBlock);
+    glBufferData(GL_UNIFORM_BUFFER, paths.size() * sizeof(glm::vec2), NULL, GL_STATIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboPathLocationBlock, 0, paths.size() * sizeof(glm::vec2));
+
+    //---  FILL UNIFORM BUFFER
+    glBindBuffer(GL_UNIFORM_BUFFER, uboPathLocationBlock);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, paths.size() * sizeof(glm::vec2), glm::value_ptr(paths[0]));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    */
 
     cout << "Starting game loop" << endl;
 
@@ -325,9 +351,6 @@ int main()
         //--- USE SHADER 
         shader.Use();
 
-        GLuint subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
-        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
-
         //--- SHADER LOCATIONS 
         GLint projectionMatrixLocation = glGetUniformLocation(shader.Program, "projectionMatrix");
         GLint viewMatrixLocation = glGetUniformLocation(shader.Program, "viewMatrix");
@@ -352,6 +375,9 @@ int main()
 
         //---  DRAW PLANE 
         planeModel.Draw();
+
+        GLuint subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
         //--- SET PLAYER TEXTURE 
         glBindTexture(GL_TEXTURE_2D, textureId[playerTextureIndex]);

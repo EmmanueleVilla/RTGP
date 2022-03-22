@@ -10,6 +10,7 @@ uniform vec3 colorIn;
 
 /* INPUT FROM SHADERS */
 in vec2 interp_UV;
+in vec3 interp_color;
 
 /* SUBROUTINES */
 subroutine vec3 fragshader();
