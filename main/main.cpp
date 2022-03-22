@@ -1,6 +1,6 @@
 //---  Std. Includes
 #include <string>
-
+#define GLM_ENABLE_EXPERIMENTAL
 //---  Loader estensions OpenGL
 #ifdef _WIN32
     #define APIENTRY __stdcall
@@ -19,12 +19,14 @@
 //---  classes developed during lab lectures to manage shaders and to load models
 #include <utils/shader_v1.h>
 #include <utils/model_v1.h>
+#include <utils/aabb.h>
 
 //---  we load the GLM classes used in the application
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include<stb_image/stb_image.h>
@@ -192,6 +194,7 @@ int main()
 
     //--- INIT MATRIXES FOR INSTANCED DRAWING 
     vector<glm::mat4> treesMatrixes;
+    vector<AABB> treesAABBs;
 
     cout << "Starting loading loop" << endl;
 
@@ -313,7 +316,6 @@ int main()
 
     while(!glfwWindowShouldClose(window))
     {
-
         //---  UPDATE TIME 
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -407,6 +409,14 @@ int main()
 
         //--- SWAP BUFFERS
         glfwSwapBuffers(window);
+
+        //std::cout << glm::to_string(treesMatrixes[0]) << std::endl;
+        //std::cout << treesMatrixes[0][3].x << std::endl; //x position of the tree
+        //std::cout << treesMatrixes[0][3].y << std::endl; //y position of the tree
+        //std::cout << treesMatrixes[0][3].z << std::endl; //z position of the tree
+        glm::vec3 treePos = glm::vec3(treesMatrixes[0][3].x, treesMatrixes[0][3].y, treesMatrixes[0][3].z);
+        glm::vec3 cameraPosition = glm::vec3(deltaX - distX, 2.0f, 2.5f + deltaZ + distZ * -1.0f);
+        cout << glm::length(treePos - cameraPosition) << endl;
     }
 
     //--- DELETE USED SHADERS
