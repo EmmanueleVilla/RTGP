@@ -58,7 +58,7 @@ GLint LoadTexture(const char* path);
 //---  MOVEMENT 
 GLfloat deltaZ = 0.0f;
 GLfloat deltaX = 0.0f;
-GLfloat speed = 5.0f;
+GLfloat speed = 25.0f;
 GLfloat rotationY = 90.0f;
 GLfloat rotationSpeed = 2.0f;
 
@@ -398,7 +398,7 @@ int main()
         glUniformMatrix4fv(modelMatrixesLocation, treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
 
         //---  DRAW TREE
-        //treeModel.DrawInstanced(treesMatrixes.size());
+        treeModel.DrawInstanced(treesMatrixes.size());
 
         GLuint index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
         glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
@@ -422,19 +422,19 @@ int main()
         for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
             glm::mat4 matrix = *i;
             glm::vec3 treePos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z);
-            float treeScale = matrix[0].x / 2.0f;
+            float treeScale = matrix[0].x / 4.0f;
             //glm::vec3 cameraPosition = glm::vec3(deltaX - distX, 2.0f, 2.5f + deltaZ + distZ * -1.0f);
             //cout << glm::length(treePos - cameraPosition) << endl;
-
+            GLfloat d = 0.0f;
             GLfloat vertices[] = {
-                treePos.x + treeScale, treePos.y + treeScale, treePos.z - treeScale,  // Top Right
-                treePos.x + treeScale, treePos.y - treeScale, treePos.z - treeScale,  // Bottom Right
-                treePos.x - treeScale, treePos.y - treeScale, treePos.z - treeScale,  // Bottom Left
-                treePos.x - treeScale, treePos.y + treeScale, treePos.z - treeScale,  // Top Left
-                treePos.x + treeScale, treePos.y + treeScale, treePos.z + treeScale,  // Top Right
-                treePos.x + treeScale, treePos.y - treeScale, treePos.z + treeScale,  // Bottom Right
-                treePos.x - treeScale, treePos.y - treeScale, treePos.z + treeScale,  // Bottom Left
-                treePos.x - treeScale, treePos.y + treeScale, treePos.z + treeScale   // Top Left
+                treePos.x + treeScale - d, treePos.y + treeScale, treePos.z - treeScale - d,  // Top Right
+                treePos.x + treeScale - d, treePos.y - treeScale, treePos.z - treeScale - d,  // Bottom Right
+                treePos.x - treeScale - d, treePos.y - treeScale, treePos.z - treeScale - d,  // Bottom Left
+                treePos.x - treeScale - d, treePos.y + treeScale, treePos.z - treeScale - d,  // Top Left
+                treePos.x + treeScale - d, treePos.y + treeScale, treePos.z + treeScale - d,  // Top Right
+                treePos.x + treeScale - d, treePos.y - treeScale, treePos.z + treeScale - d,  // Bottom Right
+                treePos.x - treeScale - d, treePos.y - treeScale, treePos.z + treeScale - d,  // Bottom Left
+                treePos.x - treeScale - d, treePos.y + treeScale, treePos.z + treeScale - d   // Top Left
             };
 
             GLuint indices[] = {
