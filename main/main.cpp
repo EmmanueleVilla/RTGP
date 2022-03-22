@@ -56,7 +56,7 @@ GLint LoadTexture(const char* path);
 //---  MOVEMENT 
 GLfloat deltaZ = 0.0f;
 GLfloat deltaX = 0.0f;
-GLfloat speed = 20.0f;
+GLfloat speed = 5.0f;
 GLfloat rotationY = 90.0f;
 GLfloat rotationSpeed = 2.0f;
 
@@ -297,36 +297,19 @@ int main()
     GLuint uboTreesMatrixBlock;
     glGenBuffers(1, &uboTreesMatrixBlock);
     glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
-    glBufferData(GL_UNIFORM_BUFFER, treesMatrixes.size() * sizeof(glm::mat4) + paths.size() * sizeof(glm::vec2), NULL, GL_STATIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, treesMatrixes.size() * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboTreesMatrixBlock, 0, treesMatrixes.size() * sizeof(glm::mat4) + paths.size() * sizeof(glm::vec2));
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboTreesMatrixBlock, 0, treesMatrixes.size() * sizeof(glm::mat4));
 
     //---  FILL UNIFORM BUFFER
     glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, treesMatrixes.size() * sizeof(glm::mat4), glm::value_ptr(treesMatrixes[0]));
-    glBufferSubData(GL_UNIFORM_BUFFER, 1024 * sizeof(glm::mat4), paths.size() * sizeof(glm::vec2), glm::value_ptr(paths[0]));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    /*
-    //--- INIT UNIFORM BUFFER FOR PATHS
-    GLint uniformPathBlockLocation = glGetUniformBlockIndex(shader.Program, "Paths");
-    glUniformBlockBinding(shader.Program, uniformPathBlockLocation, 0);
-
-    GLuint uboPathLocationBlock;
-    glGenBuffers(1, &uboPathLocationBlock);
-    glBindBuffer(GL_UNIFORM_BUFFER, uboPathLocationBlock);
-    glBufferData(GL_UNIFORM_BUFFER, paths.size() * sizeof(glm::vec2), NULL, GL_STATIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboPathLocationBlock, 0, paths.size() * sizeof(glm::vec2));
-
-    //---  FILL UNIFORM BUFFER
-    glBindBuffer(GL_UNIFORM_BUFFER, uboPathLocationBlock);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, paths.size() * sizeof(glm::vec2), glm::value_ptr(paths[0]));
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    */
 
     cout << "Starting game loop" << endl;
+
+    cout << treesMatrixes.size() << endl;
 
     while(!glfwWindowShouldClose(window))
     {
@@ -359,6 +342,7 @@ int main()
         GLint modelMatrixLocation = glGetUniformLocation(shader.Program, "modelMatrix");
         GLint modelMatrixesLocation = glGetUniformLocation(shader.Program, "modelMatrixes");
         GLint colorInLocation = glGetUniformLocation(shader.Program, "colorIn");
+        GLint instancedLocation = glGetUniformLocation(shader.Program, "instanced");
 
         //--- SET PLANE TEXTURE 
         glActiveTexture(GL_TEXTURE1);
@@ -369,6 +353,7 @@ int main()
         glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
         glUniform1i(textureLocation, 1);
         glUniform1f(repeatLocation, 80.0);
+        glUniform1i(instancedLocation, false);
         
         //---  SET PLANE MATRIX
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
@@ -387,7 +372,7 @@ int main()
         playerModelMatrix = glm::mat4(1.0f);
         playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, 2.5f + deltaZ));
         playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.15f, 0.15f, 0.15f));
+        playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.11f, 0.11f, 0.11f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
 
         //---  DRAW PLAYER 
@@ -396,6 +381,7 @@ int main()
         //--- SET TREE TEXTURE 
         glBindTexture(GL_TEXTURE_2D, textureId[treeTextureIndex]);
         glUniform1f(repeatLocation, 1.0);
+        glUniform1i(instancedLocation, true);
 
         //---  SET TREE MATRICES 
         glUniformMatrix4fv(modelMatrixesLocation, treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
@@ -408,6 +394,7 @@ int main()
 
         //--- SET CART COLOR
         glUniform3fv(colorInLocation, 1, cartColor);
+        glUniform1i(instancedLocation, false);
 
         //---  SET CART MATRICES 
         cartModelMatrix = glm::mat4(1.0f);

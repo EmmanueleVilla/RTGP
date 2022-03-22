@@ -9,10 +9,10 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 uniform mat3 normalMatrix;
+uniform int instanced;
 
 //*** UBO INPUT FROM APP ***//
-layout (std140) uniform Matrices
-{
+layout (std140) uniform Matrices {
     //*** HANDLING A MAXIMUM OF 1024 ELEMENTS ***//
     mat4 modelMatrices[1024];
 };
@@ -28,7 +28,7 @@ void main() {
 
     N = normalize(normalMatrix * normal);
 
-    if(gl_InstanceID > 0) {
+    if(instanced == 1) {
         gl_Position = projectionMatrix * viewMatrix * modelMatrices[gl_InstanceID] * vec4(position, 1.0);
     } else {
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
