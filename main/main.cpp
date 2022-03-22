@@ -136,6 +136,13 @@ int main()
     glm::mat4 coinModelMatrix = glm::mat4(1.0f);
     glm::mat4 playerModelMatrix = glm::mat4(1.0f);
     glm::mat4 cartModelMatrix = glm::mat4(1.0f);
+    glm::mat4 planeModelMatrix = glm::mat4(1.0f);
+
+    //--- INIT FIXED PLANE MATRIX
+    planeModelMatrix = glm::mat4(1.0f);
+    planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(32.0f, 0.0f, 32.0f));
+    planeModelMatrix = glm::rotate(planeModelMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(2.0f, 2.0f, 2.0f));
 
     //--- COIN DATA
     float coinRotationY = 0.0f;
@@ -151,6 +158,7 @@ int main()
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     //--- LOAD DATA FILE
+    //--- I EXPECT A 32x32 CSV AS THE PLANE OF THE SIZE
     cout << "Loading map file" << endl;
 	vector<vector<string>> content;
 	vector<string> row;
@@ -176,18 +184,11 @@ int main()
     row.clear();
     row.shrink_to_fit();
 
-    //--- EACH CSV CELL IS A 0.5f X 0.5f SQUARE
-    float planeSizeZ = content[0].size() / 4;
-    float planeSizeX = content.size() / 4;
-    float planeDeltaX = planeSizeX / 2;
-    float planeDeltaZ = planeSizeZ / 2;
-
     //--- KEEP TRACK OF THE CURRENT ROW TO LOAD ONE ROW PER RENDER LOOP
     int current = 0;
 
     //--- INIT MATRIXES FOR INSTANCED DRAWING 
     vector<glm::mat4> treesMatrixes;
-    vector<glm::mat4> planesMatrixes;
 
     cout << "Starting loading loop" << endl;
 
@@ -223,12 +224,6 @@ int main()
                     cartX = current * 2;
                     cartZ = position * 2;
                 }
-                //if(*i == "P") {
-                    glm::mat4 planeMatrix = glm::mat4(1.0f);
-                    planeMatrix = glm::translate(planeMatrix, glm::vec3(current * 2, 0.0f, position * 2));
-                    planeMatrix = glm::scale(planeMatrix, glm::vec3(0.25f, 1.0f, 0.25f));
-                    planesMatrixes.push_back(planeMatrix);
-                //}
             }
         } else {
             appState = AppStates::Loaded;
@@ -287,7 +282,7 @@ int main()
 
     cout << "Loading ended, binding new loop values" << endl;
 
-    delete &coinModel;
+    //delete &coinModel;
 
     //---  INIT UNIFORM BUFFER
     GLint uniformTreesMatrixBlockLocation = glGetUniformBlockIndex(shader.Program, "Matrices");
@@ -352,11 +347,11 @@ int main()
         glUniform1i(textureLocation, 1);
         glUniform1f(repeatLocation, 80.0);
         
-        //---  SET PLANE MATRICES 
-        glUniformMatrix4fv(modelMatrixesLocation, planesMatrixes.size(), GL_FALSE, glm::value_ptr(planesMatrixes[0]));
+        //---  SET PLANE MATRIX
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
 
         //---  DRAW PLANE 
-        planeModel.DrawInstanced(planesMatrixes.size());
+        planeModel.Draw();
 
         //--- SET PLAYER TEXTURE 
         glBindTexture(GL_TEXTURE_2D, textureId[playerTextureIndex]);
