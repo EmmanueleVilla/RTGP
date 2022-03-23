@@ -56,6 +56,8 @@ vector<GLint> textureId;
 GLint LoadTexture(const char* path);
 
 //---  MOVEMENT 
+GLfloat oldDeltaZ = 0.0f;
+GLfloat oldDeltaX = 0.0f;
 GLfloat deltaZ = 0.0f;
 GLfloat deltaX = 0.0f;
 GLfloat speed = 5.0f;
@@ -418,6 +420,125 @@ int main()
         //---  CLEAR 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        //--- CALCULATE PLAYER AABB
+        //--- THIS IS THE FIRST THING TO DO BECAUSE IT CAN MODIFY THE CAMERA VIEW
+
+        //--- PLAYER POSITION VECTOR AND DELTAS
+        glm::vec3 playerPos = glm::vec3(deltaX / 2, 0, (2.5f + deltaZ) / 2);
+        float playerScale = 0.15f;
+        GLfloat dx = 8.0f;
+        GLfloat dz = 15.0f;
+        GLfloat dy = 9.0f;
+
+        //--- VERTICES OF THE PLAYER'S AABB
+        GLfloat playerVertices[] = {
+            playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+            playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+            playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+            playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+            playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
+            playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+            playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+            playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
+        };
+
+        //--- CREATING AABB FROM VERTICES
+        AABB playerAABB = AABB(playerVertices);
+
+        //--- DEFAULT VALUE OF COLLISION DETECTED
+        bool collision = false;
+
+        //--- VERY LOW PERFORMANCE AABB CHECK
+        for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
+            AABB tree = *i;
+            bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
+            bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
+            if(collisionX && collisionZ) {
+                //--- THE PLAYER COLLIDES WITH SOMETHING
+                collision = true;
+                break;
+            }
+        }
+
+        if(collision) {
+
+            //--- CHECK COLLISION IF I MOVE ONLY IN THE Z DIRECTION
+            playerPos = glm::vec3(oldDeltaX / 2, 0, (2.5f + deltaZ) / 2);
+
+            //--- VERTICES OF THE PLAYER'S AABB
+            GLfloat zPlayerVertices[] = {
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
+            };
+
+            //--- CREATING AABB FROM VERTICES
+            playerAABB = AABB(zPlayerVertices);
+
+            //--- DEFAULT VALUE OF COLLISION DETECTED
+            bool ZmovementCollision = false;
+
+            //--- VERY LOW PERFORMANCE AABB CHECK
+            for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
+                AABB tree = *i;
+                bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
+                bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
+                if(collisionX && collisionZ) {
+                    //--- THE PLAYER COLLIDES WITH SOMETHING
+                    ZmovementCollision = true;
+                    break;
+                }
+            }
+
+            
+            //--- CHECK COLLISION IF I MOVE ONLY IN THE X DIRECTION
+            playerPos = glm::vec3(deltaX / 2, 0, (2.5f + oldDeltaZ) / 2);
+
+            //--- VERTICES OF THE PLAYER'S AABB
+            GLfloat xPlayerVertices[] = {
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
+            };
+
+            //--- CREATING AABB FROM VERTICES
+            playerAABB = AABB(xPlayerVertices);
+
+            //--- DEFAULT VALUE OF COLLISION DETECTED
+            bool XmovementCollision = false;
+
+            //--- VERY LOW PERFORMANCE AABB CHECK
+            for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
+                AABB tree = *i;
+                bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
+                bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
+                if(collisionX && collisionZ) {
+                    //--- THE PLAYER COLLIDES WITH SOMETHING
+                    XmovementCollision = true;
+                    break;
+                }
+            }
+
+            if(XmovementCollision) {
+                deltaX = oldDeltaX;
+            }
+
+            if(ZmovementCollision) {
+                deltaZ = oldDeltaZ;
+            }
+            
+        }
+
         //** UPDATE CAMERA POSITION TO FOLLOW PLAYER
         GLfloat distX = sin(glm::radians(rotationY)) * 2.5f;
         GLfloat distZ = cos(glm::radians(rotationY)) * 2.5f;
@@ -499,40 +620,6 @@ int main()
 
         //--- SET AABB COLOR
         glUniform3fv(colorInLocation, 1, aabbColor);
-
-        //--- CALCULATE PLAYER AABB
-        playerModelMatrix = glm::mat4(1.0f);
-        playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, 2.5f + deltaZ));
-
-        glm::vec3 playerPos = glm::vec3(playerModelMatrix[3].x / 2, playerModelMatrix[3].y / 2, playerModelMatrix[3].z / 2);
-        float playerScale = 0.15f;
-        GLfloat dx = 8.0f;
-        GLfloat dz = 15.0f;
-        GLfloat dy = 9.0f;
-
-        GLfloat playerVertices[] = {
-            playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-            playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-            playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-            playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-            playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
-            playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-            playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-            playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
-        };
-
-        AABB playerAABB = AABB(playerVertices);
-
-        //-- VERY LOW PERFORMANCE AABB CHECK
-        for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
-            AABB tree = *i;
-            bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
-            bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
-            if(collisionX && collisionZ) {
-                cout << "COLLISION DETECTED!!!!" << endl;
-                break;
-            }
-        }
 
         if(showAABB) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -705,6 +792,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void process_keys(GLFWwindow* window) {
+
+    oldDeltaX = deltaX;
+    oldDeltaZ = deltaZ;
 
     if(appState == AppStates::Loaded) {
         if(keys[GLFW_KEY_W]) {

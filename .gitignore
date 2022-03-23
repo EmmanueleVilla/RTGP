@@ -9,3 +9,4 @@ main/main.lib
 main/main.obj
 main/main.pdb
 main/vc140.pdb
+*.zip
