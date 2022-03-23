@@ -414,11 +414,6 @@ int main()
         //--- SET AABB COLOR
         glUniform3fv(colorInLocation, 1, cartColor);
 
-
-        //std::cout << glm::to_string(treesMatrixes[0]) << std::endl;
-        //std::cout << treesMatrixes[0][3].x << std::endl; //x position of the tree
-        //std::cout << treesMatrixes[0][3].y << std::endl; //y position of the tree
-        //std::cout << treesMatrixes[0][3].z << std::endl; //z position of the tree
         glm::vec3 treePos = glm::vec3(treesMatrixes[0][3].x, treesMatrixes[0][3].y, treesMatrixes[0][3].z);
         float treeScale = treesMatrixes[0][0].x;
         glm::vec3 cameraPosition = glm::vec3(deltaX - distX, 2.0f, 2.5f + deltaZ + distZ * -1.0f);
