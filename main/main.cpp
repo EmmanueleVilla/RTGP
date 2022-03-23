@@ -497,63 +497,56 @@ int main()
 
         if(showAABB) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
-                glm::mat4 matrix = *i;
-                glm::vec3 treePos = glm::vec3(matrix[3].x / 2, matrix[3].y / 2, matrix[3].z / 2);
-                float treeScale = matrix[0].x / 3.5f;
-                GLfloat dx = 8.0f;
-                GLfloat dz = 15.0f;
-                GLfloat dy = 9.0f;
+            for (auto i=treesAABBsVertices.begin(); i!=treesAABBsVertices.end(); ++i) {
+                vector<GLfloat> verticesVector = *i;
                 GLfloat vertices[] = {
-                    treePos.x + treeScale - dx,     dy * treeScale,  treePos.z - treeScale - dz,  // Top Right
-                    treePos.x + treeScale - dx,     0,               treePos.z - treeScale - dz,  // Bottom Right
-                    treePos.x - treeScale - dx,     0,               treePos.z - treeScale - dz,  // Bottom Left
-                    treePos.x - treeScale - dx,     dy * treeScale,  treePos.z - treeScale - dz,  // Top Left
-                    treePos.x + treeScale - dx,     dy * treeScale,  treePos.z + treeScale - dz,  // Top Right
-                    treePos.x + treeScale - dx,     0,               treePos.z + treeScale - dz,  // Bottom Right
-                    treePos.x - treeScale - dx,     0,               treePos.z + treeScale - dz,  // Bottom Left
-                    treePos.x - treeScale - dx,     dy * treeScale,  treePos.z + treeScale - dz   // Top Left
-                };
-
-                GLuint indices[] = {
-                    0, 1, 3,
-                    1, 2, 3,
-                    2, 3, 6,
-                    3, 6, 7,
-                    5, 6, 7,
-                    4, 5, 7,
-                    0, 4, 5,
-                    0, 1, 5,
-                    0, 3, 4,
-                    0, 4, 7,
-                    1, 2, 6,
-                    1, 5, 6
+                    verticesVector[0],
+                    verticesVector[1],
+                    verticesVector[2],
+                    verticesVector[3],
+                    verticesVector[4],
+                    verticesVector[5],
+                    verticesVector[6],
+                    verticesVector[7],
+                    verticesVector[8],
+                    verticesVector[9],
+                    verticesVector[10],
+                    verticesVector[11],
+                    verticesVector[12],
+                    verticesVector[13],
+                    verticesVector[14],
+                    verticesVector[15],
+                    verticesVector[16],
+                    verticesVector[17],
+                    verticesVector[18],
+                    verticesVector[19],
+                    verticesVector[20],
+                    verticesVector[21],
+                    verticesVector[22],
+                    verticesVector[23]
                 };
 
                 GLuint VBO, VAO, EBO;
                 glGenVertexArrays(1, &VAO);
                 glGenBuffers(1, &VBO);
                 glGenBuffers(1, &EBO);
-                // Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
                 glBindVertexArray(VAO);
 
                 glBindBuffer(GL_ARRAY_BUFFER, VBO);
                 glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(treesAABBsIndices), treesAABBsIndices, GL_STATIC_DRAW);
 
                 glEnableVertexAttribArray(0);
                 glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 
-                glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
-
-                glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the EBO, keep it bound to this VAO
-
-                // Draw our first triangle
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                
+                glBindVertexArray(0);
+                
                 glUseProgram(shader.Program);
                 glBindVertexArray(VAO);
-                //glDrawArrays(GL_TRIANGLES, 0, 6);
                 glDrawElements(GL_TRIANGLES, 32, GL_UNSIGNED_INT, 0);
                 glBindVertexArray(0);
             }
