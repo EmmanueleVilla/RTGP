@@ -58,7 +58,7 @@ GLint LoadTexture(const char* path);
 //---  MOVEMENT 
 GLfloat deltaZ = 0.0f;
 GLfloat deltaX = 0.0f;
-GLfloat speed = 25.0f;
+GLfloat speed = 5.0f;
 GLfloat rotationY = 90.0f;
 GLfloat rotationSpeed = 2.0f;
 
@@ -200,7 +200,9 @@ int main()
     vector<glm::mat4> treesMatrixes;
     vector<AABB> treesAABBs;
     vector<vector<GLfloat>> treesAABBsVertices;
-    GLuint treesAABBsIndices[] = {
+
+    //--- COMMON INDICES LIST FOR AABBs
+    GLuint AABBsIndices[] = {
             0, 1, 3,
             1, 2, 3,
             2, 3, 6,
@@ -536,7 +538,7 @@ int main()
                 glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(treesAABBsIndices), treesAABBsIndices, GL_STATIC_DRAW);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(AABBsIndices), AABBsIndices, GL_STATIC_DRAW);
 
                 glEnableVertexAttribArray(0);
                 glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
@@ -550,6 +552,51 @@ int main()
                 glDrawElements(GL_TRIANGLES, 32, GL_UNSIGNED_INT, 0);
                 glBindVertexArray(0);
             }
+
+            //-- FIX THIS DUPLICATION
+            playerModelMatrix = glm::mat4(1.0f);
+            playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, 2.5f + deltaZ));
+
+            glm::vec3 playerPos = glm::vec3(playerModelMatrix[3].x / 2, playerModelMatrix[3].y / 2, playerModelMatrix[3].z / 2);
+            float playerScale = 0.15f;
+            GLfloat dx = 8.0f;
+            GLfloat dz = 15.0f;
+            GLfloat dy = 9.0f;
+
+            GLfloat playerVertices[] = {
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
+            };
+
+            GLuint VBO, VAO, EBO;
+                glGenVertexArrays(1, &VAO);
+                glGenBuffers(1, &VBO);
+                glGenBuffers(1, &EBO);
+                glBindVertexArray(VAO);
+
+                glBindBuffer(GL_ARRAY_BUFFER, VBO);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(playerVertices), playerVertices, GL_STATIC_DRAW);
+
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(AABBsIndices), AABBsIndices, GL_STATIC_DRAW);
+
+                glEnableVertexAttribArray(0);
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                
+                glBindVertexArray(0);
+                
+                glUseProgram(shader.Program);
+                glBindVertexArray(VAO);
+                glDrawElements(GL_TRIANGLES, 32, GL_UNSIGNED_INT, 0);
+                glBindVertexArray(0);
         }
 
         //--- SWAP BUFFERS
