@@ -68,6 +68,7 @@ AppStates appState = AppStates::Loading;
 
 //--- SHOW WIREFRAME BOOLEAN
 bool showWireframe = false;
+bool showAABB = false;
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -319,12 +320,6 @@ int main()
 
     while(!glfwWindowShouldClose(window))
     {
-
-        if(showWireframe) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        } else {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
         //---  UPDATE TIME 
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -333,6 +328,12 @@ int main()
         //---  CHECK INPUT EVENTS 
         glfwPollEvents();
         process_keys(window);
+
+        if(showWireframe) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        } else {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
 
         //---  CLEAR 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -419,65 +420,68 @@ int main()
         //--- SET AABB COLOR
         glUniform3fv(colorInLocation, 1, aabbColor);
 
-        for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
-            glm::mat4 matrix = *i;
-            glm::vec3 treePos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z);
-            float treeScale = matrix[0].x / 4.0f;
-            //glm::vec3 cameraPosition = glm::vec3(deltaX - distX, 2.0f, 2.5f + deltaZ + distZ * -1.0f);
-            //cout << glm::length(treePos - cameraPosition) << endl;
-            GLfloat d = 0.0f;
-            GLfloat vertices[] = {
-                treePos.x + treeScale - d, treePos.y + treeScale, treePos.z - treeScale - d,  // Top Right
-                treePos.x + treeScale - d, treePos.y - treeScale, treePos.z - treeScale - d,  // Bottom Right
-                treePos.x - treeScale - d, treePos.y - treeScale, treePos.z - treeScale - d,  // Bottom Left
-                treePos.x - treeScale - d, treePos.y + treeScale, treePos.z - treeScale - d,  // Top Left
-                treePos.x + treeScale - d, treePos.y + treeScale, treePos.z + treeScale - d,  // Top Right
-                treePos.x + treeScale - d, treePos.y - treeScale, treePos.z + treeScale - d,  // Bottom Right
-                treePos.x - treeScale - d, treePos.y - treeScale, treePos.z + treeScale - d,  // Bottom Left
-                treePos.x - treeScale - d, treePos.y + treeScale, treePos.z + treeScale - d   // Top Left
-            };
+        if(showAABB) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
+                glm::mat4 matrix = *i;
+                glm::vec3 treePos = glm::vec3(matrix[3].x / 2, matrix[3].y / 2, matrix[3].z / 2);
+                float treeScale = matrix[0].x / 3.5f;
+                GLfloat dx = 8.0f;
+                GLfloat dz = 15.0f;
+                GLfloat dy = 9.0f;
+                GLfloat vertices[] = {
+                    treePos.x + treeScale - dx,     dy * treeScale,  treePos.z - treeScale - dz,  // Top Right
+                    treePos.x + treeScale - dx,     0,               treePos.z - treeScale - dz,  // Bottom Right
+                    treePos.x - treeScale - dx,     0,               treePos.z - treeScale - dz,  // Bottom Left
+                    treePos.x - treeScale - dx,     dy * treeScale,  treePos.z - treeScale - dz,  // Top Left
+                    treePos.x + treeScale - dx,     dy * treeScale,  treePos.z + treeScale - dz,  // Top Right
+                    treePos.x + treeScale - dx,     0,               treePos.z + treeScale - dz,  // Bottom Right
+                    treePos.x - treeScale - dx,     0,               treePos.z + treeScale - dz,  // Bottom Left
+                    treePos.x - treeScale - dx,     dy * treeScale,  treePos.z + treeScale - dz   // Top Left
+                };
 
-            GLuint indices[] = {
-                0, 1, 3,
-                1, 2, 3,
-                2, 3, 6,
-                3, 6, 7,
-                5, 6, 7,
-                4, 5, 7,
-                0, 4, 5,
-                0, 1, 5,
-                0, 3, 4,
-                0, 4, 7,
-                1, 2, 6,
-                1, 5, 6
-            };
+                GLuint indices[] = {
+                    0, 1, 3,
+                    1, 2, 3,
+                    2, 3, 6,
+                    3, 6, 7,
+                    5, 6, 7,
+                    4, 5, 7,
+                    0, 4, 5,
+                    0, 1, 5,
+                    0, 3, 4,
+                    0, 4, 7,
+                    1, 2, 6,
+                    1, 5, 6
+                };
 
-            GLuint VBO, VAO, EBO;
-            glGenVertexArrays(1, &VAO);
-            glGenBuffers(1, &VBO);
-            glGenBuffers(1, &EBO);
-            // Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
-            glBindVertexArray(VAO);
+                GLuint VBO, VAO, EBO;
+                glGenVertexArrays(1, &VAO);
+                glGenBuffers(1, &VBO);
+                glGenBuffers(1, &EBO);
+                // Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
+                glBindVertexArray(VAO);
 
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER, VBO);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+                glEnableVertexAttribArray(0);
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 
-            glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
+                glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
 
-            glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the EBO, keep it bound to this VAO
+                glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the EBO, keep it bound to this VAO
 
-            // Draw our first triangle
-            glUseProgram(shader.Program);
-            glBindVertexArray(VAO);
-            //glDrawArrays(GL_TRIANGLES, 0, 6);
-            glDrawElements(GL_TRIANGLES, 32, GL_UNSIGNED_INT, 0);
-            glBindVertexArray(0);
+                // Draw our first triangle
+                glUseProgram(shader.Program);
+                glBindVertexArray(VAO);
+                //glDrawArrays(GL_TRIANGLES, 0, 6);
+                glDrawElements(GL_TRIANGLES, 32, GL_UNSIGNED_INT, 0);
+                glBindVertexArray(0);
+            }
         }
 
         //--- SWAP BUFFERS
@@ -565,6 +569,10 @@ void process_keys(GLFWwindow* window) {
 
     if(keys[GLFW_KEY_P]) {
         showWireframe = !showWireframe;
+    }
+
+    if(keys[GLFW_KEY_B]) {
+        showAABB = !showAABB;
     }
 
     if(appState != AppStates::Loading) {
