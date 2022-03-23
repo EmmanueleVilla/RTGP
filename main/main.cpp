@@ -63,8 +63,8 @@ GLfloat rotationY = 90.0f;
 GLfloat rotationSpeed = 2.0f;
 
 //---  APP_STATE 
-enum class AppStates { Loading, Loaded };
-AppStates appState = AppStates::Loading;
+enum class AppStates { LoadingMap, LoadingAABBs, Loaded };
+AppStates appState = AppStates::LoadingMap;
 
 //--- SHOW WIREFRAME BOOLEAN
 bool showWireframe = false;
@@ -194,16 +194,31 @@ int main()
     row.shrink_to_fit();
 
     //--- KEEP TRACK OF THE CURRENT ROW TO LOAD ONE ROW PER RENDER LOOP
-    int current = 0;
+    int currentCell = 0;
 
     //--- INIT MATRIXES FOR INSTANCED DRAWING 
     vector<glm::mat4> treesMatrixes;
     vector<AABB> treesAABBs;
+    vector<vector<GLfloat>> treesAABBsVertices;
+    GLuint treesAABBsIndices[] = {
+            0, 1, 3,
+            1, 2, 3,
+            2, 3, 6,
+            3, 6, 7,
+            5, 6, 7,
+            4, 5, 7,
+            0, 4, 5,
+            0, 1, 5,
+            0, 3, 4,
+            0, 4, 7,
+            1, 2, 6,
+            1, 5, 6
+        };
 
     cout << "Starting loading loop" << endl;
 
     //--- LOADING RENDER LOOP
-    while(appState == AppStates::Loading)
+    while(appState == AppStates::LoadingMap || appState == AppStates::LoadingAABBs)
     {
         if(glfwWindowShouldClose(window)) {
             shader.Delete();
@@ -212,36 +227,88 @@ int main()
         }
 
         //--- CONTINUE LOADING THE LEVEL
-        if(current < content.size()) {
-            for (auto i=content[current].begin(); i!=content[current].end(); ++i) {
-                float position = i-content[current].begin();
-                if(*i == "T") {
-                    //--- TREES ARE RANDOMLY DISPLACED FROM THEIR 0.5x0.5 cell by a random value between -0.5f and 0.5f
-                    float randX = (rand() % 10 - 5) / 10.f;
-                    float randZ = (rand() % 10 - 5) / 10.f;
-                    //--- TREES ARE RANDOMLY SCALED FROM 100% TO 150%
-                    float randomScale = (100 + (rand() % 50)) / 100.f;
-                    glm::mat4 treeMatrix = glm::mat4(1.0f);
-                    treeMatrix = glm::translate(treeMatrix, glm::vec3(current * 2 + 0.5 + randX, 0.0f, position * 2 + 0.5f + randZ));
-                    treeMatrix = glm::scale(treeMatrix, glm::vec3(randomScale, randomScale, randomScale));
-                    treesMatrixes.push_back(treeMatrix);
+        if(appState == AppStates::LoadingMap) {
+            if(currentCell < content.size()) {
+                cout << "Loading map row #" << currentCell << endl;
+                for (auto i=content[currentCell].begin(); i!=content[currentCell].end(); ++i) {
+                    float position = i-content[currentCell].begin();
+                    if(*i == "T") {
+                        //--- TREES ARE RANDOMLY DISPLACED FROM THEIR 0.5x0.5 cell by a random value between -0.5f and 0.5f
+                        float randX = (rand() % 10 - 5) / 10.f;
+                        float randZ = (rand() % 10 - 5) / 10.f;
+                        //--- TREES ARE RANDOMLY SCALED FROM 100% TO 150%
+                        float randomScale = (100 + (rand() % 50)) / 100.f;
+                        glm::mat4 treeMatrix = glm::mat4(1.0f);
+                        treeMatrix = glm::translate(treeMatrix, glm::vec3(currentCell * 2 + 0.5 + randX, 0.0f, position * 2 + 0.5f + randZ));
+                        treeMatrix = glm::scale(treeMatrix, glm::vec3(randomScale, randomScale, randomScale));
+                        treesMatrixes.push_back(treeMatrix);
+                    }
+                    if(*i == "S") {
+                        deltaX = currentCell * 2;
+                        deltaZ = position * 2;
+                    }
+                    if(*i == "C") {
+                        cartX = currentCell * 2;
+                        cartZ = position * 2;
+                    }
+                    if(*i == "P") {
+                        paths.push_back(glm::vec2(currentCell-16, position-16));
+                    }
                 }
-                if(*i == "S") {
-                    deltaX = current * 2;
-                    deltaZ = position * 2;
-                }
-                if(*i == "C") {
-                    cartX = current * 2;
-                    cartZ = position * 2;
-                }
-                if(*i == "P") {
-                    paths.push_back(glm::vec2(current-16, position-16));
-                }
+            } else {
+                appState = AppStates::LoadingAABBs;
             }
-        } else {
+        }
+
+        if(appState == AppStates::LoadingAABBs) {
+            cout << "Calculating AABBs" << endl;
+            for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
+                glm::mat4 matrix = *i;
+                glm::vec3 treePos = glm::vec3(matrix[3].x / 2, matrix[3].y / 2, matrix[3].z / 2);
+                float treeScale = matrix[0].x / 3.5f;
+                GLfloat dx = 8.0f;
+                GLfloat dz = 15.0f;
+                GLfloat dy = 9.0f;
+                vector<GLfloat> treeAABBsVertices;
+                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
+                treeAABBsVertices.push_back(dy * treeScale);
+                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+
+                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
+                treeAABBsVertices.push_back(0);
+                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+
+                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
+                treeAABBsVertices.push_back(0);
+                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+
+                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
+                treeAABBsVertices.push_back(dy * treeScale);
+                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+
+                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
+                treeAABBsVertices.push_back(dy * treeScale);
+                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+
+                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
+                treeAABBsVertices.push_back(0);
+                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+
+                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
+                treeAABBsVertices.push_back(0);
+                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+
+                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
+                treeAABBsVertices.push_back(dy * treeScale);
+                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+
+                treesAABBsVertices.push_back(treeAABBsVertices);
+            }
+
             appState = AppStates::Loaded;
         }
-        current++;
+
+        currentCell++;
 
         if(showWireframe) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -583,7 +650,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void process_keys(GLFWwindow* window) {
 
-    if(appState != AppStates::Loading) {
+    if(appState == AppStates::Loaded) {
         if(keys[GLFW_KEY_W]) {
             deltaX += sin(glm::radians(rotationY)) * speed * deltaTime;
             deltaZ += cos(glm::radians(rotationY)) * speed * deltaTime;
