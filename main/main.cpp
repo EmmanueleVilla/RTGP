@@ -316,7 +316,15 @@ int main()
 
     cout << "Starting game loop" << endl;
 
-    cout << treesMatrixes.size() << endl;
+    cout << "*********" << endl;
+
+    cout << "Press WASD to move" << endl;
+
+    cout << "Keep pressing mouseR and move mouse to rotate camera" << endl;
+
+    cout << "Press P to show wireframes" << endl;
+
+    cout << "Press B to show AABBs" << endl;
 
     while(!glfwWindowShouldClose(window))
     {
@@ -553,7 +561,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
   
     // if ESC is pressed, we close the application
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-            glfwSetWindowShouldClose(window, GL_TRUE);
+        glfwSetWindowShouldClose(window, GL_TRUE);
+    }
+
+    if(key == GLFW_KEY_P && action == GLFW_PRESS) {
+        showWireframe = !showWireframe;
+    }
+
+    if(key == GLFW_KEY_B && action == GLFW_PRESS) {
+        showAABB = !showAABB;
     }
 
     if(action == GLFW_PRESS) {
@@ -566,14 +582,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void process_keys(GLFWwindow* window) {
-
-    if(keys[GLFW_KEY_P]) {
-        showWireframe = !showWireframe;
-    }
-
-    if(keys[GLFW_KEY_B]) {
-        showAABB = !showAABB;
-    }
 
     if(appState != AppStates::Loading) {
         if(keys[GLFW_KEY_W]) {
