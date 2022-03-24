@@ -127,7 +127,7 @@ int main()
     //---  LOAD MODELS 
     Model coinModel("../models/coin.obj");
     Model planeModel("../models/plane.obj");
-    Model playerModel("../models/player.obj");
+    Model playerModel("../models/dog2.obj");
     Model treeModel("../models/tree.obj");
     Model cartModel("../models/tree.obj");
 
@@ -138,7 +138,7 @@ int main()
     int treeTextureIndex = 3;
     textureId.push_back(LoadTexture("../textures/coin.jpeg"));
     textureId.push_back(LoadTexture("../textures/plane.jpg"));
-    textureId.push_back(LoadTexture("../textures/player.png"));
+    textureId.push_back(LoadTexture("../textures/dog.png"));
     textureId.push_back(LoadTexture("../textures/tree.jpg"));
 
     //---  INIT MATRICES 
@@ -641,7 +641,7 @@ int main()
         playerModelMatrix = glm::mat4(1.0f);
         playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, 2.5f + deltaZ));
         playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.11f, 0.11f, 0.11f));
+        playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.5f, 0.5f, 0.5f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
 
         //---  DRAW PLAYER 
