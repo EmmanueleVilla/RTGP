@@ -311,43 +311,41 @@ int main()
             cout << "Calculating AABBs" << endl;
             for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
                 glm::mat4 matrix = *i;
-                glm::vec3 treePos = glm::vec3(matrix[3].x / 2, matrix[3].y / 2, matrix[3].z / 2);
-                float treeScale = matrix[0].x / 2.5f;
-                GLfloat dx = 8.0f;
-                GLfloat dz = 15.0f;
-                GLfloat dy = 8.0f;
+                glm::vec3 treePos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z);
+                float treeSize = matrix[0].x / 1.5f;
+                GLfloat dy = 5.0f * treeSize;
                 vector<GLfloat> treeAABBsVertices;
-                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
-                treeAABBsVertices.push_back(dy * treeScale);
-                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+                treeAABBsVertices.push_back(treePos.x + treeSize);
+                treeAABBsVertices.push_back(dy);
+                treeAABBsVertices.push_back(treePos.z - treeSize);
 
-                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
+                treeAABBsVertices.push_back(treePos.x + treeSize);
                 treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+                treeAABBsVertices.push_back(treePos.z - treeSize);
 
-                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
+                treeAABBsVertices.push_back(treePos.x - treeSize);
                 treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+                treeAABBsVertices.push_back(treePos.z - treeSize);
 
-                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
-                treeAABBsVertices.push_back(dy * treeScale);
-                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+                treeAABBsVertices.push_back(treePos.x - treeSize);
+                treeAABBsVertices.push_back(dy);
+                treeAABBsVertices.push_back(treePos.z - treeSize);
 
-                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
-                treeAABBsVertices.push_back(dy * treeScale);
-                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+                treeAABBsVertices.push_back(treePos.x + treeSize);
+                treeAABBsVertices.push_back(dy);
+                treeAABBsVertices.push_back(treePos.z + treeSize);
 
-                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
+                treeAABBsVertices.push_back(treePos.x + treeSize);
                 treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+                treeAABBsVertices.push_back(treePos.z + treeSize);
 
-                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
+                treeAABBsVertices.push_back(treePos.x - treeSize);
                 treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+                treeAABBsVertices.push_back(treePos.z + treeSize);
 
-                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
-                treeAABBsVertices.push_back(dy * treeScale);
-                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+                treeAABBsVertices.push_back(treePos.x - treeSize);
+                treeAABBsVertices.push_back(dy);
+                treeAABBsVertices.push_back(treePos.z + treeSize);
 
                 treesAABBsVertices.push_back(treeAABBsVertices);
 
@@ -505,22 +503,20 @@ int main()
         //--- THIS IS THE FIRST THING TO DO BECAUSE IT CAN MODIFY THE CAMERA VIEW
 
         //--- PLAYER POSITION VECTOR AND DELTAS
-        glm::vec3 playerPos = glm::vec3(deltaX / 2, 0, (2.5f + deltaZ) / 2);
-        float playerScale = 0.21f;
-        GLfloat dx = 8.0f;
-        GLfloat dz = 15.0f;
-        GLfloat dy = 6.0f;
+        glm::vec3 playerPos = glm::vec3(deltaX, 0, 2.5f + deltaZ);
+        float playerSize = 0.4f;
+        GLfloat dy = 1.25f;
 
         //--- VERTICES OF THE PLAYER'S AABB
         GLfloat playerVertices[] = {
-                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-                playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-                playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
-                playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-                playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
+                playerPos.x + playerSize, dy, playerPos.z - playerSize,
+                playerPos.x + playerSize, 0.0f, playerPos.z - playerSize,
+                playerPos.x - playerSize, 0.0f, playerPos.z - playerSize,
+                playerPos.x - playerSize, dy, playerPos.z - playerSize,
+                playerPos.x + playerSize, dy, playerPos.z + playerSize,
+                playerPos.x + playerSize, 0.0f, playerPos.z + playerSize,
+                playerPos.x - playerSize, 0.0f, playerPos.z + playerSize,
+                playerPos.x - playerSize, dy, playerPos.z + playerSize
             };
 
         //--- CREATING AABB FROM VERTICES
@@ -533,6 +529,7 @@ int main()
         //--- BEST CASE MEASURED ON MAC: 34 microseconds
         //--- WORST CASE MEASURED ON MAC: 372 microseconds
         //--- BEST CASE MEASURED ON PC: 196 microseconds
+        //--- WORST CASE MEASURED ON PC: 45 microseconds
         for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
             AABB tree = *i;
             bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
@@ -547,18 +544,18 @@ int main()
         if(collision) {
 
             //--- CHECK COLLISION IF I MOVE ONLY IN THE Z DIRECTION
-            playerPos = glm::vec3(oldDeltaX / 2, 0, (2.5f + deltaZ) / 2);
+            playerPos = glm::vec3(oldDeltaX, 0, 2.5f + deltaZ);
 
             //--- VERTICES OF THE PLAYER'S AABB
             GLfloat zPlayerVertices[] = {
-                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-                playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-                playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
-                playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-                playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
+                playerPos.x + playerSize, dy * playerSize, playerPos.z - playerSize,
+                playerPos.x + playerSize, 0.0f, playerPos.z - playerSize,
+                playerPos.x - playerSize, 0.0f, playerPos.z - playerSize,
+                playerPos.x - playerSize, dy * playerSize, playerPos.z - playerSize,
+                playerPos.x + playerSize, dy * playerSize, playerPos.z + playerSize,
+                playerPos.x + playerSize, 0.0f, playerPos.z + playerSize,
+                playerPos.x - playerSize, 0.0f, playerPos.z + playerSize,
+                playerPos.x - playerSize, dy * playerSize, playerPos.z + playerSize
             };
 
             //--- CREATING AABB FROM VERTICES
@@ -581,18 +578,18 @@ int main()
 
             
             //--- CHECK COLLISION IF I MOVE ONLY IN THE X DIRECTION
-            playerPos = glm::vec3(deltaX / 2, 0, (2.5f + oldDeltaZ) / 2);
+            playerPos = glm::vec3(deltaX, 0, 2.5f + oldDeltaZ);
 
             //--- VERTICES OF THE PLAYER'S AABB
             GLfloat xPlayerVertices[] = {
-                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-                playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-                playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
-                playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-                playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
+                playerPos.x + playerSize, dy * playerSize, playerPos.z - playerSize,
+                playerPos.x + playerSize, 0.0f, playerPos.z - playerSize,
+                playerPos.x - playerSize, 0.0f, playerPos.z - playerSize,
+                playerPos.x - playerSize, dy * playerSize, playerPos.z - playerSize,
+                playerPos.x + playerSize, dy * playerSize, playerPos.z + playerSize,
+                playerPos.x + playerSize, 0.0f, playerPos.z + playerSize,
+                playerPos.x - playerSize, 0.0f, playerPos.z + playerSize,
+                playerPos.x - playerSize, dy * playerSize, playerPos.z + playerSize
             };
 
             //--- CREATING AABB FROM VERTICES
@@ -694,17 +691,16 @@ int main()
         //---  DRAW TREE
         treeModel.DrawInstanced(treesMatrixes.size());
 
-        //GLuint index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
-        //glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
 
-        //--- SET CART COLOR
-        //glUniform3fv(colorInLocation, 1, cartColor);
+        //--- SET CART TEXTURE
+        glBindTexture(GL_TEXTURE_2D, textureId[cartTextureIndex]);
+        glUniform1f(repeatLocation, 1.0);
         glUniform1i(instancedLocation, false);
 
         //---  SET CART MATRICES 
         cartModelMatrix = glm::mat4(1.0f);
         cartModelMatrix = glm::translate(cartModelMatrix, glm::vec3(cartX, 0.0f, cartZ));
-        cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(2.0f, 1.0f, 2.0f));
+        cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(1.25f, 1.25f, 1.25f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
 
         //---  DRAW CART 
@@ -714,6 +710,9 @@ int main()
         glUniform3fv(colorInLocation, 1, aabbColor);
 
         if(showAABB) {
+
+            glm::mat4 resetMatrix = glm::mat4(1.0f);
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(resetMatrix));
 
             GLuint index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
