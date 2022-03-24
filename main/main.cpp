@@ -698,7 +698,7 @@ int main()
         //glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
 
         //--- SET CART COLOR
-        glUniform3fv(colorInLocation, 1, cartColor);
+        //glUniform3fv(colorInLocation, 1, cartColor);
         glUniform1i(instancedLocation, false);
 
         //---  SET CART MATRICES 
