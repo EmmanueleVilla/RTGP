@@ -66,7 +66,7 @@ GLfloat oldDeltaZ = 0.0f;
 GLfloat oldDeltaX = 0.0f;
 GLfloat deltaZ = 0.0f;
 GLfloat deltaX = 0.0f;
-GLfloat speed = 5.0f;
+GLfloat speed = 25.0f;
 GLfloat rotationY = 90.0f;
 GLfloat rotationSpeed = 2.0f;
 
@@ -131,17 +131,19 @@ int main()
     Model planeModel("../models/plane.obj");
     Model playerModel("../models/dog.obj");
     Model treeModel("../models/tree.obj");
-    Model cartModel("../models/tree.obj");
+    Model cartModel("../models/cart.obj");
 
     //--- LOAD TEXTURES 
     int coinTextureIndex = 0;
     int planeTextureIndex = 1;
     int playerTextureIndex = 2;
     int treeTextureIndex = 3;
+    int cartTextureIndex = 4;
     textureId.push_back(LoadTexture("../textures/coin.jpeg"));
     textureId.push_back(LoadTexture("../textures/plane.jpg"));
     textureId.push_back(LoadTexture("../textures/dog.jpg"));
     textureId.push_back(LoadTexture("../textures/tree.jpg"));
+    textureId.push_back(LoadTexture("../textures/cart.jpg"));
 
     cout << "Loaded textures" << endl;
 
@@ -309,43 +311,43 @@ int main()
             cout << "Calculating AABBs" << endl;
             for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
                 glm::mat4 matrix = *i;
-                glm::vec3 treePos = glm::vec3(matrix[3].x / 2, matrix[3].y / 2, matrix[3].z / 2);
-                float treeScale = matrix[0].x / 3.5f;
-                GLfloat dx = 8.0f;
-                GLfloat dz = 15.0f;
+                glm::vec3 treePos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z * 0.725f);
+                float treeSize = 0.5f;
+                GLfloat dx = 0.0f;
+                GLfloat dz = 0.0f;
                 GLfloat dy = 9.0f;
                 vector<GLfloat> treeAABBsVertices;
-                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
-                treeAABBsVertices.push_back(dy * treeScale);
-                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+                treeAABBsVertices.push_back(treePos.x + treeSize - dx);
+                treeAABBsVertices.push_back(dy * treeSize);
+                treeAABBsVertices.push_back(treePos.z - treeSize - dz);
 
-                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
+                treeAABBsVertices.push_back(treePos.x + treeSize - dx);
                 treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+                treeAABBsVertices.push_back(treePos.z - treeSize - dz);
 
-                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
+                treeAABBsVertices.push_back(treePos.x - treeSize - dx);
                 treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+                treeAABBsVertices.push_back(treePos.z - treeSize - dz);
 
-                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
-                treeAABBsVertices.push_back(dy * treeScale);
-                treeAABBsVertices.push_back(treePos.z - treeScale - dz);
+                treeAABBsVertices.push_back(treePos.x - treeSize - dx);
+                treeAABBsVertices.push_back(dy * treeSize);
+                treeAABBsVertices.push_back(treePos.z - treeSize - dz);
 
-                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
-                treeAABBsVertices.push_back(dy * treeScale);
-                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+                treeAABBsVertices.push_back(treePos.x + treeSize - dx);
+                treeAABBsVertices.push_back(dy * treeSize);
+                treeAABBsVertices.push_back(treePos.z + treeSize - dz);
 
-                treeAABBsVertices.push_back(treePos.x + treeScale - dx);
+                treeAABBsVertices.push_back(treePos.x + treeSize - dx);
                 treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+                treeAABBsVertices.push_back(treePos.z + treeSize - dz);
 
-                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
+                treeAABBsVertices.push_back(treePos.x - treeSize - dx);
                 treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+                treeAABBsVertices.push_back(treePos.z + treeSize - dz);
 
-                treeAABBsVertices.push_back(treePos.x - treeScale - dx);
-                treeAABBsVertices.push_back(dy * treeScale);
-                treeAABBsVertices.push_back(treePos.z + treeScale - dz);
+                treeAABBsVertices.push_back(treePos.x - treeSize - dx);
+                treeAABBsVertices.push_back(dy * treeSize);
+                treeAABBsVertices.push_back(treePos.z + treeSize - dz);
 
                 treesAABBsVertices.push_back(treeAABBsVertices);
 
@@ -695,9 +697,9 @@ int main()
         GLuint index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
         glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
 
-        //--- SET CART COLOR
-        glUniform3fv(colorInLocation, 1, cartColor);
-        glUniform1i(instancedLocation, false);
+        //--- SET CART TEXTURE
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, textureId[cartTextureIndex]);
 
         //---  SET CART MATRICES 
         cartModelMatrix = glm::mat4(1.0f);
@@ -706,7 +708,7 @@ int main()
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
 
         //---  DRAW CART 
-        cartModel.Draw();
+        //cartModel.Draw();
 
         //--- SET AABB COLOR
         glUniform3fv(colorInLocation, 1, aabbColor);
