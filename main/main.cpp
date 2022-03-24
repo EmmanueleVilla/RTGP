@@ -131,7 +131,7 @@ int main()
     Model planeModel("../models/plane.obj");
     Model playerModel("../models/dog.obj");
     Model treeModel("../models/tree.obj");
-    Model cartModel("../models/tree.obj");
+    Model cartModel("../models/cart.obj");
 
     //--- LOAD TEXTURES 
     int coinTextureIndex = 0;
@@ -142,6 +142,7 @@ int main()
     textureId.push_back(LoadTexture("../textures/plane.jpg"));
     textureId.push_back(LoadTexture("../textures/dog.jpg"));
     textureId.push_back(LoadTexture("../textures/tree.jpg"));
+    textureId.push_back(LoadTexture("../textures/cart.jpg"));
 
     cout << "Loaded textures" << endl;
 
@@ -310,10 +311,10 @@ int main()
             for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
                 glm::mat4 matrix = *i;
                 glm::vec3 treePos = glm::vec3(matrix[3].x / 2, matrix[3].y / 2, matrix[3].z / 2);
-                float treeScale = matrix[0].x / 3.5f;
+                float treeScale = matrix[0].x / 2.5f;
                 GLfloat dx = 8.0f;
                 GLfloat dz = 15.0f;
-                GLfloat dy = 9.0f;
+                GLfloat dy = 8.0f;
                 vector<GLfloat> treeAABBsVertices;
                 treeAABBsVertices.push_back(treePos.x + treeScale - dx);
                 treeAABBsVertices.push_back(dy * treeScale);
