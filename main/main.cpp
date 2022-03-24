@@ -694,8 +694,8 @@ int main()
         //---  DRAW TREE
         treeModel.DrawInstanced(treesMatrixes.size());
 
-        GLuint index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
-        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
+        //GLuint index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
+        //glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
 
         //--- SET CART COLOR
         glUniform3fv(colorInLocation, 1, cartColor);
