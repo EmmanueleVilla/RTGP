@@ -138,6 +138,7 @@ int main()
     int planeTextureIndex = 1;
     int playerTextureIndex = 2;
     int treeTextureIndex = 3;
+    int cartTextureIndex = 4;
     textureId.push_back(LoadTexture("../textures/coin.jpeg"));
     textureId.push_back(LoadTexture("../textures/plane.jpg"));
     textureId.push_back(LoadTexture("../textures/dog.jpg"));
