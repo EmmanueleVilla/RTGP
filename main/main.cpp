@@ -20,6 +20,7 @@
 #include <utils/shader_v1.h>
 #include <utils/model_v1.h>
 #include <utils/aabb.h>
+#include <utils/utils.h>
 
 //---  we load the GLM classes used in the application
 #include <glm/glm.hpp>
@@ -33,6 +34,9 @@
 
 //---  APPLICATION WINDOW 
 GLuint screenWidth = 1280, screenHeight = 720;
+
+//--- UTILITIES CLASS
+Utilities utils = Utilities();
 
 //---  INPUT KEY CALLBACK 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -431,16 +435,7 @@ int main()
         GLfloat dy = 9.0f;
 
         //--- VERTICES OF THE PLAYER'S AABB
-        GLfloat playerVertices[] = {
-            playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-            playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-            playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-            playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-            playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
-            playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-            playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-            playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
-        };
+        vector<GLfloat> playerVertices = utils.getVertices(playerPos, playerScale, dx, dy, dz);
 
         //--- CREATING AABB FROM VERTICES
         AABB playerAABB = AABB(playerVertices);
@@ -466,16 +461,7 @@ int main()
             playerPos = glm::vec3(oldDeltaX / 2, 0, (2.5f + deltaZ) / 2);
 
             //--- VERTICES OF THE PLAYER'S AABB
-            GLfloat zPlayerVertices[] = {
-                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-                playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-                playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
-                playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-                playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
-            };
+            vector<GLfloat> zPlayerVertices = utils.getVertices(playerPos, playerScale, dx, dy, dz);
 
             //--- CREATING AABB FROM VERTICES
             playerAABB = AABB(zPlayerVertices);
@@ -500,16 +486,7 @@ int main()
             playerPos = glm::vec3(deltaX / 2, 0, (2.5f + oldDeltaZ) / 2);
 
             //--- VERTICES OF THE PLAYER'S AABB
-            GLfloat xPlayerVertices[] = {
-                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-                playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-                playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
-                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
-                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
-                playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-                playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
-                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
-            };
+            vector<GLfloat> xPlayerVertices = utils.getVertices(playerPos, playerScale, dx, dy, dz);
 
             //--- CREATING AABB FROM VERTICES
             playerAABB = AABB(xPlayerVertices);
@@ -684,7 +661,7 @@ int main()
                 glBindVertexArray(VAO);
 
                 glBindBuffer(GL_ARRAY_BUFFER, VBO);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(playerVertices), playerVertices, GL_STATIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(playerVertices), &playerVertices[0], GL_STATIC_DRAW);
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
                 glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(AABBsIndices), AABBsIndices, GL_STATIC_DRAW);
