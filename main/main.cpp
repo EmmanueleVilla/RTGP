@@ -69,7 +69,7 @@ GLfloat rotationY = 90.0f;
 GLfloat rotationSpeed = 2.0f;
 
 //---  APP_STATE 
-enum class AppStates { LoadingMap, LoadingAABBs, Loaded };
+enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, Loaded };
 AppStates appState = AppStates::LoadingMap;
 
 //--- SHOW WIREFRAME BOOLEAN
@@ -165,15 +165,15 @@ int main()
     float cartZ = 0.0f;
     GLfloat cartColor[] = { 0.65f, 0.16f, 0.16f };
 
-    //--- AABB COLOR
+    //--- AABB WIREFRAME COLOR
     GLfloat aabbColor[] = { 1.0f, 0.0f, 0.0f };
 
     //---  INIT CAMERA 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    //--- LOAD DATA FILE
-    //--- I EXPECT A 32x32 CSV AS THE PLANE OF THE SIZE
+    //--- LOAD CSV DATA FILE
+    //--- I EXPECT A 32x32 CSV LIKE THE PLANE OF THE SIZE
     cout << "Loading map file" << endl;
 	vector<vector<string>> content;
 	vector<string> row;
@@ -225,8 +225,11 @@ int main()
 
     cout << "Starting loading loop" << endl;
 
+    //--- TIME MEASUREMENT
+    long long maxMicroseconds = -1;
+
     //--- LOADING RENDER LOOP
-    while(appState == AppStates::LoadingMap || appState == AppStates::LoadingAABBs)
+    while(appState == AppStates::LoadingMap || appState == AppStates::LoadingAABBs || appState == AppStates::CreatingAABBsHierarchy)
     {
         if(glfwWindowShouldClose(window)) {
             shader.Delete();
@@ -234,38 +237,68 @@ int main()
             return 0;
         }
 
-        //--- CONTINUE LOADING THE LEVEL
-        if(appState == AppStates::LoadingMap) {
-            if(currentCell < content.size()) {
-                cout << "Loading map row #" << currentCell << endl;
-                for (auto i=content[currentCell].begin(); i!=content[currentCell].end(); ++i) {
-                    float position = i-content[currentCell].begin();
-                    if(*i == "T") {
-                        //--- TREES ARE RANDOMLY DISPLACED FROM THEIR 0.5x0.5 cell by a random value between -0.5f and 0.5f
-                        float randX = (rand() % 10 - 5) / 10.f;
-                        float randZ = (rand() % 10 - 5) / 10.f;
-                        //--- TREES ARE RANDOMLY SCALED FROM 100% TO 150%
-                        float randomScale = (100 + (rand() % 50)) / 100.f;
-                        glm::mat4 treeMatrix = glm::mat4(1.0f);
-                        treeMatrix = glm::translate(treeMatrix, glm::vec3(currentCell * 2 + 0.5 + randX, 0.0f, position * 2 + 0.5f + randZ));
-                        treeMatrix = glm::scale(treeMatrix, glm::vec3(randomScale, randomScale, randomScale));
-                        treesMatrixes.push_back(treeMatrix);
-                    }
-                    if(*i == "S") {
-                        deltaX = currentCell * 2;
-                        deltaZ = position * 2;
-                    }
-                    if(*i == "C") {
-                        cartX = currentCell * 2;
-                        cartZ = position * 2;
-                    }
-                    if(*i == "P") {
-                        paths.push_back(glm::vec2(currentCell-16, position-16));
-                    }
-                }
-            } else {
-                appState = AppStates::LoadingAABBs;
-            }
+        if(appState == AppStates::CreatingAABBsHierarchy) {
+            cout << "Creating AABBs' hierarchy" << endl;
+
+            //--- AABB THAT TAKES THE WHOLE MAP
+            AABBNode whole = AABBNode(-20.0f, 20.0f, 0.0f, 12.0f, -20.0f, 20.0f);
+            
+            //--- FIRST QUARTER OF THE WHOLE AABB
+            AABBNode firstQuarter = AABBNode(-20.0f, 0.0f, 0.0f, 12.0f,  -20.0f, 0.0f);
+
+            //--- QUARTERS OF THE FIRST QUARTER
+            AABBNode firstQuarterFirstQuarter = AABBNode(-20, -10, 0, 12, -20, -10);
+            AABBNode firstQuarterSecondQuarter = AABBNode(-10, 0, 0, 12, -20, -10);
+            AABBNode firstQuarterThirdQuarter = AABBNode(-20, -10, 0, 12, -10, 0);
+            AABBNode firstQuarterForthQuarter = AABBNode(-10, 0, 0, 12, -10, 0);
+
+            firstQuarter.add_children(firstQuarterFirstQuarter);
+            firstQuarter.add_children(firstQuarterSecondQuarter);
+            firstQuarter.add_children(firstQuarterThirdQuarter);
+            firstQuarter.add_children(firstQuarterForthQuarter);
+
+            //--- SECOND QUARTER OF THE WHOLE AABB
+            AABBNode secondQuarter = AABBNode(0.0f, 20.0f, 0.0f, 12.0f,  0.0f, 20.0f);
+
+            //--- QUARTERS OF THE SECOND QUARTER
+            AABBNode secondQuarterFirstQuarter = AABBNode(0, 10, 0, 12, 0, 10);
+            AABBNode secondQuarterSecondQuarter = AABBNode(0, 10, 0, 12, 10, 20);
+            AABBNode secondQuarterThirdQuarter = AABBNode(10, 20, 0, 12, 0, 10);
+            AABBNode secondQuarterForthQuarter = AABBNode(10, 20, 0, 12, 10, 20);
+
+            secondQuarter.add_children(secondQuarterFirstQuarter);
+            secondQuarter.add_children(secondQuarterSecondQuarter);
+            secondQuarter.add_children(secondQuarterThirdQuarter);
+            secondQuarter.add_children(secondQuarterForthQuarter);
+
+            //--- THIRD QUARTER OF THE WHOLE AABB
+            AABBNode thirdQuarter = AABBNode(-20.0f, 0.0f, 0.0f, 12.0f,  0.0f, 20.0f);
+
+            //--- QUARTERS OF THE SECOND QUARTER
+            AABBNode thirdQuarterFirstQuarter = AABBNode(-20, -10, 0, 12, 0, 10);
+            AABBNode thirdQuarterSecondQuarter = AABBNode(-20, -10, 0, 12, 10, 20);
+            AABBNode thirdQuarterThirdQuarter = AABBNode(-10, 0, 0, 12, 0, 10);
+            AABBNode thirdQuarterForthQuarter = AABBNode(-10, 0, 0, 12, 10, 20);
+
+            thirdQuarter.add_children(thirdQuarterFirstQuarter);
+            thirdQuarter.add_children(thirdQuarterSecondQuarter);
+            thirdQuarter.add_children(thirdQuarterThirdQuarter);
+            thirdQuarter.add_children(thirdQuarterForthQuarter);
+            
+            //--- FORTH QUARTER OF THE WHOLE AABB
+            AABBNode forthQuarter = AABBNode(0.0f, 20.0f, 0.0f, 12.0f,  -20.0f, 0.0f);
+
+            AABBNode forthQuarterFirstQuarter = AABBNode(0, 10, 0, 12, -20, -10);
+            AABBNode forthQuarterSecondQuarter = AABBNode(0, 10, 0, 12, -10, 0);
+            AABBNode forthQuarterThirdQuarter = AABBNode(10, 20, 0, 12, -20, -10);
+            AABBNode forthQuarterForthQuarter = AABBNode(10, 20, 0, 12, -10, 0);
+
+            forthQuarter.add_children(forthQuarterFirstQuarter);
+            forthQuarter.add_children(forthQuarterSecondQuarter);
+            forthQuarter.add_children(forthQuarterThirdQuarter);
+            forthQuarter.add_children(forthQuarterForthQuarter);
+
+            appState = AppStates::Loaded;
         }
 
         if(appState == AppStates::LoadingAABBs) {
@@ -316,9 +349,42 @@ int main()
                 treesAABBs.push_back(aabb);
             }
 
-            appState = AppStates::Loaded;
+            appState = AppStates::CreatingAABBsHierarchy;
         }
 
+        //--- CONTINUE LOADING THE LEVEL
+        if(appState == AppStates::LoadingMap) {
+            if(currentCell < content.size()) {
+                cout << "Loading map row #" << currentCell << endl;
+                for (auto i=content[currentCell].begin(); i!=content[currentCell].end(); ++i) {
+                    float position = i-content[currentCell].begin();
+                    if(*i == "T") {
+                        //--- TREES ARE RANDOMLY DISPLACED FROM THEIR 0.5x0.5 cell by a random value between -0.5f and 0.5f
+                        float randX = (rand() % 10 - 5) / 10.f;
+                        float randZ = (rand() % 10 - 5) / 10.f;
+                        //--- TREES ARE RANDOMLY SCALED FROM 100% TO 150%
+                        float randomScale = (100 + (rand() % 50)) / 100.f;
+                        glm::mat4 treeMatrix = glm::mat4(1.0f);
+                        treeMatrix = glm::translate(treeMatrix, glm::vec3(currentCell * 2 + 0.5 + randX, 0.0f, position * 2 + 0.5f + randZ));
+                        treeMatrix = glm::scale(treeMatrix, glm::vec3(randomScale, randomScale, randomScale));
+                        treesMatrixes.push_back(treeMatrix);
+                    }
+                    if(*i == "S") {
+                        deltaX = currentCell * 2;
+                        deltaZ = position * 2;
+                    }
+                    if(*i == "C") {
+                        cartX = currentCell * 2;
+                        cartZ = position * 2;
+                    }
+                    if(*i == "P") {
+                        paths.push_back(glm::vec2(currentCell-16, position-16));
+                    }
+                }
+            } else {
+                appState = AppStates::LoadingAABBs;
+            }
+        }
         currentCell++;
 
         if(showWireframe) {
@@ -424,6 +490,9 @@ int main()
         //---  CLEAR 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
+        auto start = std::chrono::high_resolution_clock::now();
+
         //--- CALCULATE PLAYER AABB
         //--- THIS IS THE FIRST THING TO DO BECAUSE IT CAN MODIFY THE CAMERA VIEW
 
@@ -444,6 +513,8 @@ int main()
         bool collision = false;
 
         //--- VERY LOW PERFORMANCE AABB CHECK
+        //--- BEST CASE MEASURED ON MAC: 34 microseconds
+        //--- WORST CASE MEASURED ON MAC: 372 microseconds
         for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
             AABB tree = *i;
             bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
@@ -514,6 +585,14 @@ int main()
                 deltaZ = oldDeltaZ;
             }
             
+        }
+
+        auto elapsed = std::chrono::high_resolution_clock::now() - start;
+        long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+
+        if(maxMicroseconds < microseconds) {
+            cout << microseconds << endl;
+            maxMicroseconds = microseconds;
         }
 
         //** UPDATE CAMERA POSITION TO FOLLOW PLAYER

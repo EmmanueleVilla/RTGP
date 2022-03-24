@@ -1,5 +1,15 @@
 class AABB {
     public:
+
+    AABB(GLfloat minX, GLfloat maxX, GLfloat minY, GLfloat maxY, GLfloat minZ, GLfloat maxZ) {
+        MinX = minX;
+        MaxX = maxX;
+        MinY = minY;
+        MaxY = maxY;
+        MinZ = minZ;
+        MaxZ = maxZ;
+    }
+
     AABB(vector<GLfloat> vertices) {
         int index = 0;
         for (auto i=vertices.begin(); i!=vertices.end(); ++i) {
@@ -68,4 +78,19 @@ class AABB {
     float MaxX = -9999;
     float MaxY = -9999;
     float MaxZ = -9999;
+};
+
+class AABBNode : public AABB {
+
+    private:
+    vector<AABB> children;
+    
+    public:
+    AABBNode(GLfloat minX, GLfloat maxX, GLfloat minY, GLfloat maxY, GLfloat minZ, GLfloat maxZ) : AABB(minX, maxX, minY, maxY, minZ, maxZ) {
+
+    }
+
+    void add_children(AABB aabb) {
+        children.push_back(aabb);
+    }
 };
