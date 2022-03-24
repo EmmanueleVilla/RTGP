@@ -443,6 +443,8 @@ int main()
 
     cout << "Loading ended, binding new loop values" << endl;
 
+    glClearColor(135.0f / 255.f, 206.0f / 255.f, 235.0f / 255.f, 1.0f);
+
     //delete &coinModel;
 
     //---  INIT UNIFORM BUFFER FOR TREES
@@ -528,6 +530,7 @@ int main()
         //--- VERY LOW PERFORMANCE AABB CHECK
         //--- BEST CASE MEASURED ON MAC: 34 microseconds
         //--- WORST CASE MEASURED ON MAC: 372 microseconds
+        //--- BEST CASE MEASURED ON PC: 196 microseconds
         for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
             AABB tree = *i;
             bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
