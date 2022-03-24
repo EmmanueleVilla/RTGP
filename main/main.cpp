@@ -6,6 +6,8 @@
     #define APIENTRY __stdcall
 #endif
 
+#include <chrono>
+
 #include <glad/glad.h>
 
 //---  GLFW library to create window and to manage I/O
@@ -127,7 +129,7 @@ int main()
     //---  LOAD MODELS 
     Model coinModel("../models/coin.obj");
     Model planeModel("../models/plane.obj");
-    Model playerModel("../models/dog2.obj");
+    Model playerModel("../models/dog.obj");
     Model treeModel("../models/tree.obj");
     Model cartModel("../models/tree.obj");
 
@@ -138,8 +140,10 @@ int main()
     int treeTextureIndex = 3;
     textureId.push_back(LoadTexture("../textures/coin.jpeg"));
     textureId.push_back(LoadTexture("../textures/plane.jpg"));
-    textureId.push_back(LoadTexture("../textures/dog.png"));
+    textureId.push_back(LoadTexture("../textures/dog.jpg"));
     textureId.push_back(LoadTexture("../textures/tree.jpg"));
+
+    cout << "Loaded textures" << endl;
 
     //---  INIT MATRICES 
     glm::mat4 coinModelMatrix = glm::mat4(1.0f);
@@ -504,7 +508,16 @@ int main()
         GLfloat dy = 9.0f;
 
         //--- VERTICES OF THE PLAYER'S AABB
-        vector<GLfloat> playerVertices = utils.getVertices(playerPos, playerScale, dx, dy, dz);
+        GLfloat playerVertices[] = {
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
+            };
 
         //--- CREATING AABB FROM VERTICES
         AABB playerAABB = AABB(playerVertices);
@@ -532,7 +545,16 @@ int main()
             playerPos = glm::vec3(oldDeltaX / 2, 0, (2.5f + deltaZ) / 2);
 
             //--- VERTICES OF THE PLAYER'S AABB
-            vector<GLfloat> zPlayerVertices = utils.getVertices(playerPos, playerScale, dx, dy, dz);
+            GLfloat zPlayerVertices[] = {
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
+            };
 
             //--- CREATING AABB FROM VERTICES
             playerAABB = AABB(zPlayerVertices);
@@ -557,7 +579,16 @@ int main()
             playerPos = glm::vec3(deltaX / 2, 0, (2.5f + oldDeltaZ) / 2);
 
             //--- VERTICES OF THE PLAYER'S AABB
-            vector<GLfloat> xPlayerVertices = utils.getVertices(playerPos, playerScale, dx, dy, dz);
+            GLfloat xPlayerVertices[] = {
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z - playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z - playerScale - dz,
+                playerPos.x + playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz,
+                playerPos.x + playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, 0.0f, playerPos.z + playerScale - dz,
+                playerPos.x - playerScale - dx, dy * playerScale, playerPos.z + playerScale - dz
+            };
 
             //--- CREATING AABB FROM VERTICES
             playerAABB = AABB(xPlayerVertices);
@@ -641,7 +672,7 @@ int main()
         playerModelMatrix = glm::mat4(1.0f);
         playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, 2.5f + deltaZ));
         playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.5f, 0.5f, 0.5f));
+        playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
 
         //---  DRAW PLAYER 
@@ -889,17 +920,20 @@ GLint LoadTexture(const char* path)
     int w, h, channels;
     unsigned char* image;
     image = stbi_load(path, &w, &h, &channels, STBI_rgb);
-
-    if (image == nullptr)
+    if (image == nullptr) {
         std::cout << "Failed to load texture!" << std::endl;
+    }
 
     glGenTextures(1, &textureImage);
     glBindTexture(GL_TEXTURE_2D, textureImage);
+
     // 3 channels = RGB ; 4 channel = RGBA
-    if (channels==3)
+    if (channels == 3) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-    else if (channels==4)
+    }
+    else if (channels == 4) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    }
     glGenerateMipmap(GL_TEXTURE_2D);
     // we set how to consider UVs outside [0,1] range
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

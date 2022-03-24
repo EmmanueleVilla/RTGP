@@ -103,6 +103,7 @@ private:
     // loading of the model using Assimp library. Nodes are processed to build a vector of Mesh class instances
     void loadModel(string path)
     {
+        cout << "Loading model " << path << endl;
         // loading using Assimp
         // N.B.: it is possible to set, if needed, some operations to be performed by Assimp after the loading.
         // Details on the different flags to use are available at: http://assimp.sourceforge.net/lib_html/postprocess_8h.html#a64795260b95f5a4b3f3dc1be4f52e410
@@ -127,6 +128,8 @@ private:
     // Recursive processing of nodes of Assimp data structure
     void processNode(aiNode* node, const aiScene* scene)
     {
+
+        cout << "Processing node " << node << endl;
         // we process each mesh inside the current node
         for(GLuint i = 0; i < node->mNumMeshes; i++)
         {
@@ -138,6 +141,7 @@ private:
             // we use emplace_back instead as push_back, so to have the instance created directly in the 
             // vector memory, without the creation of a temp copy.
             // https://en.cppreference.com/w/cpp/container/vector/emplace_back 
+            cout << "Processing mesh " << i << endl;
             this->meshes.emplace_back(processMesh(mesh));
         }
         // we then recursively process each of the children nodes
