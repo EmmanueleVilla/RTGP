@@ -714,6 +714,10 @@ int main()
         glUniform3fv(colorInLocation, 1, aabbColor);
 
         if(showAABB) {
+
+            GLuint index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
+            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
+
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             for (auto i=treesAABBsVertices.begin(); i!=treesAABBsVertices.end(); ++i) {
                 vector<GLfloat> verticesVector = *i;
