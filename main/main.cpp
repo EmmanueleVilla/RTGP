@@ -502,10 +502,10 @@ int main()
 
         //--- PLAYER POSITION VECTOR AND DELTAS
         glm::vec3 playerPos = glm::vec3(deltaX / 2, 0, (2.5f + deltaZ) / 2);
-        float playerScale = 0.15f;
+        float playerScale = 0.21f;
         GLfloat dx = 8.0f;
         GLfloat dz = 15.0f;
-        GLfloat dy = 9.0f;
+        GLfloat dy = 6.0f;
 
         //--- VERTICES OF THE PLAYER'S AABB
         GLfloat playerVertices[] = {
