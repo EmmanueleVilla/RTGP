@@ -549,7 +549,7 @@ int main()
                 break;
             }
         }
-
+        
         if(collision) {
 
             //--- CHECK COLLISION IF I MOVE ONLY IN THE Z DIRECTION
@@ -585,9 +585,8 @@ int main()
                 }
             }
 
-            
             //--- CHECK COLLISION IF I MOVE ONLY IN THE X DIRECTION
-            playerPos = glm::vec3(deltaX, 0, 2.5f + oldDeltaZ);
+            playerPos = glm::vec3(deltaX, 0, oldDeltaZ);
 
             //--- VERTICES OF THE PLAYER'S AABB
             GLfloat xPlayerVertices[] = {
@@ -628,7 +627,7 @@ int main()
             }
             
         }
-
+        
         auto elapsed = std::chrono::high_resolution_clock::now() - start;
         long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 
