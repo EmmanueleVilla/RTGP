@@ -494,9 +494,9 @@ int main()
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
     //--- CREATING THE TEXTURE
-    GLuint renderedTexture;
-    glGenTextures(1, &renderedTexture);
-    glBindTexture(GL_TEXTURE_2D, renderedTexture);
+    GLuint quadTexture;
+    glGenTextures(1, &quadTexture);
+    glBindTexture(GL_TEXTURE_2D, quadTexture);
 
     //--- PASSING AN EMPTY IMAGE
     glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
@@ -513,7 +513,7 @@ int main()
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
 
     //--- SET TEXTURE AS COLOR ATTACHMENT
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, quadTexture, 0);
 
     //--- SET THE LIST OF DRAW BUFFERS
     GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
@@ -846,7 +846,6 @@ int main()
             
             glBindVertexArray(0);
             
-            glUseProgram(shader.Program);
             glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, 32, GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
@@ -870,14 +869,15 @@ int main()
         glGenBuffers(1, &quadVertexBuffer);
         glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-        // Create and compile our GLSL program from the shaders
-        Shader quadShader = Shader("base.vert", "quad.frag" );
-        glUseProgram(quadShader.Program);
-        quadShader.Use();
-
-        GLuint texID = glGetUniformLocation(quadShader.Program, "tex");
+        
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glBindTexture(GL_TEXTURE_2D, quadTexture);
+        glUniform1f(repeatLocation, 1.0);
+        glUniform1i(instancedLocation, false);
+
+        subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
         //--- SWAP BUFFERS
         glfwSwapBuffers(window);

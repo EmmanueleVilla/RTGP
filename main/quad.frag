@@ -10,10 +10,9 @@ out vec4 color;
 uniform sampler2D tex;
 
 void main(){
-    //vec2 newUV = 2 * interp_UV.xy;  
-    //newUV /= vec2(1280, 720);
-    //newUV -= vec2(1.0, 1.0);  
+    vec2 newUV = 2 * interp_UV.xy;  
+    newUV /= vec2(1280, 720);
+    newUV -= vec2(1.0, 1.0);  
 
-    //color = vec4(vec3(texture(tex, newUV).xyz), 1.0f);
-    color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    color = vec4(vec3(texture(tex, newUV).xyz), 1.0f);
 }

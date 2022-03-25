@@ -22,6 +22,14 @@ vec3 textured() {
 }
 
 subroutine(fragshader)
+vec3 fisheye() {
+    vec2 newUV = 2 * interp_UV.xy;  
+    newUV /= vec2(1280, 720);
+    newUV -= vec2(1.0, 1.0);
+    return vec3(texture(tex, newUV).xyz);
+}
+
+subroutine(fragshader)
 vec3 fixedColor() {
     return vec3(colorIn);
 }
