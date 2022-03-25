@@ -67,8 +67,17 @@ GLfloat oldDeltaX = 0.0f;
 GLfloat deltaZ = 0.0f;
 GLfloat deltaX = 0.0f;
 GLfloat speed = 5.0f;
-GLfloat rotationY = 90.0f;
+GLfloat rotationY = 0.0f;
 GLfloat rotationSpeed = 2.0f;
+
+//--- CAMERA
+#define MAX_CAMERA_DISTANCE 5.0f
+#define MIN_CAMERA_DISTANCE 4.0f
+#define MAX_CAMERA_Y_DELTA 1.0f
+#define MIN_CAMERA_Y_DELTA 1.0f
+GLfloat cameraDistance = MAX_CAMERA_DISTANCE;
+GLfloat cameraY = MAX_CAMERA_Y_DELTA;
+GLfloat cameraZoomSpeed = 3.5f;
 
 //---  APP_STATE 
 enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, Loaded };
@@ -248,7 +257,7 @@ int main()
 
             //--- AABB THAT TAKES THE WHOLE MAP
             AABBNode whole = AABBNode(-20.0f, 20.0f, 0.0f, 12.0f, -20.0f, 20.0f);
-            
+             
             //--- FIRST QUARTER OF THE WHOLE AABB
             AABBNode firstQuarter = AABBNode(-20.0f, 0.0f, 0.0f, 12.0f,  -20.0f, 0.0f);
 
@@ -503,7 +512,7 @@ int main()
         //--- THIS IS THE FIRST THING TO DO BECAUSE IT CAN MODIFY THE CAMERA VIEW
 
         //--- PLAYER POSITION VECTOR AND DELTAS
-        glm::vec3 playerPos = glm::vec3(deltaX, 0, 2.5f + deltaZ);
+        glm::vec3 playerPos = glm::vec3(deltaX, 0, deltaZ);
         float playerSize = 0.4f;
         GLfloat dy = 1.25f;
 
@@ -544,7 +553,7 @@ int main()
         if(collision) {
 
             //--- CHECK COLLISION IF I MOVE ONLY IN THE Z DIRECTION
-            playerPos = glm::vec3(oldDeltaX, 0, 2.5f + deltaZ);
+            playerPos = glm::vec3(oldDeltaX, 0, deltaZ);
 
             //--- VERTICES OF THE PLAYER'S AABB
             GLfloat zPlayerVertices[] = {
@@ -627,11 +636,11 @@ int main()
             cout << microseconds << endl;
             maxMicroseconds = microseconds;
         }
-
+        
         //** UPDATE CAMERA POSITION TO FOLLOW PLAYER
-        GLfloat distX = sin(glm::radians(rotationY)) * 2.5f;
-        GLfloat distZ = cos(glm::radians(rotationY)) * 2.5f;
-        view = glm::lookAt(glm::vec3(deltaX - distX, 2.0f, 2.5f + deltaZ + distZ * -1.0f), glm::vec3(deltaX + distX, 0.0f, 2.5f + deltaZ + distZ), glm::vec3(0.0f, 1.0f, 0.0f));
+        GLfloat distX = -sin(glm::radians(rotationY)) * cameraDistance;
+        GLfloat distZ = cos(glm::radians(rotationY)) * cameraDistance;
+        view = glm::lookAt(glm::vec3(deltaX + distX, 2.0f + cameraY, deltaZ - distZ), glm::vec3(deltaX, cameraY, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
         
         //--- USE SHADER 
         shader.Use();
@@ -672,7 +681,7 @@ int main()
 
         //---  SET PLAYER MATRICES 
         playerModelMatrix = glm::mat4(1.0f);
-        playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, 2.5f + deltaZ));
+        playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, deltaZ));
         playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
         playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
@@ -718,6 +727,8 @@ int main()
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            //TODO: draw instanced instead of single
+
             for (auto i=treesAABBsVertices.begin(); i!=treesAABBsVertices.end(); ++i) {
                 vector<GLfloat> verticesVector = *i;
                 GLfloat vertices[] = {
@@ -773,28 +784,28 @@ int main()
             }
 
             GLuint VBO, VAO, EBO;
-                glGenVertexArrays(1, &VAO);
-                glGenBuffers(1, &VBO);
-                glGenBuffers(1, &EBO);
-                glBindVertexArray(VAO);
+            glGenVertexArrays(1, &VAO);
+            glGenBuffers(1, &VBO);
+            glGenBuffers(1, &EBO);
+            glBindVertexArray(VAO);
 
-                glBindBuffer(GL_ARRAY_BUFFER, VBO);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(playerVertices), &playerVertices[0], GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(playerVertices), &playerVertices[0], GL_STATIC_DRAW);
 
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(AABBsIndices), AABBsIndices, GL_STATIC_DRAW);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(AABBsIndices), AABBsIndices, GL_STATIC_DRAW);
 
-                glEnableVertexAttribArray(0);
-                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-                
-                glBindVertexArray(0);
-                
-                glUseProgram(shader.Program);
-                glBindVertexArray(VAO);
-                glDrawElements(GL_TRIANGLES, 32, GL_UNSIGNED_INT, 0);
-                glBindVertexArray(0);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            
+            glBindVertexArray(0);
+            
+            glUseProgram(shader.Program);
+            glBindVertexArray(VAO);
+            glDrawElements(GL_TRIANGLES, 32, GL_UNSIGNED_INT, 0);
+            glBindVertexArray(0);
         }
 
         //--- SWAP BUFFERS
@@ -886,12 +897,34 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
+
 void process_keys(GLFWwindow* window) {
 
     oldDeltaX = deltaX;
     oldDeltaZ = deltaZ;
 
     if(appState == AppStates::Loaded) {
+
+        if(keys[GLFW_KEY_SPACE]) {
+            cameraDistance -= cameraZoomSpeed * deltaTime;
+            cameraY -= cameraZoomSpeed * deltaTime;
+            if(cameraDistance < MIN_CAMERA_DISTANCE) {
+                cameraDistance = MIN_CAMERA_DISTANCE;
+            }
+            if(cameraY < MIN_CAMERA_Y_DELTA) {
+                cameraY = MIN_CAMERA_Y_DELTA;
+            }
+        } else {
+            cameraDistance += cameraZoomSpeed * deltaTime;
+            cameraY += cameraZoomSpeed * deltaTime;
+            if(cameraDistance > MAX_CAMERA_DISTANCE) {
+                cameraDistance = MAX_CAMERA_DISTANCE;
+            }
+            if(cameraY > MAX_CAMERA_Y_DELTA) {
+                cameraY = MAX_CAMERA_Y_DELTA;
+            }
+        }
+
         if(keys[GLFW_KEY_W]) {
             deltaX += sin(glm::radians(rotationY)) * speed * deltaTime;
             deltaZ += cos(glm::radians(rotationY)) * speed * deltaTime;
