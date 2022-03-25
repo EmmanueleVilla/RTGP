@@ -1,7 +1,7 @@
 #version 410 core
 
-/* OUTPUT */
-out vec4 color;
+/* OUTPUT TO FRAME BUFFER */
+layout(location = 0) out vec4 color;
 
 /* INPUT FROM APP */
 uniform sampler2D tex;
@@ -10,7 +10,6 @@ uniform vec3 colorIn;
 
 /* INPUT FROM SHADERS */
 in vec2 interp_UV;
-in vec3 interp_color;
 
 /* SUBROUTINES */
 subroutine vec3 fragshader();

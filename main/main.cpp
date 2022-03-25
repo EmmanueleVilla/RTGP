@@ -485,6 +485,49 @@ int main()
 
     cout << "Press B to show AABBs" << endl;
 
+    //--- TO APPLY THE LENS EFFECT, WE RENDER TO A RENDER TARGET
+    //--- LATER TO BE USED AS A TEXTURE
+
+    //--- CREATING FRAME BUFFER
+    GLuint frameBuffer = 0;
+    glGenFramebuffers(1, &frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
+    //--- CREATING THE TEXTURE
+    GLuint renderedTexture;
+    glGenTextures(1, &renderedTexture);
+    glBindTexture(GL_TEXTURE_2D, renderedTexture);
+
+    //--- PASSING AN EMPTY IMAGE
+    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+    //--- FILTERING
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    //--- DEPTH BUFFER (NEEDED?)
+    GLuint depthBuffer;
+    glGenRenderbuffers(1, &depthBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+
+    //--- SET TEXTURE AS COLOR ATTACHMENT
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+
+    //--- SET THE LIST OF DRAW BUFFERS
+    GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+    glDrawBuffers(1, drawBuffers);
+
+    //--- CHECK FRAME BUFFER SANITY
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cout << "Frame buffer status " << glCheckFramebufferStatus(GL_FRAMEBUFFER) << ", aborting" << std::endl;
+        return -1;
+    }
+
+    //--- RENDER TO FRAME BUFFER
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
     while(!glfwWindowShouldClose(window))
     {
         //---  UPDATE TIME 
@@ -700,7 +743,6 @@ int main()
         //---  DRAW TREE
         treeModel.DrawInstanced(treesMatrixes.size());
 
-
         //--- SET CART TEXTURE
         glBindTexture(GL_TEXTURE_2D, textureId[cartTextureIndex]);
         glUniform1f(repeatLocation, 1.0);
@@ -810,6 +852,33 @@ int main()
             glDrawElements(GL_TRIANGLES, 32, GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
         }
+
+        //--- RENDER TO QUAD
+        GLuint quadVertexArray;
+        glGenVertexArrays(1, &quadVertexArray);
+        glBindVertexArray(quadVertexArray);
+
+        static const GLfloat quadVertices[] = {
+            -1.0f, -1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,
+            -1.0f,  1.0f, 0.0f,
+            -1.0f,  1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,
+            1.0f,  1.0f, 0.0f,
+        };
+
+        GLuint quadVertexBuffer;
+        glGenBuffers(1, &quadVertexBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+        // Create and compile our GLSL program from the shaders
+        Shader quadShader = Shader("base.vert", "quad.frag" );
+        glUseProgram(quadShader.Program);
+        quadShader.Use();
+
+        GLuint texID = glGetUniformLocation(quadShader.Program, "tex");
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         //--- SWAP BUFFERS
         glfwSwapBuffers(window);
