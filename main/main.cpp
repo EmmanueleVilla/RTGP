@@ -718,6 +718,10 @@ int main()
         //--- SET AABB COLOR
         glUniform3fv(colorInLocation, 1, aabbColor);
 
+        //--- DRAW EVERY AABB IN MEMORY USING THE AABB VERTICES AS INPUT
+        //--- THIS IS _VERY_ SLOW IN MY MAC WITHOUT A DEDICATED GPU
+        //--- AND COULD BE IMPROVED BY USING THE MODEL MATRIX AND DRAW INSTANCED...
+        //--- BUT IT DOESN'T MAKE SENSE SINCE ITS PURPOSE IS TO SHOW IF THE AABBs ARE CORRECT
         if(showAABB) {
 
             glm::mat4 resetMatrix = glm::mat4(1.0f);
@@ -727,7 +731,6 @@ int main()
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            //TODO: draw instanced instead of single
 
             for (auto i=treesAABBsVertices.begin(); i!=treesAABBsVertices.end(); ++i) {
                 vector<GLfloat> verticesVector = *i;
