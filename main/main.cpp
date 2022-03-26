@@ -854,6 +854,12 @@ int main()
 
 
         //quadShader.Use();
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        
+        //---  CLEAR 
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        view = glm::lookAt(glm::vec3(0.0f, 5.0f, 3.0f), glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         //--- SET PLANE TEXTURE 
         glActiveTexture(GL_TEXTURE1);
@@ -905,7 +911,7 @@ int main()
         
         */
         //--- SWAP BUFFERS
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        
         glfwSwapBuffers(window);
     }
 
