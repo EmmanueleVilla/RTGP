@@ -77,7 +77,13 @@ GLfloat rotationSpeed = 2.0f;
 #define MIN_CAMERA_Y_DELTA 1.0f
 GLfloat cameraDistance = MAX_CAMERA_DISTANCE;
 GLfloat cameraY = MAX_CAMERA_Y_DELTA;
-GLfloat cameraZoomSpeed = 3.5f;
+GLfloat cameraZoomSpeed = 3.0f;
+
+//--- PINCUSHION DISTORSION
+#define MIN_DISTORSION -0.80f
+#define MAX_DISTORSION 0.0f
+GLfloat distorsion = MAX_DISTORSION;
+GLfloat distorsionSpeed = 0.75f;
 
 //---  APP_STATE 
 enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, Loaded };
@@ -696,6 +702,7 @@ int main()
         GLint modelMatrixesLocation = glGetUniformLocation(shader.Program, "modelMatrixes");
         GLint colorInLocation = glGetUniformLocation(shader.Program, "colorIn");
         GLint instancedLocation = glGetUniformLocation(shader.Program, "instanced");
+        GLint distorsionLocation = glGetUniformLocation(shader.Program, "distorsion");
 
         //--- SET PLANE TEXTURE 
         glActiveTexture(GL_TEXTURE1);
@@ -707,6 +714,7 @@ int main()
         glUniform1i(textureLocation, 1);
         glUniform1f(repeatLocation, 80.0);
         glUniform1i(instancedLocation, false);
+        glUniform1f(distorsionLocation, distorsion);
         
         //---  SET PLANE MATRIX
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
@@ -980,8 +988,9 @@ void process_keys(GLFWwindow* window) {
     oldDeltaZ = deltaZ;
 
     if(appState == AppStates::Loaded) {
-
+        cout << distorsion << endl;
         if(keys[GLFW_KEY_SPACE]) {
+            distorsion -= distorsionSpeed * deltaTime;
             cameraDistance -= cameraZoomSpeed * deltaTime;
             cameraY -= cameraZoomSpeed * deltaTime;
             if(cameraDistance < MIN_CAMERA_DISTANCE) {
@@ -990,7 +999,11 @@ void process_keys(GLFWwindow* window) {
             if(cameraY < MIN_CAMERA_Y_DELTA) {
                 cameraY = MIN_CAMERA_Y_DELTA;
             }
+            if(distorsion < MIN_DISTORSION) {
+                distorsion = MIN_DISTORSION;
+            }
         } else {
+            distorsion += distorsionSpeed * deltaTime;
             cameraDistance += cameraZoomSpeed * deltaTime;
             cameraY += cameraZoomSpeed * deltaTime;
             if(cameraDistance > MAX_CAMERA_DISTANCE) {
@@ -998,6 +1011,9 @@ void process_keys(GLFWwindow* window) {
             }
             if(cameraY > MAX_CAMERA_Y_DELTA) {
                 cameraY = MAX_CAMERA_Y_DELTA;
+            }
+            if(distorsion > MAX_DISTORSION) {
+                distorsion = MAX_DISTORSION;
             }
         }
 

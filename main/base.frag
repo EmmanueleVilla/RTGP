@@ -7,6 +7,7 @@ layout(location = 0) out vec4 color;
 uniform sampler2D tex;
 uniform float repeat;
 uniform vec3 colorIn;
+uniform float distorsion;
 
 /* INPUT FROM SHADERS */
 in vec2 interp_UV;
@@ -27,21 +28,11 @@ vec3 textured() {
 subroutine(fragshader)
 vec3 pincushion() {
     vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
-    float theta = atan(repeatedUV.y, repeatedUV.x);
-    float radius = lenght(repeatedUV);
-    radius = pow(radius, 1.5f);
-    repeatedUV.x = radius * cos(theta);
-    repeatedUV.y = radius * sin(theta);
-    repeatedUV = 0.5f * (repeatedUV + vec2(1.0f,1.0f));
-    /*
-    vec2 uv = (interp_UV.xy / vec2(1280, 720)) - vec2(0.5);
+    vec2 uv = interp_UV.xy - vec2(0.5, 0.5);
 	float uva = atan(uv.x, uv.y);
     float uvd = sqrt(dot(uv, uv));
-    float k = 0.0f;
-    uvd = uvd*(1.0 + k*uvd*uvd);
-    return vec3(texture(tex, vec2(0.5) + vec2(sin(uva), cos(uva))*uvd).xyz);
-    */
-    return vec3(texture(tex, repeatedUV).xyz);
+    uvd = uvd * (1.0 + distorsion * uvd * uvd);
+    return vec3(texture(tex, vec2(0.5) + vec2(sin(uva), cos(uva)) * uvd).xyz);
 }
 
 subroutine(fragshader)
