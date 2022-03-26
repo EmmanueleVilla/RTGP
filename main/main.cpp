@@ -80,7 +80,7 @@ GLfloat cameraY = MAX_CAMERA_Y_DELTA;
 GLfloat cameraZoomSpeed = 3.0f;
 
 //--- PINCUSHION DISTORSION
-#define MIN_DISTORSION -0.80f
+#define MIN_DISTORSION -1.00f
 #define MAX_DISTORSION 0.0f
 GLfloat distorsion = MAX_DISTORSION;
 GLfloat distorsionSpeed = 0.75f;
@@ -988,7 +988,6 @@ void process_keys(GLFWwindow* window) {
     oldDeltaZ = deltaZ;
 
     if(appState == AppStates::Loaded) {
-        cout << distorsion << endl;
         if(keys[GLFW_KEY_SPACE]) {
             distorsion -= distorsionSpeed * deltaTime;
             cameraDistance -= cameraZoomSpeed * deltaTime;
