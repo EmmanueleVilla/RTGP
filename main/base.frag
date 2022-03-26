@@ -32,7 +32,8 @@ vec3 pincushion() {
 	float uva = atan(uv.x, uv.y);
     float uvd = sqrt(dot(uv, uv));
     uvd = uvd * (1.0 + distorsion * uvd * uvd);
-    return vec3(texture(tex, vec2(0.5) + vec2(sin(uva), cos(uva)) * uvd).xyz);
+    vec3 col = vec3(texture(tex, vec2(0.5) + vec2(sin(uva), cos(uva)) * uvd).xyz);
+    return col + vec3(distorsion/10.0f);
 }
 
 subroutine(fragshader)
