@@ -526,11 +526,11 @@ int main()
         return -1;
     }
 
-    //--- RENDER TO FRAME BUFFER
-    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-
     while(!glfwWindowShouldClose(window))
     {
+        //--- RENDER TO FRAME BUFFER
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
         //---  UPDATE TIME 
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
