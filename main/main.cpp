@@ -67,7 +67,7 @@ GLfloat oldDeltaX = 0.0f;
 GLfloat deltaZ = 0.0f;
 GLfloat deltaX = 0.0f;
 GLfloat speed = 5.0f;
-GLfloat rotationY = 0.0f;
+GLfloat rotationY = 90.0f;
 GLfloat rotationSpeed = 2.0f;
 
 //--- CAMERA
@@ -133,7 +133,6 @@ int main()
 
     //---  INIT SHADERS 
     Shader shader = Shader("base.vert", "base.frag");
-    Shader quadShader = Shader("base.vert", "quad.frag");
     SetupShader(shader.Program);
     
     //---  LOAD MODELS 
@@ -853,13 +852,15 @@ int main()
         }
 
 
-        //quadShader.Use();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
         //---  CLEAR 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        view = glm::lookAt(glm::vec3(0.0f, 5.0f, 3.0f), glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        view = glm::lookAt(glm::vec3(0.0f, 1.0f, 7.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        //subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fisheye");
+        //glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
         //--- SET PLANE TEXTURE 
         glActiveTexture(GL_TEXTURE1);
@@ -873,9 +874,9 @@ int main()
         glUniform1i(instancedLocation, false);
         
         glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
-        planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(-10.0f, 1.0f, -10.0f));
+        planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(0.0f, 1.0f, -10.0f));
         planeModelMatrix2 = glm::rotate(planeModelMatrix2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        planeModelMatrix2 = glm::scale(planeModelMatrix2, glm::vec3(1/32.0f * 17.0f, 1.0f, 1/32.0f * 10.0f));
+        planeModelMatrix2 = glm::scale(planeModelMatrix2, glm::vec3(1/16.0f * 17.0f, 1.0f, 1/16.0f * 10.0f));
 
         //---  SET PLANE MATRIX
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));

@@ -23,10 +23,11 @@ vec3 textured() {
 
 subroutine(fragshader)
 vec3 fisheye() {
-    vec2 newUV = 2 * interp_UV.xy;  
-    newUV /= vec2(1280, 720);
-    newUV -= vec2(1.0, 1.0);
-    return vec3(texture(tex, newUV).xyz);
+    vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
+    repeatedUV = 2 * repeatedUV.xy;  
+    repeatedUV /= vec2(1280, 720);
+    repeatedUV -= vec2(1.0, 1.0);  
+    return vec3(texture(tex, repeatedUV).xyz);
 }
 
 subroutine(fragshader)
