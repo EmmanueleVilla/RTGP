@@ -15,6 +15,9 @@ in vec2 interp_UV;
 subroutine vec3 fragshader();
 subroutine uniform fragshader fragShaderImpl;
 
+/* CONSTANTS */
+const float PI = 3.1415926535;
+
 subroutine(fragshader)
 vec3 textured() {
     vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
@@ -22,12 +25,14 @@ vec3 textured() {
 }
 
 subroutine(fragshader)
-vec3 fisheye() {
-    vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
-    repeatedUV = 2 * repeatedUV.xy;  
-    repeatedUV /= vec2(1280, 720);
-    repeatedUV -= vec2(1.0, 1.0);  
-    return vec3(texture(tex, repeatedUV).xyz);
+vec3 pincushion() {
+    vec2 uv = (interp_UV.xy / iResolution.xy) - vec2(0.5);
+	//float uva = atan(uv.x, uv.y);
+    //float uvd = sqrt(dot(uv, uv));
+    //float k = 0.0f;
+    //uvd = uvd*(1.0 + k*uvd*uvd);
+    //return vec3(texture(tex, vec2(0.5) + vec2(sin(uva), cos(uva))*uvd).xyz);
+    return vec3(texture(tex, uv).xyz);
 }
 
 subroutine(fragshader)

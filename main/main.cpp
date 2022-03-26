@@ -851,7 +851,7 @@ int main()
             glBindVertexArray(0);
         }
 
-
+        //--- RENDER TO QUAD
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
         //---  CLEAR 
@@ -859,8 +859,8 @@ int main()
 
         view = glm::lookAt(glm::vec3(0.0f, 1.0f, 7.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        //subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fisheye");
-        //glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+        subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "pincushion");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
         //--- SET PLANE TEXTURE 
         glActiveTexture(GL_TEXTURE1);
@@ -883,36 +883,8 @@ int main()
 
         //---  DRAW PLANE 
         planeModel.Draw();
-        
-        /*
-        //--- RENDER TO QUAD
-        
-        glBindTexture(GL_TEXTURE_2D, quadTexture);
 
-        GLuint quadVertexArray;
-        glGenVertexArrays(1, &quadVertexArray);
-        glBindVertexArray(quadVertexArray);
-
-        static const GLfloat quadVertices[] = {
-            -1.0f, -1.0f, 0.0f,
-            1.0f, -1.0f, 0.0f,
-            -1.0f,  1.0f, 0.0f,
-            -1.0f,  1.0f, 0.0f,
-            1.0f, -1.0f, 0.0f,
-            1.0f,  1.0f, 0.0f,
-        };
-        
-        GLuint quadVertexBuffer;
-        glGenBuffers(1, &quadVertexBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-        
-        textureLocation = glGetUniformLocation(quadShader.Program, "tex");
-        glUniform1i(textureLocation, 1);
-        
-        */
         //--- SWAP BUFFERS
-        
         glfwSwapBuffers(window);
     }
 
