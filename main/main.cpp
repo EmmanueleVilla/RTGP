@@ -684,12 +684,85 @@ int main()
             cout << microseconds << endl;
             maxMicroseconds = microseconds;
         }
-        
+
         //** UPDATE CAMERA POSITION TO FOLLOW PLAYER
         GLfloat distX = -sin(glm::radians(rotationY)) * cameraDistance;
         GLfloat distZ = cos(glm::radians(rotationY)) * cameraDistance;
         view = glm::lookAt(glm::vec3(deltaX + distX, 1.5f, deltaZ - distZ), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
-        
+
+        /*
+        bool cameraCollides = false;
+        do {
+            //** UPDATE CAMERA POSITION TO FOLLOW PLAYER
+            GLfloat distX = -sin(glm::radians(rotationY)) * cameraDistance;
+            GLfloat distZ = cos(glm::radians(rotationY)) * cameraDistance;
+            view = glm::lookAt(glm::vec3(deltaX + distX, 1.5f, deltaZ - distZ), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
+
+            //--- IF THE CAMERA COLLIDES WITH SOMETHING, I PUSH IT TO THE PLAYER UNTIL IT COLLIDES NO MORE
+            cameraCollides = false;
+
+            //--- THE CAMERA AABB IS A CUBE WITH SIZE 0.1, CENTERED IN THE VIEW POINT
+            AABB cameraAABB = AABB(
+                deltaX + distX - 0.05f,
+                deltaX + distX + 0.05f,
+                1.5f - 0.05f,
+                1.5f + 0.05f,
+                deltaZ - distZ - 0.05f,
+                deltaZ - distZ + 0.05f);
+
+            //--- VERY LOW PERFORMANCE AABB CHECK
+            for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
+                AABB tree = *i;
+                bool collisionX = (tree.MinX <= cameraAABB.MaxX && tree.MaxX >= cameraAABB.MinX);
+                bool collisionZ = (tree.MinZ <= cameraAABB.MaxZ && tree.MaxZ >= cameraAABB.MinZ);
+                if(collisionX && collisionZ) {
+                    //--- THE CAMERA COLLIDES WITH SOMETHING
+                    cameraCollides = true;
+                    break;
+                }
+            }
+            if(cameraCollides) {
+                cameraDistance -= cameraZoomSpeed * 10 * deltaTime;
+                cout << "Camera collision" << endl;
+            }
+        } while(cameraCollides);
+*/
+        /*
+        do {
+            //** UPDATE CAMERA POSITION TO FOLLOW PLAYER
+            GLfloat distX = -sin(glm::radians(rotationY)) * cameraDistance;
+            GLfloat distZ = cos(glm::radians(rotationY)) * cameraDistance;
+            view = glm::lookAt(glm::vec3(deltaX + distX, 1.5f, deltaZ - distZ), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
+
+            //--- IF THE CAMERA DOESN'T COLLIDE WITH ANYTHING, I PULL IT FROM THE PLAYER UNTIL IT COLLIDES AND IT'S AT MAX DISTANCE
+            cameraCollides = true;
+
+            //--- THE CAMERA AABB IS A CUBE WITH SIZE 0.1, CENTERED IN THE VIEW POINT
+            AABB cameraAABB = AABB(
+                deltaX + distX - 0.05f,
+                deltaX + distX + 0.05f,
+                1.5f - 0.05f,
+                1.5f + 0.05f,
+                deltaZ - distZ - 0.05f,
+                deltaZ - distZ + 0.05f);
+
+            //--- VERY LOW PERFORMANCE AABB CHECK
+            for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
+                AABB tree = *i;
+                bool collisionX = (tree.MinX <= cameraAABB.MaxX && tree.MaxX >= cameraAABB.MinX);
+                bool collisionZ = (tree.MinZ <= cameraAABB.MaxZ && tree.MaxZ >= cameraAABB.MinZ);
+                if(collisionX && collisionZ) {
+                    //--- THE CAMERA COLLIDES WITH SOMETHING
+                    cameraCollides = true;
+                    break;
+                }
+            }
+            if(!cameraCollides) {
+                cameraDistance += cameraZoomSpeed * 10 * deltaTime;
+            }
+        } while(!cameraCollides);
+        */
+
         //--- USE SHADER 
         shader.Use();
 
@@ -988,6 +1061,7 @@ void process_keys(GLFWwindow* window) {
     oldDeltaZ = deltaZ;
 
     if(appState == AppStates::Loaded) {
+        /*
         if(keys[GLFW_KEY_SPACE]) {
             distorsion -= distorsionSpeed * deltaTime;
             cameraDistance -= cameraZoomSpeed * deltaTime;
@@ -1015,6 +1089,7 @@ void process_keys(GLFWwindow* window) {
                 distorsion = MAX_DISTORSION;
             }
         }
+        */
 
         if(keys[GLFW_KEY_W]) {
             deltaX += sin(glm::radians(rotationY)) * speed * deltaTime;
@@ -1026,11 +1101,11 @@ void process_keys(GLFWwindow* window) {
             deltaZ -= cos(glm::radians(rotationY)) * speed * deltaTime;
         }
 
-        if(keys[GLFW_KEY_A]) {
+        if(keys[GLFW_KEY_A] && !keys[GLFW_MOUSE_BUTTON_RIGHT]) {
             rotationY += deltaTime * 50.0f * rotationSpeed;
         }
 
-        if(keys[GLFW_KEY_D]) {
+        if(keys[GLFW_KEY_D] && !keys[GLFW_MOUSE_BUTTON_RIGHT]) {
             rotationY -= deltaTime * 50.0f * rotationSpeed;
         }
 
