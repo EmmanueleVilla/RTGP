@@ -135,6 +135,7 @@ int main()
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     //---  INIT SHADERS 
@@ -422,7 +423,9 @@ int main()
         glfwPollEvents();
 
         //---  CLEAR 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glStencilMask(0xFF);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glStencilMask(0x00);
 
         shader.Use();
 
@@ -511,18 +514,18 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    //--- DEPTH BUFFER (NEEDED?)
+    //--- DEPTH-STENCIL BUFFER   
     GLuint depthBuffer;
     glGenRenderbuffers(1, &depthBuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
 
     //--- SET TEXTURE AS COLOR ATTACHMENT
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, quadTexture, 0);
 
     //--- SET THE LIST OF DRAW BUFFERS
-    GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+    GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
     glDrawBuffers(1, drawBuffers);
 
     //--- CHECK FRAME BUFFER SANITY
@@ -552,8 +555,9 @@ int main()
         }
 
         //---  CLEAR 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        glStencilMask(0xFF);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glStencilMask(0x00);
 
         auto start = std::chrono::high_resolution_clock::now();
 
@@ -690,78 +694,10 @@ int main()
         GLfloat distZ = cos(glm::radians(rotationY)) * cameraDistance;
         view = glm::lookAt(glm::vec3(deltaX + distX, 1.5f, deltaZ - distZ), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        /*
-        bool cameraCollides = false;
-        do {
-            //** UPDATE CAMERA POSITION TO FOLLOW PLAYER
-            GLfloat distX = -sin(glm::radians(rotationY)) * cameraDistance;
-            GLfloat distZ = cos(glm::radians(rotationY)) * cameraDistance;
-            view = glm::lookAt(glm::vec3(deltaX + distX, 1.5f, deltaZ - distZ), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
-
-            //--- IF THE CAMERA COLLIDES WITH SOMETHING, I PUSH IT TO THE PLAYER UNTIL IT COLLIDES NO MORE
-            cameraCollides = false;
-
-            //--- THE CAMERA AABB IS A CUBE WITH SIZE 0.1, CENTERED IN THE VIEW POINT
-            AABB cameraAABB = AABB(
-                deltaX + distX - 0.05f,
-                deltaX + distX + 0.05f,
-                1.5f - 0.05f,
-                1.5f + 0.05f,
-                deltaZ - distZ - 0.05f,
-                deltaZ - distZ + 0.05f);
-
-            //--- VERY LOW PERFORMANCE AABB CHECK
-            for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
-                AABB tree = *i;
-                bool collisionX = (tree.MinX <= cameraAABB.MaxX && tree.MaxX >= cameraAABB.MinX);
-                bool collisionZ = (tree.MinZ <= cameraAABB.MaxZ && tree.MaxZ >= cameraAABB.MinZ);
-                if(collisionX && collisionZ) {
-                    //--- THE CAMERA COLLIDES WITH SOMETHING
-                    cameraCollides = true;
-                    break;
-                }
-            }
-            if(cameraCollides) {
-                cameraDistance -= cameraZoomSpeed * 10 * deltaTime;
-                cout << "Camera collision" << endl;
-            }
-        } while(cameraCollides);
-*/
-        /*
-        do {
-            //** UPDATE CAMERA POSITION TO FOLLOW PLAYER
-            GLfloat distX = -sin(glm::radians(rotationY)) * cameraDistance;
-            GLfloat distZ = cos(glm::radians(rotationY)) * cameraDistance;
-            view = glm::lookAt(glm::vec3(deltaX + distX, 1.5f, deltaZ - distZ), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
-
-            //--- IF THE CAMERA DOESN'T COLLIDE WITH ANYTHING, I PULL IT FROM THE PLAYER UNTIL IT COLLIDES AND IT'S AT MAX DISTANCE
-            cameraCollides = true;
-
-            //--- THE CAMERA AABB IS A CUBE WITH SIZE 0.1, CENTERED IN THE VIEW POINT
-            AABB cameraAABB = AABB(
-                deltaX + distX - 0.05f,
-                deltaX + distX + 0.05f,
-                1.5f - 0.05f,
-                1.5f + 0.05f,
-                deltaZ - distZ - 0.05f,
-                deltaZ - distZ + 0.05f);
-
-            //--- VERY LOW PERFORMANCE AABB CHECK
-            for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
-                AABB tree = *i;
-                bool collisionX = (tree.MinX <= cameraAABB.MaxX && tree.MaxX >= cameraAABB.MinX);
-                bool collisionZ = (tree.MinZ <= cameraAABB.MaxZ && tree.MaxZ >= cameraAABB.MinZ);
-                if(collisionX && collisionZ) {
-                    //--- THE CAMERA COLLIDES WITH SOMETHING
-                    cameraCollides = true;
-                    break;
-                }
-            }
-            if(!cameraCollides) {
-                cameraDistance += cameraZoomSpeed * 10 * deltaTime;
-            }
-        } while(!cameraCollides);
-        */
+        //TODO:
+        // 1) RAYCAST FROM CAMERA TO PLAYER
+        // 2a) IF THERE'S AN OBJECT IN THE MIDDLE, MOVE CAMERA TOWARDS THE PLAYER INSTANTLY
+        // 3a) IF THERE'S NOTHING IN THE MIDDLE, MOVE CAMERA BACK GRADUALLY UNTIL MAX_DISTANCE IS REACHED
 
         //--- USE SHADER 
         shader.Use();
@@ -823,120 +759,69 @@ int main()
         //---  DRAW TREE
         treeModel.DrawInstanced(treesMatrixes.size());
 
-        //--- SET CART TEXTURE
-        glBindTexture(GL_TEXTURE_2D, textureId[cartTextureIndex]);
-        glUniform1f(repeatLocation, 1.0);
-        glUniform1i(instancedLocation, false);
+        if(keys[GLFW_KEY_SPACE]) {
+            //--- TODO WRITE CART TO STENCIL ONLY WHEN IT NEEDS TO BE OUTLINED
+            //--- IN THE FIRST PASS, ALL FRAGMENTS PASS THE STENCIL TEST
+            //--- ACTION WHEN STENCIL FAILS, DEPTH FAILS AND BOTH PASS
+            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilMask(0xFF);
 
-        //---  SET CART MATRICES 
-        cartModelMatrix = glm::mat4(1.0f);
-        cartModelMatrix = glm::translate(cartModelMatrix, glm::vec3(cartX, 0.0f, cartZ));
-        cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(1.25f, 1.25f, 1.25f));
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
+            //--- SET CART TEXTURE
+            glBindTexture(GL_TEXTURE_2D, textureId[cartTextureIndex]);
+            glUniform1f(repeatLocation, 1.0);
+            glUniform1i(instancedLocation, false);
 
-        //---  DRAW CART 
-        cartModel.Draw();
+            //---  SET CART MATRICES 
+            cartModelMatrix = glm::mat4(1.0f);
+            cartModelMatrix = glm::translate(cartModelMatrix, glm::vec3(cartX, 0.0f, cartZ));
+            cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(1.25f, 1.25f, 1.25f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
 
-        //--- SET AABB COLOR
-        glUniform3fv(colorInLocation, 1, aabbColor);
+            //---  DRAW CART 
+            cartModel.Draw();
 
-        //--- DRAW EVERY AABB IN MEMORY USING THE AABB VERTICES AS INPUT
-        //--- THIS IS _VERY_ SLOW IN MY MAC WITHOUT A DEDICATED GPU
-        //--- AND COULD BE IMPROVED BY USING THE MODEL MATRIX AND DRAW INSTANCED...
-        //--- BUT IT DOESN'T MAKE SENSE SINCE ITS PURPOSE IS TO SHOW IF THE AABBs ARE CORRECT
-        if(showAABB) {
+            // ONLY DRAW PARTS WHERE STENCIL BUFFER IS != 1
+            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 
-            glm::mat4 resetMatrix = glm::mat4(1.0f);
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(resetMatrix));
+            // DON'T WRITE ON STENCIL BUFFER 
+            glStencilMask(0x00);
 
-            GLuint index = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
-            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &index);
+            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "redOutline");
+            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            //---  SET UPSCALED CART MATRICES 
+            cartModelMatrix = glm::mat4(1.0f);
+            cartModelMatrix = glm::translate(cartModelMatrix, glm::vec3(cartX, 0.0f, cartZ));
+            cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(1.28f, 1.28f, 1.28f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
 
-            for (auto i=treesAABBsVertices.begin(); i!=treesAABBsVertices.end(); ++i) {
-                vector<GLfloat> verticesVector = *i;
-                GLfloat vertices[] = {
-                    verticesVector[0],
-                    verticesVector[1],
-                    verticesVector[2],
-                    verticesVector[3],
-                    verticesVector[4],
-                    verticesVector[5],
-                    verticesVector[6],
-                    verticesVector[7],
-                    verticesVector[8],
-                    verticesVector[9],
-                    verticesVector[10],
-                    verticesVector[11],
-                    verticesVector[12],
-                    verticesVector[13],
-                    verticesVector[14],
-                    verticesVector[15],
-                    verticesVector[16],
-                    verticesVector[17],
-                    verticesVector[18],
-                    verticesVector[19],
-                    verticesVector[20],
-                    verticesVector[21],
-                    verticesVector[22],
-                    verticesVector[23]
-                };
+            //---  DRAW CART 
+            cartModel.Draw();
 
-                GLuint VBO, VAO, EBO;
-                glGenVertexArrays(1, &VAO);
-                glGenBuffers(1, &VBO);
-                glGenBuffers(1, &EBO);
-                glBindVertexArray(VAO);
+        } else {
+            //--- SET CART TEXTURE
+            glBindTexture(GL_TEXTURE_2D, textureId[cartTextureIndex]);
+            glUniform1f(repeatLocation, 1.0);
+            glUniform1i(instancedLocation, false);
 
-                glBindBuffer(GL_ARRAY_BUFFER, VBO);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+            //---  SET CART MATRICES 
+            cartModelMatrix = glm::mat4(1.0f);
+            cartModelMatrix = glm::translate(cartModelMatrix, glm::vec3(cartX, 0.0f, cartZ));
+            cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(1.25f, 1.25f, 1.25f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
 
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(AABBsIndices), AABBsIndices, GL_STATIC_DRAW);
-
-                glEnableVertexAttribArray(0);
-                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-                
-                glBindVertexArray(0);
-                
-                glUseProgram(shader.Program);
-                glBindVertexArray(VAO);
-                glDrawElements(GL_TRIANGLES, 32, GL_UNSIGNED_INT, 0);
-                glBindVertexArray(0);
-            }
-
-            GLuint VBO, VAO, EBO;
-            glGenVertexArrays(1, &VAO);
-            glGenBuffers(1, &VBO);
-            glGenBuffers(1, &EBO);
-            glBindVertexArray(VAO);
-
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(playerVertices), &playerVertices[0], GL_STATIC_DRAW);
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(AABBsIndices), AABBsIndices, GL_STATIC_DRAW);
-
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            
-            glBindVertexArray(0);
-            
-            glBindVertexArray(VAO);
-            glDrawElements(GL_TRIANGLES, 32, GL_UNSIGNED_INT, 0);
-            glBindVertexArray(0);
+            //---  DRAW CART 
+            cartModel.Draw();
         }
 
         //--- RENDER TO QUAD
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
         //---  CLEAR 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glStencilMask(0xFF);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glStencilMask(0x00);
 
         view = glm::lookAt(glm::vec3(0.0f, 1.0f, 7.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -1061,7 +946,6 @@ void process_keys(GLFWwindow* window) {
     oldDeltaZ = deltaZ;
 
     if(appState == AppStates::Loaded) {
-        /*
         if(keys[GLFW_KEY_SPACE]) {
             distorsion -= distorsionSpeed * deltaTime;
             cameraDistance -= cameraZoomSpeed * deltaTime;
@@ -1089,7 +973,6 @@ void process_keys(GLFWwindow* window) {
                 distorsion = MAX_DISTORSION;
             }
         }
-        */
 
         if(keys[GLFW_KEY_W]) {
             deltaX += sin(glm::radians(rotationY)) * speed * deltaTime;
