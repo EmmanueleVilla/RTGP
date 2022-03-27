@@ -1035,11 +1035,11 @@ void process_keys(GLFWwindow* window) {
         }
 
         if(keys[GLFW_MOUSE_BUTTON_RIGHT]) {
-            double xPos, unused;
-            glfwGetCursorPos(window, &xPos, &unused);
-            double diff = mouseXPos - xPos;
+            double xPos, yPos;
+            glfwGetCursorPos(window, &xPos, &yPos);
+            double diffX = mouseXPos - xPos;
             mouseXPos = xPos;
-            rotationY += diff * rotationSpeed;
+            rotationY += diffX * rotationSpeed;
         }
     }
 }
