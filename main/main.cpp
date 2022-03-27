@@ -72,9 +72,9 @@ GLfloat rotationSpeed = 2.0f;
 
 //--- CAMERA
 #define MAX_CAMERA_DISTANCE 5.0f
-#define MIN_CAMERA_DISTANCE 4.0f
+#define MIN_CAMERA_DISTANCE 2.5f
 #define MAX_CAMERA_Y_DELTA 1.0f
-#define MIN_CAMERA_Y_DELTA 1.0f
+#define MIN_CAMERA_Y_DELTA 0.0f
 GLfloat cameraDistance = MAX_CAMERA_DISTANCE;
 GLfloat cameraY = MAX_CAMERA_Y_DELTA;
 GLfloat cameraZoomSpeed = 3.0f;
@@ -688,7 +688,7 @@ int main()
         //** UPDATE CAMERA POSITION TO FOLLOW PLAYER
         GLfloat distX = -sin(glm::radians(rotationY)) * cameraDistance;
         GLfloat distZ = cos(glm::radians(rotationY)) * cameraDistance;
-        view = glm::lookAt(glm::vec3(deltaX + distX, 2.0f + cameraY, deltaZ - distZ), glm::vec3(deltaX, cameraY, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
+        view = glm::lookAt(glm::vec3(deltaX + distX, 1.5f, deltaZ - distZ), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
         
         //--- USE SHADER 
         shader.Use();
@@ -1027,13 +1027,11 @@ void process_keys(GLFWwindow* window) {
         }
 
         if(keys[GLFW_KEY_A]) {
-            deltaX += cos(glm::radians(rotationY)) * speed * deltaTime;
-            deltaZ -= sin(glm::radians(rotationY)) * speed * deltaTime;
+            rotationY += deltaTime * 50.0f * rotationSpeed;
         }
 
         if(keys[GLFW_KEY_D]) {
-            deltaX -= cos(glm::radians(rotationY)) * speed * deltaTime;
-            deltaZ += sin(glm::radians(rotationY)) * speed * deltaTime;
+            rotationY -= deltaTime * 50.0f * rotationSpeed;
         }
 
         if(keys[GLFW_MOUSE_BUTTON_RIGHT]) {
