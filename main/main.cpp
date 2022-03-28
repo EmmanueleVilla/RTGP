@@ -551,17 +551,7 @@ int main()
             // DON'T WRITE ON STENCIL BUFFER 
             glStencilMask(0x00);
 
-            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "redOutline");
-            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
-
-            //---  SET UPSCALED CART MATRICES 
-            matrices[CART_INDEX] = glm::mat4(1.0f);
-            matrices[CART_INDEX] = glm::translate(matrices[CART_INDEX], glm::vec3(cartX, 0.0f, cartZ));
-            matrices[CART_INDEX] = glm::scale(matrices[CART_INDEX], glm::vec3(1.27f, 1.27f, 1.27f));
-            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
-
-            //---  DRAW CART 
-            models[CART_INDEX].Draw(locations[LOCATION_INSTANCED]);
+            drawCart(shader, locations, 1.013f, "redOutline");
 
         } else {
             drawCart(shader, locations, 1.0f, "textured");
@@ -885,7 +875,7 @@ void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, strin
     //---  SET CART MATRICES 
     matrices[CART_INDEX] = glm::mat4(1.0f);
     matrices[CART_INDEX] = glm::translate(matrices[CART_INDEX], glm::vec3(cartX, 0.0f, cartZ));
-    matrices[CART_INDEX] = glm::scale(matrices[CART_INDEX], glm::vec3(1.25f, 1.25f, 1.25f));
+    matrices[CART_INDEX] = glm::scale(matrices[CART_INDEX], glm::vec3(1.25f * scaleModifier, 1.25f * scaleModifier, 1.25f * scaleModifier));
     glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
 
     //---  DRAW CART 
