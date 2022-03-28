@@ -526,14 +526,6 @@ int main()
 
             drawCart(shader, locations, 1.0f, "textured");
 
-            // DON'T WRITE ON STENCIL BUFFER 
-            glStencilMask(0x00);
-
-            drawPlayer(shader, locations, 1.0f);
-            
-            // WRITE ON STENCIL BUFFER 
-            glStencilMask(0xFF);
-
             //--- REMOVE PLAYER FROM STENCIL
             glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
 
@@ -555,8 +547,9 @@ int main()
 
         } else {
             drawCart(shader, locations, 1.0f, "textured");
-            drawPlayer(shader, locations, 1.0f);
         }
+
+        drawPlayer(shader, locations, 1.0f);
 
         //--- RENDER TO QUAD
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
