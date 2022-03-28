@@ -201,7 +201,6 @@ int main()
     //--- INIT MATRIXES FOR INSTANCED DRAWING 
     vector<glm::mat4> treesMatrixes;
     vector<AABB> AABBs;
-    vector<vector<GLfloat>> treesAABBsVertices;
 
     //--- COMMON INDICES LIST FOR AABBs
     GLuint AABBsIndices[] = {
@@ -336,8 +335,6 @@ int main()
                 treeAABBsVertices.push_back(treePos.x - treeSize);
                 treeAABBsVertices.push_back(dy);
                 treeAABBsVertices.push_back(treePos.z + treeSize);
-
-                treesAABBsVertices.push_back(treeAABBsVertices);
 
                 AABB aabb = AABB(treeAABBsVertices);
                 AABBs.push_back(aabb);
