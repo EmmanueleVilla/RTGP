@@ -47,13 +47,21 @@ vec4 fixedColor() {
 
 subroutine(fragshader)
 vec4 redOutline() {
-    float sin = sin(time + 75 * interp_UV.x * interp_UV.y);
     float sinMin = -1.0f;
     float sinMax = 1.0f;
-    float redMin = 0.25f;
+
+    float redSin = sin(time + 75 * interp_UV.x * interp_UV.y);
+    float redMin = 0.6f;
     float redMax = 1.0f;
-    float red = ((sin - sinMin)/(sinMax - sinMin))*(redMax - redMin) + redMin;
-    return vec4(red, 0.0f, 0.0f, 1.0f);
+
+    float red = ((redSin - sinMin)/(sinMax - sinMin))*(redMax - redMin) + redMin;
+
+    float alphaSin = sin(5*(time + 25 * interp_UV.x + 10 * interp_UV.y));
+    float alphaMin = 0.25f;
+    float alphaMax = 1.0f;
+
+    float alpha = ((alphaSin - sinMin)/(sinMax - sinMin))*(alphaMax - alphaMin) + alphaMin;
+    return vec4(red, 0.0f, 0.0f, alpha);
 }
 
 void main() {
