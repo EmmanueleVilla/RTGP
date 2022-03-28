@@ -94,6 +94,9 @@ GLfloat distorsionSpeed = 0.75f;
 enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, Loaded };
 AppStates appState = AppStates::LoadingMap;
 
+//--- UTILS METHODS
+void clear();
+
 /////////////////// MAIN function ///////////////////////
 int main()
 {
@@ -227,7 +230,6 @@ int main()
             }
 
             glm::vec3 cartPos = glm::vec3(cartX, 0.0f, cartZ);
-            vector<GLfloat> cartAABBsVertices;
             float dy = 2.0f;
             glm::vec3 cartSize = glm::vec3(2.0f, 0.0f, 1.5f);
             AABB aabb = AABB(VerticesBuilder().build(cartPos, dy, glm::vec3(cartSize)));
@@ -280,10 +282,7 @@ int main()
 
         glfwPollEvents();
 
-        //---  CLEAR 
-        glStencilMask(0xFF);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glStencilMask(0x00);
+        clear();
 
         shader.Use();
 
@@ -402,10 +401,7 @@ int main()
         glfwPollEvents();
         process_keys(window);
 
-        //---  CLEAR 
-        glStencilMask(0xFF);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glStencilMask(0x00);
+        clear();
 
         auto start = std::chrono::high_resolution_clock::now();
 
@@ -687,10 +683,7 @@ int main()
         //--- RENDER TO QUAD
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
-        //---  CLEAR 
-        glStencilMask(0xFF);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glStencilMask(0x00);
+        clear();
 
         view = glm::lookAt(glm::vec3(0.0f, 1.0f, 7.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -914,4 +907,10 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         double unused;
         glfwGetCursorPos(window, &mouseXPos, &unused);
     }
+}
+
+void clear() {
+    glStencilMask(0xFF);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glStencilMask(0x00);
 }
