@@ -37,8 +37,7 @@ vec4 taylorInvSqrt(vec4 r) {
 }
 
 float snoise(vec3 v) {
-    return 1.0f;
-    /*
+    
     const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
     const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
 
@@ -96,7 +95,6 @@ float snoise(vec3 v) {
     vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
     m = m * m;
     return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
-    */
 }
 
 subroutine(fragshader)
@@ -126,23 +124,12 @@ vec4 fixedColor() {
 
 subroutine(fragshader)
 vec4 redOutline() {
-    /*
-    float sinMin = -1.0f;
-    float sinMax = 1.0f;
-
-    float redSin = sin(time + 75 * interp_UV.x * interp_UV.y);
-    float redMin = 0.6f;
-    float redMax = 1.0f;
-
-    float red = ((redSin - sinMin)/(sinMax - sinMin))*(redMax - redMin) + redMin;
-
-    float alphaSin = sin(5*(time + 25 * interp_UV.x + 10 * interp_UV.y));
-    float alphaMin = 0.25f;
+    float alpha = snoise(vec3(interp_UV * 10, time));
+    float noiseMin = 0.0f;
+    float noiseMax = 1.0f;
+    float alphaMin = 0.5f;
     float alphaMax = 1.0f;
-
-    float alpha = ((alphaSin - sinMin)/(sinMax - sinMin))*(alphaMax - alphaMin) + alphaMin;
-    */
-    float alpha = snoise(interp_UV);
+    alpha = ((alpha - noiseMin) / (noiseMax - noiseMin)) * (alphaMax - alphaMin) + alphaMin;
     return vec4(1.0f, 0.0f, 0.0f, alpha);
 }
 
