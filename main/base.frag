@@ -21,12 +21,14 @@ subroutine uniform fragshader fragShaderImpl;
 const float PI = 3.1415926535;
 
 float snoise(vec3 v) {
+    return 1.0f;
+    /*
     const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
     const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
 
     vec3 i  = floor(v + dot(v, C.yyy) );
     vec3 x0 =   v - i + dot(i, C.xxx) ;
-
+    
     vec3 g = step(x0.yzx, x0.xyz);
     vec3 l = 1.0 - g;
     vec3 i1 = min( g.xyz, l.zxy );
@@ -78,6 +80,7 @@ float snoise(vec3 v) {
     vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
     m = m * m;
     return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+    */
 }
 
 subroutine(fragshader)
@@ -107,6 +110,7 @@ vec4 fixedColor() {
 
 subroutine(fragshader)
 vec4 redOutline() {
+    /*
     float sinMin = -1.0f;
     float sinMax = 1.0f;
 
@@ -121,7 +125,9 @@ vec4 redOutline() {
     float alphaMax = 1.0f;
 
     float alpha = ((alphaSin - sinMin)/(sinMax - sinMin))*(alphaMax - alphaMin) + alphaMin;
-    return vec4(red, 0.0f, 0.0f, alpha);
+    */
+    float alpha = snoise(interp_UV);
+    return vec4(1.0f, 0.0f, 0.0f, alpha);
 }
 
 void main() {
