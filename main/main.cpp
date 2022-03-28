@@ -37,8 +37,8 @@
 #define COIN_INDEX 0
 #define PLANE_INDEX 1
 #define PLAYER_INDEX 2
-#define TREE_INDEX 3
-#define CART_INDEX 4
+#define CART_INDEX 3
+#define TREE_INDEX 4
 
 //---  APPLICATION WINDOW 
 GLuint screenWidth = 1280, screenHeight = 720;
@@ -147,7 +147,7 @@ int main()
     SetupShader(shader.Program);
 
     //--- LOAD TEXTURES AND MODELS
-    string names[] { "coin", "plane", "dog", "tree", "cart" }; 
+    string names[] { "coin", "plane", "dog", "cart", "tree" }; 
     for (string name : names) {
         textures.push_back(LoadTexture(("../textures/" + name + ".jpg").c_str()));
         models.push_back(Model("../models/" + name + ".obj"));
