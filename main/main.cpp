@@ -34,13 +34,18 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include<stb_image/stb_image.h>
 
+#define COIN_INDEX 0
+#define PLANE_INDEX 1
+#define PLAYER_INDEX 2
+#define TREE_INDEX 3
+#define CART_INDEX 4
+
 //---  APPLICATION WINDOW 
 GLuint screenWidth = 1280, screenHeight = 720;
 
 //---  INPUT KEY CALLBACK 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
-//void mouse_position_callback(GLFWwindow* window, double xpos, double ypos);
 void process_keys(GLFWwindow* window);
 bool keys[1024];
 double mouseXPos;
@@ -54,8 +59,9 @@ void SetupShader(int shader_program);
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-//---  TEXTURES 
-vector<GLint> textureId;
+//---  TEXTURES AND MODELS
+vector<GLint> textures;
+vector<Model> models;
 GLint LoadTexture(const char* path);
 
 //---  MOVEMENT 
@@ -103,18 +109,17 @@ int main()
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     //---  INIT WINDOW 
-    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "The switcher", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "Witcher senses demo", nullptr, nullptr);
     if (!window)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
+
     glfwMakeContextCurrent(window);
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
-    //glfwSetCursorPosCallback(window, mouse_position_callback);
 
     //---  INIT CONTEXT 
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
@@ -127,34 +132,35 @@ int main()
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
+
+    //--- ENABLE DEPTH TEST, STENCIL TEST AND ALPHA BLENDING
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+
+    //--- SET CLEAR COLOR
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     //---  INIT SHADERS 
     Shader shader = Shader("base.vert", "base.frag");
     SetupShader(shader.Program);
-    
-    //---  LOAD MODELS 
-    Model coinModel("../models/coin.obj");
-    Model planeModel("../models/plane.obj");
-    Model playerModel("../models/dog.obj");
-    Model treeModel("../models/tree.obj");
-    Model cartModel("../models/cart.obj");
 
-    //--- LOAD TEXTURES 
-    int coinTextureIndex = 0;
-    int planeTextureIndex = 1;
-    int playerTextureIndex = 2;
-    int treeTextureIndex = 3;
-    int cartTextureIndex = 4;
-    textureId.push_back(LoadTexture("../textures/coin.jpeg"));
-    textureId.push_back(LoadTexture("../textures/plane.jpg"));
-    textureId.push_back(LoadTexture("../textures/dog.jpg"));
-    textureId.push_back(LoadTexture("../textures/tree.jpg"));
-    textureId.push_back(LoadTexture("../textures/cart.jpg"));
+    //--- LOAD TEXTURES AND MODELS
+    textures.push_back(LoadTexture("../textures/coin.jpeg"));
+    models.push_back(Model("../models/coin.obj"));
+
+    textures.push_back(LoadTexture("../textures/plane.jpg"));
+    models.push_back(Model("../models/plane.obj"));
+
+    textures.push_back(LoadTexture("../textures/dog.jpg"));
+    models.push_back(Model("../models/dog.obj"));
+
+    textures.push_back(LoadTexture("../textures/tree.jpg"));
+    models.push_back(Model("../models/tree.obj"));
+
+    textures.push_back(LoadTexture("../textures/cart.jpg"));
+    models.push_back(Model("../models/cart.obj"));
 
     cout << "Loaded textures" << endl;
 
@@ -442,7 +448,7 @@ int main()
 
         //--- SET COIN TEXTURE 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, textureId[coinTextureIndex]);
+        glBindTexture(GL_TEXTURE_2D, textures[COIN_INDEX]);
 
         //--- PASS VALUES TO SHADER 
         glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projection));
@@ -458,7 +464,7 @@ int main()
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(coinModelMatrix));
 
         //---  DRAW COIN 
-        coinModel.Draw();
+        models[COIN_INDEX].Draw();
 
         glfwSwapBuffers(window);
     }
@@ -710,7 +716,7 @@ int main()
 
         //--- SET PLANE TEXTURE 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, textureId[planeTextureIndex]);
+        glBindTexture(GL_TEXTURE_2D, textures[PLANE_INDEX]);
 
         //--- PASS VALUES TO SHADER 
         glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projection));
@@ -725,13 +731,13 @@ int main()
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
 
         //---  DRAW PLANE 
-        planeModel.Draw();
+        models[PLANE_INDEX].Draw();
 
         GLuint subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
         glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
         //--- SET TREE TEXTURE 
-        glBindTexture(GL_TEXTURE_2D, textureId[treeTextureIndex]);
+        glBindTexture(GL_TEXTURE_2D, textures[TREE_INDEX]);
         glUniform1f(repeatLocation, 1.0);
         glUniform1i(instancedLocation, true);
 
@@ -739,7 +745,7 @@ int main()
         glUniformMatrix4fv(modelMatrixesLocation, treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
 
         //---  DRAW TREE
-        treeModel.DrawInstanced(treesMatrixes.size());
+        models[TREE_INDEX].DrawInstanced(treesMatrixes.size());
 
         //--- TODO: OPTIMIZE BY REMOVING Y
         float distancePlayerCart = distance(playerPos, glm::vec3(cartX, 0.0f, cartZ));
@@ -751,7 +757,7 @@ int main()
             glStencilMask(0xFF);
 
             //--- SET CART TEXTURE
-            glBindTexture(GL_TEXTURE_2D, textureId[cartTextureIndex]);
+            glBindTexture(GL_TEXTURE_2D, textures[CART_INDEX]);
             glUniform1f(repeatLocation, 1.0);
             glUniform1i(instancedLocation, false);
 
@@ -762,7 +768,7 @@ int main()
             glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
 
             //---  DRAW CART 
-            cartModel.Draw();
+            models[CART_INDEX].Draw();
 
             // DON'T WRITE ON STENCIL BUFFER 
             glStencilMask(0x00);
@@ -772,7 +778,7 @@ int main()
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
             //--- SET PLAYER TEXTURE 
-            glBindTexture(GL_TEXTURE_2D, textureId[playerTextureIndex]);
+            glBindTexture(GL_TEXTURE_2D, textures[PLAYER_INDEX]);
             glUniform1f(repeatLocation, 1.0);
 
             //---  SET PLAYER MATRICES 
@@ -783,8 +789,7 @@ int main()
             glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
 
             //---  DRAW PLAYER 
-            playerModel.Draw();
-
+            models[PLAYER_INDEX].Draw();
             
             // WRITE ON STENCIL BUFFER 
             glStencilMask(0xFF);
@@ -799,7 +804,7 @@ int main()
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
             //--- SET PLAYER TEXTURE 
-            glBindTexture(GL_TEXTURE_2D, textureId[playerTextureIndex]);
+            glBindTexture(GL_TEXTURE_2D, textures[PLAYER_INDEX]);
             glUniform1f(repeatLocation, 1.0);
 
             //---  SET PLAYER MATRICES 
@@ -810,7 +815,7 @@ int main()
             glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
 
             //---  DRAW PLAYER 
-            playerModel.Draw();
+            models[PLAYER_INDEX].Draw();
 
             glColorMask(true, true, true, true);
             glDepthMask(true);
@@ -831,11 +836,11 @@ int main()
             glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
 
             //---  DRAW CART 
-            cartModel.Draw();
+            models[CART_INDEX].Draw();
 
         } else {
             //--- SET CART TEXTURE
-            glBindTexture(GL_TEXTURE_2D, textureId[cartTextureIndex]);
+            glBindTexture(GL_TEXTURE_2D, textures[CART_INDEX]);
             glUniform1f(repeatLocation, 1.0);
             glUniform1i(instancedLocation, false);
 
@@ -846,14 +851,14 @@ int main()
             glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
 
             //---  DRAW CART 
-            cartModel.Draw();
+            models[CART_INDEX].Draw();
 
             //--- DRAW PLAYER
             subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
             //--- SET PLAYER TEXTURE 
-            glBindTexture(GL_TEXTURE_2D, textureId[playerTextureIndex]);
+            glBindTexture(GL_TEXTURE_2D, textures[PLAYER_INDEX]);
             glUniform1f(repeatLocation, 1.0);
 
             //---  SET PLAYER MATRICES 
@@ -864,7 +869,7 @@ int main()
             glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
 
             //---  DRAW PLAYER 
-            playerModel.Draw();
+            models[PLAYER_INDEX].Draw();
         }
 
         //--- RENDER TO QUAD
@@ -900,7 +905,7 @@ int main()
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));
 
         //---  DRAW PLANE 
-        planeModel.Draw();
+        models[PLANE_INDEX].Draw();
 
         //--- SWAP BUFFERS
         glfwSwapBuffers(window);
