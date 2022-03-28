@@ -230,39 +230,7 @@ int main()
             vector<GLfloat> cartAABBsVertices;
             float dy = 2.0f;
             glm::vec3 cartSize = glm::vec3(2.0f, 0.0f, 1.5f);
-            cartAABBsVertices.push_back(cartPos.x + cartSize.x);
-            cartAABBsVertices.push_back(dy);
-            cartAABBsVertices.push_back(cartPos.z - cartSize.z);
-
-            cartAABBsVertices.push_back(cartPos.x + cartSize.x);
-            cartAABBsVertices.push_back(0);
-            cartAABBsVertices.push_back(cartPos.z - cartSize.z);
-
-            cartAABBsVertices.push_back(cartPos.x - cartSize.x);
-            cartAABBsVertices.push_back(0);
-            cartAABBsVertices.push_back(cartPos.z - cartSize.z);
-
-            cartAABBsVertices.push_back(cartPos.x - cartSize.x);
-            cartAABBsVertices.push_back(dy);
-            cartAABBsVertices.push_back(cartPos.z - cartSize.z);
-
-            cartAABBsVertices.push_back(cartPos.x + cartSize.x);
-            cartAABBsVertices.push_back(dy);
-            cartAABBsVertices.push_back(cartPos.z + cartSize.z);
-
-            cartAABBsVertices.push_back(cartPos.x + cartSize.x);
-            cartAABBsVertices.push_back(0);
-            cartAABBsVertices.push_back(cartPos.z + cartSize.z);
-
-            cartAABBsVertices.push_back(cartPos.x - cartSize.x);
-            cartAABBsVertices.push_back(0);
-            cartAABBsVertices.push_back(cartPos.z + cartSize.z);
-
-            cartAABBsVertices.push_back(cartPos.x - cartSize.x);
-            cartAABBsVertices.push_back(dy);
-            cartAABBsVertices.push_back(cartPos.z + cartSize.z);
-
-            AABB aabb = AABB(cartAABBsVertices);
+            AABB aabb = AABB(VerticesBuilder().build(cartPos, dy, glm::vec3(cartSize)));
             AABBs.push_back(aabb);
 
             appState = AppStates::CreatingAABBsHierarchy;
@@ -449,20 +417,8 @@ int main()
         float playerSize = 0.4f;
         GLfloat dy = 1.25f;
 
-        //--- VERTICES OF THE PLAYER'S AABB
-        GLfloat playerVertices[] = {
-                playerPos.x + playerSize, dy, playerPos.z - playerSize,
-                playerPos.x + playerSize, 0.0f, playerPos.z - playerSize,
-                playerPos.x - playerSize, 0.0f, playerPos.z - playerSize,
-                playerPos.x - playerSize, dy, playerPos.z - playerSize,
-                playerPos.x + playerSize, dy, playerPos.z + playerSize,
-                playerPos.x + playerSize, 0.0f, playerPos.z + playerSize,
-                playerPos.x - playerSize, 0.0f, playerPos.z + playerSize,
-                playerPos.x - playerSize, dy, playerPos.z + playerSize
-            };
-
         //--- CREATING AABB FROM VERTICES
-        AABB playerAABB = AABB(playerVertices);
+        AABB playerAABB = AABB(VerticesBuilder().build(playerPos, dy, glm::vec3(playerSize)));
 
         //--- DEFAULT VALUE OF COLLISION DETECTED
         bool collision = false;
@@ -488,20 +444,8 @@ int main()
             //--- CHECK COLLISION IF I MOVE ONLY IN THE Z DIRECTION
             playerPos = glm::vec3(oldDeltaX, 0, deltaZ);
 
-            //--- VERTICES OF THE PLAYER'S AABB
-            GLfloat zPlayerVertices[] = {
-                playerPos.x + playerSize, dy * playerSize, playerPos.z - playerSize,
-                playerPos.x + playerSize, 0.0f, playerPos.z - playerSize,
-                playerPos.x - playerSize, 0.0f, playerPos.z - playerSize,
-                playerPos.x - playerSize, dy * playerSize, playerPos.z - playerSize,
-                playerPos.x + playerSize, dy * playerSize, playerPos.z + playerSize,
-                playerPos.x + playerSize, 0.0f, playerPos.z + playerSize,
-                playerPos.x - playerSize, 0.0f, playerPos.z + playerSize,
-                playerPos.x - playerSize, dy * playerSize, playerPos.z + playerSize
-            };
-
             //--- CREATING AABB FROM VERTICES
-            playerAABB = AABB(zPlayerVertices);
+            playerAABB = AABB(VerticesBuilder().build(playerPos, dy, glm::vec3(playerSize)));
 
             //--- DEFAULT VALUE OF COLLISION DETECTED
             bool ZmovementCollision = false;
@@ -521,20 +465,8 @@ int main()
             //--- CHECK COLLISION IF I MOVE ONLY IN THE X DIRECTION
             playerPos = glm::vec3(deltaX, 0, oldDeltaZ);
 
-            //--- VERTICES OF THE PLAYER'S AABB
-            GLfloat xPlayerVertices[] = {
-                playerPos.x + playerSize, dy * playerSize, playerPos.z - playerSize,
-                playerPos.x + playerSize, 0.0f, playerPos.z - playerSize,
-                playerPos.x - playerSize, 0.0f, playerPos.z - playerSize,
-                playerPos.x - playerSize, dy * playerSize, playerPos.z - playerSize,
-                playerPos.x + playerSize, dy * playerSize, playerPos.z + playerSize,
-                playerPos.x + playerSize, 0.0f, playerPos.z + playerSize,
-                playerPos.x - playerSize, 0.0f, playerPos.z + playerSize,
-                playerPos.x - playerSize, dy * playerSize, playerPos.z + playerSize
-            };
-
             //--- CREATING AABB FROM VERTICES
-            playerAABB = AABB(xPlayerVertices);
+            playerAABB = AABB(VerticesBuilder().build(playerPos, dy, glm::vec3(playerSize)));
 
             //--- DEFAULT VALUE OF COLLISION DETECTED
             bool XmovementCollision = false;
