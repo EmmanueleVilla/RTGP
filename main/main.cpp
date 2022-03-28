@@ -137,7 +137,7 @@ void setTexture(int index, GLint repeatLocation, float repeatValue);
 void loadAABBs();
 void loadNextRow();
 void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier);
-void drawCart(Shader shader, vector<GLint> locations, float scaleModifier);
+void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine);
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -524,18 +524,8 @@ int main()
             glStencilFunc(GL_ALWAYS, 1, 0xFF);
             glStencilMask(0xFF);
 
-            //--- SET CART TEXTURE
-            setTexture(CART_INDEX, locations[LOCATION_REPEAT], 1.0f);
-
-            //---  SET CART MATRICES 
-            matrices[CART_INDEX] = glm::mat4(1.0f);
-            matrices[CART_INDEX] = glm::translate(matrices[CART_INDEX], glm::vec3(cartX, 0.0f, cartZ));
-            matrices[CART_INDEX] = glm::scale(matrices[CART_INDEX], glm::vec3(1.25f, 1.25f, 1.25f));
-            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
-
-            //---  DRAW CART 
-            models[CART_INDEX].Draw(locations[LOCATION_INSTANCED]);
-
+            drawCart(shader, locations, 1.0f, "textured");
+            
             // DON'T WRITE ON STENCIL BUFFER 
             glStencilMask(0x00);
 
@@ -893,4 +883,22 @@ void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier) {
 
     //---  DRAW PLAYER 
     models[PLAYER_INDEX].Draw(locations[LOCATION_INSTANCED]);
+}
+
+void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine) {
+    //--- CHECK SUBROUTINES
+    GLuint subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, subroutine.c_str());
+    glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+
+    //--- SET CART TEXTURE
+    setTexture(CART_INDEX, locations[LOCATION_REPEAT], 1.0f);
+
+    //---  SET CART MATRICES 
+    matrices[CART_INDEX] = glm::mat4(1.0f);
+    matrices[CART_INDEX] = glm::translate(matrices[CART_INDEX], glm::vec3(cartX, 0.0f, cartZ));
+    matrices[CART_INDEX] = glm::scale(matrices[CART_INDEX], glm::vec3(1.25f, 1.25f, 1.25f));
+    glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
+
+    //---  DRAW CART 
+    models[CART_INDEX].Draw(locations[LOCATION_INSTANCED]);
 }
