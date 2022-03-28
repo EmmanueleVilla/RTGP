@@ -228,7 +228,7 @@ int main()
 
     //--- INIT MATRIXES FOR INSTANCED DRAWING 
     vector<glm::mat4> treesMatrixes;
-    vector<AABB> treesAABBs;
+    vector<AABB> AABBs;
     vector<vector<GLfloat>> treesAABBsVertices;
 
     //--- COMMON INDICES LIST FOR AABBs
@@ -326,7 +326,7 @@ int main()
         }
 
         if(appState == AppStates::LoadingAABBs) {
-            cout << "Calculating AABBs" << endl;
+            cout << "Calculating trees AABBs" << endl;
             for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
                 glm::mat4 matrix = *i;
                 glm::vec3 treePos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z);
@@ -368,8 +368,47 @@ int main()
                 treesAABBsVertices.push_back(treeAABBsVertices);
 
                 AABB aabb = AABB(treeAABBsVertices);
-                treesAABBs.push_back(aabb);
+                AABBs.push_back(aabb);
             }
+
+            glm::vec3 cartPos = glm::vec3(cartX, 0.0f, cartZ);
+            vector<GLfloat> cartAABBsVertices;
+            float dy = 2.0f;
+            glm::vec3 cartSize = glm::vec3(2.0f, 0.0f, 1.5f);
+            cartAABBsVertices.push_back(cartPos.x + cartSize.x);
+            cartAABBsVertices.push_back(dy);
+            cartAABBsVertices.push_back(cartPos.z - cartSize.z);
+
+            cartAABBsVertices.push_back(cartPos.x + cartSize.x);
+            cartAABBsVertices.push_back(0);
+            cartAABBsVertices.push_back(cartPos.z - cartSize.z);
+
+            cartAABBsVertices.push_back(cartPos.x - cartSize.x);
+            cartAABBsVertices.push_back(0);
+            cartAABBsVertices.push_back(cartPos.z - cartSize.z);
+
+            cartAABBsVertices.push_back(cartPos.x - cartSize.x);
+            cartAABBsVertices.push_back(dy);
+            cartAABBsVertices.push_back(cartPos.z - cartSize.z);
+
+            cartAABBsVertices.push_back(cartPos.x + cartSize.x);
+            cartAABBsVertices.push_back(dy);
+            cartAABBsVertices.push_back(cartPos.z + cartSize.z);
+
+            cartAABBsVertices.push_back(cartPos.x + cartSize.x);
+            cartAABBsVertices.push_back(0);
+            cartAABBsVertices.push_back(cartPos.z + cartSize.z);
+
+            cartAABBsVertices.push_back(cartPos.x - cartSize.x);
+            cartAABBsVertices.push_back(0);
+            cartAABBsVertices.push_back(cartPos.z + cartSize.z);
+
+            cartAABBsVertices.push_back(cartPos.x - cartSize.x);
+            cartAABBsVertices.push_back(dy);
+            cartAABBsVertices.push_back(cartPos.z + cartSize.z);
+
+            AABB aabb = AABB(cartAABBsVertices);
+            AABBs.push_back(aabb);
 
             appState = AppStates::CreatingAABBsHierarchy;
         }
@@ -594,7 +633,7 @@ int main()
         //--- WORST CASE MEASURED ON MAC: 372 microseconds
         //--- BEST CASE MEASURED ON PC: 196 microseconds
         //--- WORST CASE MEASURED ON PC: 45 microseconds
-        for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
+        for (auto i= AABBs.begin(); i!=AABBs.end(); ++i) {
             AABB tree = *i;
             bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
             bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
@@ -629,7 +668,7 @@ int main()
             bool ZmovementCollision = false;
 
             //--- VERY LOW PERFORMANCE AABB CHECK
-            for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
+            for (auto i= AABBs.begin(); i!=AABBs.end(); ++i) {
                 AABB tree = *i;
                 bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
                 bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
@@ -662,7 +701,7 @@ int main()
             bool XmovementCollision = false;
 
             //--- VERY LOW PERFORMANCE AABB CHECK
-            for (auto i= treesAABBs.begin(); i!=treesAABBs.end(); ++i) {
+            for (auto i= AABBs.begin(); i!=AABBs.end(); ++i) {
                 AABB tree = *i;
                 bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
                 bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
