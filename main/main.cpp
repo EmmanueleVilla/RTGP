@@ -23,6 +23,7 @@
 #include <utils/model_v1.h>
 #include <utils/aabb.h>
 #include <utils/csv_loader.h>
+#include <utils/vertices.h>
 
 //---  we load the GLM classes used in the application
 #include <glm/glm.hpp>
@@ -62,6 +63,7 @@ GLfloat lastFrame = 0.0f;
 //---  TEXTURES AND MODELS
 vector<GLint> textures;
 vector<Model> models;
+vector<glm::mat4> matrices;
 GLint LoadTexture(const char* path);
 
 //---  MOVEMENT 
@@ -146,26 +148,20 @@ int main()
     Shader shader = Shader("base.vert", "base.frag");
     SetupShader(shader.Program);
 
-    //--- LOAD TEXTURES AND MODELS
+    //--- LOAD TEXTURES MODELS, MATRICES
     string names[] { "coin", "plane", "dog", "cart", "tree" }; 
     for (string name : names) {
         textures.push_back(LoadTexture(("../textures/" + name + ".jpg").c_str()));
         models.push_back(Model("../models/" + name + ".obj"));
+        matrices.push_back(glm::mat4(1.0f));
     }
 
     cout << "Loaded textures and models" << endl;
 
-    //---  INIT MATRICES 
-    glm::mat4 coinModelMatrix = glm::mat4(1.0f);
-    glm::mat4 playerModelMatrix = glm::mat4(1.0f);
-    glm::mat4 cartModelMatrix = glm::mat4(1.0f);
-    glm::mat4 planeModelMatrix = glm::mat4(1.0f);
-
     //--- INIT FIXED PLANE MATRIX
-    planeModelMatrix = glm::mat4(1.0f);
-    planeModelMatrix = glm::translate(planeModelMatrix, glm::vec3(32.0f, 0.0f, 32.0f));
-    planeModelMatrix = glm::rotate(planeModelMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(2.0f, 2.0f, 2.0f));
+    matrices[PLANE_INDEX] = glm::translate(matrices[PLANE_INDEX], glm::vec3(32.0f, 0.0f, 32.0f));
+    matrices[PLANE_INDEX] = glm::rotate(matrices[PLANE_INDEX], glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    matrices[PLANE_INDEX] = glm::scale(matrices[PLANE_INDEX], glm::vec3(2.0f, 2.0f, 2.0f));
 
     //--- PLANE PATH DATA
     vector<glm::vec2> paths;
@@ -178,9 +174,6 @@ int main()
     float cartX = 0.0f;
     float cartZ = 0.0f;
     GLfloat cartColor[] = { 0.65f, 0.16f, 0.16f };
-
-    //--- AABB WIREFRAME COLOR
-    GLfloat aabbColor[] = { 1.0f, 0.0f, 0.0f };
 
     //---  INIT CAMERA 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
@@ -195,25 +188,13 @@ int main()
     //--- KEEP TRACK OF THE CURRENT ROW TO LOAD ONE ROW PER RENDER LOOP
     int currentCell = 0;
 
-    //--- INIT MATRIXES FOR INSTANCED DRAWING 
+    //--- MATRIXES FOR INSTANCED DRAWING 
     vector<glm::mat4> treesMatrixes;
-    vector<AABB> AABBs;
 
-    //--- COMMON INDICES LIST FOR AABBs
-    GLuint AABBsIndices[] = {
-            0, 1, 3,
-            1, 2, 3,
-            2, 3, 6,
-            3, 6, 7,
-            5, 6, 7,
-            4, 5, 7,
-            0, 4, 5,
-            0, 1, 5,
-            0, 3, 4,
-            0, 4, 7,
-            1, 2, 6,
-            1, 5, 6
-        };
+    //--- AABBs list
+    vector<AABB> AABBs;
+    AABBNode AABBhierarchy = AABBNode();
+    GLuint AABBsIndices[] = { 0, 1, 3,1, 2, 3, 2, 3, 6, 3, 6, 7, 5, 6, 7, 4, 5, 7, 0, 4, 5, 0, 1, 5, 0, 3, 4, 0, 4, 7, 1, 2, 6, 1, 5, 6 };
 
     cout << "Starting loading loop" << endl;
 
@@ -231,65 +212,6 @@ int main()
 
         if(appState == AppStates::CreatingAABBsHierarchy) {
             cout << "Creating AABBs' hierarchy" << endl;
-
-            //--- AABB THAT TAKES THE WHOLE MAP
-            AABBNode whole = AABBNode(-20.0f, 20.0f, 0.0f, 12.0f, -20.0f, 20.0f);
-             
-            //--- FIRST QUARTER OF THE WHOLE AABB
-            AABBNode firstQuarter = AABBNode(-20.0f, 0.0f, 0.0f, 12.0f,  -20.0f, 0.0f);
-
-            //--- QUARTERS OF THE FIRST QUARTER
-            AABBNode firstQuarterFirstQuarter = AABBNode(-20, -10, 0, 12, -20, -10);
-            AABBNode firstQuarterSecondQuarter = AABBNode(-10, 0, 0, 12, -20, -10);
-            AABBNode firstQuarterThirdQuarter = AABBNode(-20, -10, 0, 12, -10, 0);
-            AABBNode firstQuarterForthQuarter = AABBNode(-10, 0, 0, 12, -10, 0);
-
-            firstQuarter.add_children(firstQuarterFirstQuarter);
-            firstQuarter.add_children(firstQuarterSecondQuarter);
-            firstQuarter.add_children(firstQuarterThirdQuarter);
-            firstQuarter.add_children(firstQuarterForthQuarter);
-
-            //--- SECOND QUARTER OF THE WHOLE AABB
-            AABBNode secondQuarter = AABBNode(0.0f, 20.0f, 0.0f, 12.0f,  0.0f, 20.0f);
-
-            //--- QUARTERS OF THE SECOND QUARTER
-            AABBNode secondQuarterFirstQuarter = AABBNode(0, 10, 0, 12, 0, 10);
-            AABBNode secondQuarterSecondQuarter = AABBNode(0, 10, 0, 12, 10, 20);
-            AABBNode secondQuarterThirdQuarter = AABBNode(10, 20, 0, 12, 0, 10);
-            AABBNode secondQuarterForthQuarter = AABBNode(10, 20, 0, 12, 10, 20);
-
-            secondQuarter.add_children(secondQuarterFirstQuarter);
-            secondQuarter.add_children(secondQuarterSecondQuarter);
-            secondQuarter.add_children(secondQuarterThirdQuarter);
-            secondQuarter.add_children(secondQuarterForthQuarter);
-
-            //--- THIRD QUARTER OF THE WHOLE AABB
-            AABBNode thirdQuarter = AABBNode(-20.0f, 0.0f, 0.0f, 12.0f,  0.0f, 20.0f);
-
-            //--- QUARTERS OF THE SECOND QUARTER
-            AABBNode thirdQuarterFirstQuarter = AABBNode(-20, -10, 0, 12, 0, 10);
-            AABBNode thirdQuarterSecondQuarter = AABBNode(-20, -10, 0, 12, 10, 20);
-            AABBNode thirdQuarterThirdQuarter = AABBNode(-10, 0, 0, 12, 0, 10);
-            AABBNode thirdQuarterForthQuarter = AABBNode(-10, 0, 0, 12, 10, 20);
-
-            thirdQuarter.add_children(thirdQuarterFirstQuarter);
-            thirdQuarter.add_children(thirdQuarterSecondQuarter);
-            thirdQuarter.add_children(thirdQuarterThirdQuarter);
-            thirdQuarter.add_children(thirdQuarterForthQuarter);
-            
-            //--- FORTH QUARTER OF THE WHOLE AABB
-            AABBNode forthQuarter = AABBNode(0.0f, 20.0f, 0.0f, 12.0f,  -20.0f, 0.0f);
-
-            AABBNode forthQuarterFirstQuarter = AABBNode(0, 10, 0, 12, -20, -10);
-            AABBNode forthQuarterSecondQuarter = AABBNode(0, 10, 0, 12, -10, 0);
-            AABBNode forthQuarterThirdQuarter = AABBNode(10, 20, 0, 12, -20, -10);
-            AABBNode forthQuarterForthQuarter = AABBNode(10, 20, 0, 12, -10, 0);
-
-            forthQuarter.add_children(forthQuarterFirstQuarter);
-            forthQuarter.add_children(forthQuarterSecondQuarter);
-            forthQuarter.add_children(forthQuarterThirdQuarter);
-            forthQuarter.add_children(forthQuarterForthQuarter);
-
             appState = AppStates::Loaded;
         }
 
@@ -300,40 +222,7 @@ int main()
                 glm::vec3 treePos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z);
                 float treeSize = matrix[0].x / 1.5f;
                 GLfloat dy = 5.0f * treeSize;
-                vector<GLfloat> treeAABBsVertices;
-                treeAABBsVertices.push_back(treePos.x + treeSize);
-                treeAABBsVertices.push_back(dy);
-                treeAABBsVertices.push_back(treePos.z - treeSize);
-
-                treeAABBsVertices.push_back(treePos.x + treeSize);
-                treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z - treeSize);
-
-                treeAABBsVertices.push_back(treePos.x - treeSize);
-                treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z - treeSize);
-
-                treeAABBsVertices.push_back(treePos.x - treeSize);
-                treeAABBsVertices.push_back(dy);
-                treeAABBsVertices.push_back(treePos.z - treeSize);
-
-                treeAABBsVertices.push_back(treePos.x + treeSize);
-                treeAABBsVertices.push_back(dy);
-                treeAABBsVertices.push_back(treePos.z + treeSize);
-
-                treeAABBsVertices.push_back(treePos.x + treeSize);
-                treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z + treeSize);
-
-                treeAABBsVertices.push_back(treePos.x - treeSize);
-                treeAABBsVertices.push_back(0);
-                treeAABBsVertices.push_back(treePos.z + treeSize);
-
-                treeAABBsVertices.push_back(treePos.x - treeSize);
-                treeAABBsVertices.push_back(dy);
-                treeAABBsVertices.push_back(treePos.z + treeSize);
-
-                AABB aabb = AABB(treeAABBsVertices);
+                AABB aabb = AABB(VerticesBuilder().build(treePos, dy, glm::vec3(treeSize)));
                 AABBs.push_back(aabb);
             }
 
@@ -448,11 +337,11 @@ int main()
         glUniform1f(repeatLocation, 1.0);
         
         //---  SET COIN MATRICES 
-        coinModelMatrix = glm::mat4(1.0f);
-        coinModelMatrix = glm::translate(coinModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-        coinModelMatrix = glm::rotate(coinModelMatrix, glm::radians(coinRotationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        coinModelMatrix = glm::scale(coinModelMatrix, glm::vec3(0.08f, 0.08f, 0.08f));
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(coinModelMatrix));
+        matrices[COIN_INDEX] = glm::mat4(1.0f);
+        matrices[COIN_INDEX] = glm::translate(matrices[COIN_INDEX], glm::vec3(0.0f, 0.0f, 0.0f));
+        matrices[COIN_INDEX] = glm::rotate(matrices[COIN_INDEX], glm::radians(coinRotationY), glm::vec3(0.0f, 1.0f, 0.0f));
+        matrices[COIN_INDEX] = glm::scale(matrices[COIN_INDEX], glm::vec3(0.08f, 0.08f, 0.08f));
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[COIN_INDEX]));
 
         //---  DRAW COIN 
         models[COIN_INDEX].Draw();
@@ -719,7 +608,7 @@ int main()
         glUniform1f(timeLocation, glfwGetTime());
         
         //---  SET PLANE MATRIX
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[PLANE_INDEX]));
 
         //---  DRAW PLANE 
         models[PLANE_INDEX].Draw();
@@ -753,10 +642,10 @@ int main()
             glUniform1i(instancedLocation, false);
 
             //---  SET CART MATRICES 
-            cartModelMatrix = glm::mat4(1.0f);
-            cartModelMatrix = glm::translate(cartModelMatrix, glm::vec3(cartX, 0.0f, cartZ));
-            cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(1.25f, 1.25f, 1.25f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
+            matrices[CART_INDEX] = glm::mat4(1.0f);
+            matrices[CART_INDEX] = glm::translate(matrices[CART_INDEX], glm::vec3(cartX, 0.0f, cartZ));
+            matrices[CART_INDEX] = glm::scale(matrices[CART_INDEX], glm::vec3(1.25f, 1.25f, 1.25f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
 
             //---  DRAW CART 
             models[CART_INDEX].Draw();
@@ -773,11 +662,11 @@ int main()
             glUniform1f(repeatLocation, 1.0);
 
             //---  SET PLAYER MATRICES 
-            playerModelMatrix = glm::mat4(1.0f);
-            playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, deltaZ));
-            playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
-            playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
+            matrices[PLAYER_INDEX] = glm::mat4(1.0f);
+            matrices[PLAYER_INDEX] = glm::translate(matrices[PLAYER_INDEX], glm::vec3(deltaX, 0.0f, deltaZ));
+            matrices[PLAYER_INDEX] = glm::rotate(matrices[PLAYER_INDEX], glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
+            matrices[PLAYER_INDEX] = glm::scale(matrices[PLAYER_INDEX], glm::vec3(0.03f, 0.03f, 0.03f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
 
             //---  DRAW PLAYER 
             models[PLAYER_INDEX].Draw();
@@ -799,11 +688,11 @@ int main()
             glUniform1f(repeatLocation, 1.0);
 
             //---  SET PLAYER MATRICES 
-            playerModelMatrix = glm::mat4(1.0f);
-            playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, deltaZ));
-            playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
-            playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.0305f, 0.0305f, 0.0305f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
+            matrices[PLAYER_INDEX] = glm::mat4(1.0f);
+            matrices[PLAYER_INDEX] = glm::translate(matrices[PLAYER_INDEX], glm::vec3(deltaX, 0.0f, deltaZ));
+            matrices[PLAYER_INDEX] = glm::rotate(matrices[PLAYER_INDEX], glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
+            matrices[PLAYER_INDEX] = glm::scale(matrices[PLAYER_INDEX], glm::vec3(0.0305f, 0.0305f, 0.0305f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
 
             //---  DRAW PLAYER 
             models[PLAYER_INDEX].Draw();
@@ -821,10 +710,10 @@ int main()
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
             //---  SET UPSCALED CART MATRICES 
-            cartModelMatrix = glm::mat4(1.0f);
-            cartModelMatrix = glm::translate(cartModelMatrix, glm::vec3(cartX, 0.0f, cartZ));
-            cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(1.27f, 1.27f, 1.27f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
+            matrices[CART_INDEX] = glm::mat4(1.0f);
+            matrices[CART_INDEX] = glm::translate(matrices[CART_INDEX], glm::vec3(cartX, 0.0f, cartZ));
+            matrices[CART_INDEX] = glm::scale(matrices[CART_INDEX], glm::vec3(1.27f, 1.27f, 1.27f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
 
             //---  DRAW CART 
             models[CART_INDEX].Draw();
@@ -836,10 +725,10 @@ int main()
             glUniform1i(instancedLocation, false);
 
             //---  SET CART MATRICES 
-            cartModelMatrix = glm::mat4(1.0f);
-            cartModelMatrix = glm::translate(cartModelMatrix, glm::vec3(cartX, 0.0f, cartZ));
-            cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(1.25f, 1.25f, 1.25f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
+            matrices[CART_INDEX] = glm::mat4(1.0f);
+            matrices[CART_INDEX] = glm::translate(matrices[CART_INDEX], glm::vec3(cartX, 0.0f, cartZ));
+            matrices[CART_INDEX] = glm::scale(matrices[CART_INDEX], glm::vec3(1.25f, 1.25f, 1.25f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
 
             //---  DRAW CART 
             models[CART_INDEX].Draw();
@@ -853,11 +742,11 @@ int main()
             glUniform1f(repeatLocation, 1.0);
 
             //---  SET PLAYER MATRICES 
-            playerModelMatrix = glm::mat4(1.0f);
-            playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, deltaZ));
-            playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
-            playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
+            matrices[PLAYER_INDEX] = glm::mat4(1.0f);
+            matrices[PLAYER_INDEX] = glm::translate(matrices[PLAYER_INDEX], glm::vec3(deltaX, 0.0f, deltaZ));
+            matrices[PLAYER_INDEX] = glm::rotate(matrices[PLAYER_INDEX], glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
+            matrices[PLAYER_INDEX] = glm::scale(matrices[PLAYER_INDEX], glm::vec3(0.03f, 0.03f, 0.03f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
 
             //---  DRAW PLAYER 
             models[PLAYER_INDEX].Draw();
