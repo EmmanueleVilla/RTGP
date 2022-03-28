@@ -8,6 +8,7 @@ uniform sampler2D tex;
 uniform float repeat;
 uniform vec3 colorIn;
 uniform float distorsion;
+uniform float time;
 
 /* INPUT FROM SHADERS */
 in vec2 interp_UV;
@@ -46,7 +47,13 @@ vec4 fixedColor() {
 
 subroutine(fragshader)
 vec4 redOutline() {
-    return vec4(0.5f - distorsion, 0.0f, 0.0f, 1.0f);
+    float sin = sin(time + 75 * interp_UV.x * interp_UV.y);
+    float sinMin = -1.0f;
+    float sinMax = 1.0f;
+    float redMin = 0.25f;
+    float redMax = 1.0f;
+    float red = ((sin - sinMin)/(sinMax - sinMin))*(redMax - redMin) + redMin;
+    return vec4(red, 0.0f, 0.0f, 1.0f);
 }
 
 void main() {

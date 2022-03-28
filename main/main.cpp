@@ -712,6 +712,7 @@ int main()
         GLint colorInLocation = glGetUniformLocation(shader.Program, "colorIn");
         GLint instancedLocation = glGetUniformLocation(shader.Program, "instanced");
         GLint distorsionLocation = glGetUniformLocation(shader.Program, "distorsion");
+        GLint timeLocation = glGetUniformLocation(shader.Program, "time");
 
         //--- SET PLANE TEXTURE 
         glActiveTexture(GL_TEXTURE1);
@@ -724,6 +725,7 @@ int main()
         glUniform1f(repeatLocation, 80.0);
         glUniform1i(instancedLocation, false);
         glUniform1f(distorsionLocation, distorsion);
+        glUniform1f(timeLocation, glfwGetTime());
         
         //---  SET PLANE MATRIX
         glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix));
@@ -759,7 +761,9 @@ int main()
         //---  DRAW TREE
         treeModel.DrawInstanced(treesMatrixes.size());
 
-        if(keys[GLFW_KEY_SPACE]) {
+        //--- TODO: OPTIMIZE BY REMOVING Y
+        float distancePlayerCart = distance(playerPos, glm::vec3(cartX, 0.0f, cartZ));
+        if(keys[GLFW_KEY_SPACE] && distancePlayerCart < 5) {
             //--- TODO WRITE CART TO STENCIL ONLY WHEN IT NEEDS TO BE OUTLINED
             //--- IN THE FIRST PASS, ALL FRAGMENTS PASS THE STENCIL TEST
             //--- ACTION WHEN STENCIL FAILS, DEPTH FAILS AND BOTH PASS
@@ -793,7 +797,7 @@ int main()
             //---  SET UPSCALED CART MATRICES 
             cartModelMatrix = glm::mat4(1.0f);
             cartModelMatrix = glm::translate(cartModelMatrix, glm::vec3(cartX, 0.0f, cartZ));
-            cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(1.28f, 1.28f, 1.28f));
+            cartModelMatrix = glm::scale(cartModelMatrix, glm::vec3(1.27f, 1.27f, 1.27f));
             glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(cartModelMatrix));
 
             //---  DRAW CART 
