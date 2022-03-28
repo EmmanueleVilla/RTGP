@@ -22,7 +22,7 @@
 #include <utils/shader_v1.h>
 #include <utils/model_v1.h>
 #include <utils/aabb.h>
-#include <utils/utils.h>
+#include <utils/csv_loader.h>
 
 //---  we load the GLM classes used in the application
 #include <glm/glm.hpp>
@@ -36,9 +36,6 @@
 
 //---  APPLICATION WINDOW 
 GLuint screenWidth = 1280, screenHeight = 720;
-
-//--- UTILITIES CLASS
-Utilities utils = Utilities();
 
 //---  INPUT KEY CALLBACK 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -88,10 +85,6 @@ GLfloat distorsionSpeed = 0.75f;
 //---  APP_STATE 
 enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, Loaded };
 AppStates appState = AppStates::LoadingMap;
-
-//--- SHOW WIREFRAME BOOLEAN
-bool showWireframe = false;
-bool showAABB = false;
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -199,30 +192,9 @@ int main()
     //--- LOAD CSV DATA FILE
     //--- I EXPECT A 32x32 CSV LIKE THE PLANE OF THE SIZE
     cout << "Loading map file" << endl;
-	vector<vector<string>> content;
-	vector<string> row;
-	string line, word;
-	fstream file ("../data/map.csv", ios::in);
-	if(file.is_open()) {
-		while(getline(file, line))
-		{
-			row.clear();
- 
-			stringstream str(line);
- 
-			while(getline(str, word, ',')) {
-				row.push_back(word);
-            }
-			content.push_back(row);
-		}
-	} else {
-		std::cout << "Failed to load level data" << std::endl;
-        return -1;
-    }
 
-    row.clear();
-    row.shrink_to_fit();
-
+    vector<vector<string>> content = CsvLoader().read("../data/map.csv");
+	
     //--- KEEP TRACK OF THE CURRENT ROW TO LOAD ONE ROW PER RENDER LOOP
     int currentCell = 0;
 
@@ -448,12 +420,6 @@ int main()
         }
         currentCell++;
 
-        if(showWireframe) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        } else {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-
         //---  UPDATE TIME 
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -531,10 +497,6 @@ int main()
 
     cout << "Keep pressing mouseR and move mouse to rotate camera" << endl;
 
-    cout << "Press P to show wireframes" << endl;
-
-    cout << "Press B to show AABBs" << endl;
-
     //--- TO APPLY THE LENS EFFECT, WE RENDER TO A RENDER TARGET
     //--- LATER TO BE USED AS A TEXTURE
 
@@ -588,12 +550,6 @@ int main()
         //---  CHECK INPUT EVENTS 
         glfwPollEvents();
         process_keys(window);
-
-        if(showWireframe) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        } else {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
 
         //---  CLEAR 
         glStencilMask(0xFF);
@@ -1019,14 +975,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // if ESC is pressed, we close the application
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
-    }
-
-    if(key == GLFW_KEY_P && action == GLFW_PRESS) {
-        showWireframe = !showWireframe;
-    }
-
-    if(key == GLFW_KEY_B && action == GLFW_PRESS) {
-        showAABB = !showAABB;
     }
 
     if(action == GLFW_PRESS) {
