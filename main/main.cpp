@@ -147,22 +147,13 @@ int main()
     SetupShader(shader.Program);
 
     //--- LOAD TEXTURES AND MODELS
-    textures.push_back(LoadTexture("../textures/coin.jpeg"));
-    models.push_back(Model("../models/coin.obj"));
+    string names[] { "coin", "plane", "dog", "tree", "cart" }; 
+    for (string name : names) {
+        textures.push_back(LoadTexture(("../textures/" + name + ".jpg").c_str()));
+        models.push_back(Model("../models/" + name + ".obj"));
+    }
 
-    textures.push_back(LoadTexture("../textures/plane.jpg"));
-    models.push_back(Model("../models/plane.obj"));
-
-    textures.push_back(LoadTexture("../textures/dog.jpg"));
-    models.push_back(Model("../models/dog.obj"));
-
-    textures.push_back(LoadTexture("../textures/tree.jpg"));
-    models.push_back(Model("../models/tree.obj"));
-
-    textures.push_back(LoadTexture("../textures/cart.jpg"));
-    models.push_back(Model("../models/cart.obj"));
-
-    cout << "Loaded textures" << endl;
+    cout << "Loaded textures and models" << endl;
 
     //---  INIT MATRICES 
     glm::mat4 coinModelMatrix = glm::mat4(1.0f);
