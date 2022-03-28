@@ -94,8 +94,48 @@ GLfloat distorsionSpeed = 0.75f;
 enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, Loaded };
 AppStates appState = AppStates::LoadingMap;
 
+//--- MATRIXES FOR INSTANCED DRAWING 
+vector<glm::mat4> treesMatrixes;
+
+//--- AABBs list
+vector<AABB> AABBs;
+AABBNode AABBhierarchy = AABBNode();
+GLuint AABBsIndices[] = { 0, 1, 3,1, 2, 3, 2, 3, 6, 3, 6, 7, 5, 6, 7, 4, 5, 7, 0, 4, 5, 0, 1, 5, 0, 3, 4, 0, 4, 7, 1, 2, 6, 1, 5, 6 };
+
+//--- CART DATA
+float cartX = 0.0f;
+float cartZ = 0.0f;
+GLfloat cartColor[] = { 0.65f, 0.16f, 0.16f };
+
+//--- INDEX TO KEEP TRACK OF THE CURRENT ROW TO LOAD ONE ROW PER RENDER LOOP
+int currentCell = 0;
+
+//--- PLANE PATH DATA
+vector<glm::vec2> paths;
+
+//--- LOAD CSV DATA FILE
+//--- I EXPECT A 32x32 CSV LIKE THE PLANE OF THE SIZE
+vector<vector<string>> content = CsvLoader().read("../data/map.csv");
+
+//--- SHADER LOCATIONS
+string locationNames[] { "projectionMatrix", "viewMatrix", "tex", "repeat", "modelMatrix", "modelMatrixes", "colorIn", "instanced", "distorsion", "time" }; 
+
+#define LOCATION_PROJECTION_MATRIX 0
+#define LOCATION_VIEW_MATRIX 1
+#define LOCATION_TEXTURE 2
+#define LOCATION_REPEAT 3
+#define LOCATION_MODEL_MATRIX 4
+#define LOCATION_MODEL_MATRIXES 5
+#define LOCATION_COLOR 6
+#define LOCATION_INSTANCED 7
+#define LOCATION_DISTORSION 8
+#define LOCATION_TIME 9
+
 //--- UTILS METHODS
 void clear();
+void setTexture(int index, GLint repeatLocation, float repeatValue);
+void loadAABBs();
+void loadNextRow();
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -166,38 +206,13 @@ int main()
     matrices[PLANE_INDEX] = glm::rotate(matrices[PLANE_INDEX], glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     matrices[PLANE_INDEX] = glm::scale(matrices[PLANE_INDEX], glm::vec3(2.0f, 2.0f, 2.0f));
 
-    //--- PLANE PATH DATA
-    vector<glm::vec2> paths;
-
     //--- COIN DATA
     float coinRotationY = 0.0f;
     float coinRotationSpeed = 20.0f;
 
-    //--- CART DATA
-    float cartX = 0.0f;
-    float cartZ = 0.0f;
-    GLfloat cartColor[] = { 0.65f, 0.16f, 0.16f };
-
     //---  INIT CAMERA 
     glm::mat4 projection = glm::perspective(45.0f, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    //--- LOAD CSV DATA FILE
-    //--- I EXPECT A 32x32 CSV LIKE THE PLANE OF THE SIZE
-    cout << "Loading map file" << endl;
-
-    vector<vector<string>> content = CsvLoader().read("../data/map.csv");
-	
-    //--- KEEP TRACK OF THE CURRENT ROW TO LOAD ONE ROW PER RENDER LOOP
-    int currentCell = 0;
-
-    //--- MATRIXES FOR INSTANCED DRAWING 
-    vector<glm::mat4> treesMatrixes;
-
-    //--- AABBs list
-    vector<AABB> AABBs;
-    AABBNode AABBhierarchy = AABBNode();
-    GLuint AABBsIndices[] = { 0, 1, 3,1, 2, 3, 2, 3, 6, 3, 6, 7, 5, 6, 7, 4, 5, 7, 0, 4, 5, 0, 1, 5, 0, 3, 4, 0, 4, 7, 1, 2, 6, 1, 5, 6 };
 
     cout << "Starting loading loop" << endl;
 
@@ -219,54 +234,13 @@ int main()
         }
 
         if(appState == AppStates::LoadingAABBs) {
-            cout << "Calculating trees AABBs" << endl;
-            for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
-                glm::mat4 matrix = *i;
-                glm::vec3 treePos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z);
-                float treeSize = matrix[0].x / 1.5f;
-                GLfloat dy = 5.0f * treeSize;
-                AABB aabb = AABB(VerticesBuilder().build(treePos, dy, glm::vec3(treeSize)));
-                AABBs.push_back(aabb);
-            }
-
-            glm::vec3 cartPos = glm::vec3(cartX, 0.0f, cartZ);
-            float dy = 2.0f;
-            glm::vec3 cartSize = glm::vec3(2.0f, 0.0f, 1.5f);
-            AABB aabb = AABB(VerticesBuilder().build(cartPos, dy, glm::vec3(cartSize)));
-            AABBs.push_back(aabb);
-
-            appState = AppStates::CreatingAABBsHierarchy;
+            loadAABBs();
         }
 
         //--- CONTINUE LOADING THE LEVEL
         if(appState == AppStates::LoadingMap) {
             if(currentCell < content.size()) {
-                cout << "Loading map row #" << currentCell << endl;
-                for (auto i=content[currentCell].begin(); i!=content[currentCell].end(); ++i) {
-                    float position = i-content[currentCell].begin();
-                    if(*i == "T") {
-                        //--- TREES ARE RANDOMLY DISPLACED FROM THEIR 0.5x0.5 cell by a random value between -0.5f and 0.5f
-                        float randX = (rand() % 10 - 5) / 10.f;
-                        float randZ = (rand() % 10 - 5) / 10.f;
-                        //--- TREES ARE RANDOMLY SCALED FROM 100% TO 150%
-                        float randomScale = (100 + (rand() % 50)) / 100.f;
-                        glm::mat4 treeMatrix = glm::mat4(1.0f);
-                        treeMatrix = glm::translate(treeMatrix, glm::vec3(currentCell * 2 + 0.5 + randX, 0.0f, position * 2 + 0.5f + randZ));
-                        treeMatrix = glm::scale(treeMatrix, glm::vec3(randomScale, randomScale, randomScale));
-                        treesMatrixes.push_back(treeMatrix);
-                    }
-                    if(*i == "S") {
-                        deltaX = currentCell * 2;
-                        deltaZ = position * 2;
-                    }
-                    if(*i == "C") {
-                        cartX = currentCell * 2;
-                        cartZ = position * 2;
-                    }
-                    if(*i == "P") {
-                        paths.push_back(glm::vec2(currentCell-16, position-16));
-                    }
-                }
+                loadNextRow();
             } else {
                 appState = AppStates::LoadingAABBs;
             }
@@ -286,32 +260,27 @@ int main()
 
         shader.Use();
 
-        //--- SHADER LOCATIONS 
-        GLint projectionMatrixLocation = glGetUniformLocation(shader.Program, "projectionMatrix");
-        GLint viewMatrixLocation = glGetUniformLocation(shader.Program, "viewMatrix");
-        GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
-        GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
-        GLint modelMatrixLocation = glGetUniformLocation(shader.Program, "modelMatrix");
+        //--- SHADER LOCATIONS
+        vector<GLint> locations;
+        for (string name : locationNames) {
+            locations.push_back(glGetUniformLocation(shader.Program, name.c_str()));
+        }
 
-        //--- SET COIN TEXTURE 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, textures[COIN_INDEX]);
+        setTexture(COIN_INDEX, locations[LOCATION_REPEAT], 1.0f);
 
         //--- PASS VALUES TO SHADER 
-        glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
-        glUniform1i(textureLocation, 1);
-        glUniform1f(repeatLocation, 1.0);
+        glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
         
         //---  SET COIN MATRICES 
         matrices[COIN_INDEX] = glm::mat4(1.0f);
         matrices[COIN_INDEX] = glm::translate(matrices[COIN_INDEX], glm::vec3(0.0f, 0.0f, 0.0f));
         matrices[COIN_INDEX] = glm::rotate(matrices[COIN_INDEX], glm::radians(coinRotationY), glm::vec3(0.0f, 1.0f, 0.0f));
         matrices[COIN_INDEX] = glm::scale(matrices[COIN_INDEX], glm::vec3(0.08f, 0.08f, 0.08f));
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[COIN_INDEX]));
+        glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[COIN_INDEX]));
 
         //---  DRAW COIN 
-        models[COIN_INDEX].Draw();
+        models[COIN_INDEX].Draw(locations[LOCATION_INSTANCED]);
 
         glfwSwapBuffers(window);
     }
@@ -510,50 +479,39 @@ int main()
         //--- USE SHADER 
         shader.Use();
 
-        //--- SHADER LOCATIONS 
-        GLint projectionMatrixLocation = glGetUniformLocation(shader.Program, "projectionMatrix");
-        GLint viewMatrixLocation = glGetUniformLocation(shader.Program, "viewMatrix");
-        GLint textureLocation = glGetUniformLocation(shader.Program, "tex");
-        GLint repeatLocation = glGetUniformLocation(shader.Program, "repeat");
-        GLint modelMatrixLocation = glGetUniformLocation(shader.Program, "modelMatrix");
-        GLint modelMatrixesLocation = glGetUniformLocation(shader.Program, "modelMatrixes");
-        GLint colorInLocation = glGetUniformLocation(shader.Program, "colorIn");
-        GLint instancedLocation = glGetUniformLocation(shader.Program, "instanced");
-        GLint distorsionLocation = glGetUniformLocation(shader.Program, "distorsion");
-        GLint timeLocation = glGetUniformLocation(shader.Program, "time");
+        //--- SHADER LOCATIONS
+        vector<GLint> locations;
+        for (string name : locationNames) {
+            locations.push_back(glGetUniformLocation(shader.Program, name.c_str()));
+        }
 
-        //--- SET PLANE TEXTURE 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, textures[PLANE_INDEX]);
+        glUniform1i(locations[LOCATION_TEXTURE], 1);
+
+        setTexture(PLANE_INDEX, locations[LOCATION_REPEAT], 80.0f);
 
         //--- PASS VALUES TO SHADER 
-        glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
-        glUniform1i(textureLocation, 1);
-        glUniform1f(repeatLocation, 80.0);
-        glUniform1i(instancedLocation, false);
-        glUniform1f(distorsionLocation, distorsion);
-        glUniform1f(timeLocation, glfwGetTime());
+        glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
+        glUniform1f(locations[LOCATION_DISTORSION], distorsion);
+        glUniform1f(locations[LOCATION_TIME], glfwGetTime());
         
         //---  SET PLANE MATRIX
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[PLANE_INDEX]));
+        glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLANE_INDEX]));
 
         //---  DRAW PLANE 
-        models[PLANE_INDEX].Draw();
+        models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
 
         GLuint subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
         glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
         //--- SET TREE TEXTURE 
-        glBindTexture(GL_TEXTURE_2D, textures[TREE_INDEX]);
-        glUniform1f(repeatLocation, 1.0);
-        glUniform1i(instancedLocation, true);
+        setTexture(TREE_INDEX, locations[LOCATION_REPEAT], 1.0f);
 
         //---  SET TREE MATRICES 
-        glUniformMatrix4fv(modelMatrixesLocation, treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
+        glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIXES], treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
 
         //---  DRAW TREE
-        models[TREE_INDEX].DrawInstanced(treesMatrixes.size());
+        models[TREE_INDEX].DrawInstanced(treesMatrixes.size(), locations[LOCATION_INSTANCED]);
 
         //--- TODO: OPTIMIZE BY REMOVING Y
         float distancePlayerCart = distance(playerPos, glm::vec3(cartX, 0.0f, cartZ));
@@ -565,18 +523,16 @@ int main()
             glStencilMask(0xFF);
 
             //--- SET CART TEXTURE
-            glBindTexture(GL_TEXTURE_2D, textures[CART_INDEX]);
-            glUniform1f(repeatLocation, 1.0);
-            glUniform1i(instancedLocation, false);
+            setTexture(CART_INDEX, locations[LOCATION_REPEAT], 1.0f);
 
             //---  SET CART MATRICES 
             matrices[CART_INDEX] = glm::mat4(1.0f);
             matrices[CART_INDEX] = glm::translate(matrices[CART_INDEX], glm::vec3(cartX, 0.0f, cartZ));
             matrices[CART_INDEX] = glm::scale(matrices[CART_INDEX], glm::vec3(1.25f, 1.25f, 1.25f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
+            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
 
             //---  DRAW CART 
-            models[CART_INDEX].Draw();
+            models[CART_INDEX].Draw(locations[LOCATION_INSTANCED]);
 
             // DON'T WRITE ON STENCIL BUFFER 
             glStencilMask(0x00);
@@ -586,18 +542,17 @@ int main()
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
             //--- SET PLAYER TEXTURE 
-            glBindTexture(GL_TEXTURE_2D, textures[PLAYER_INDEX]);
-            glUniform1f(repeatLocation, 1.0);
+            setTexture(PLAYER_INDEX, locations[LOCATION_REPEAT], 1.0f);
 
             //---  SET PLAYER MATRICES 
             matrices[PLAYER_INDEX] = glm::mat4(1.0f);
             matrices[PLAYER_INDEX] = glm::translate(matrices[PLAYER_INDEX], glm::vec3(deltaX, 0.0f, deltaZ));
             matrices[PLAYER_INDEX] = glm::rotate(matrices[PLAYER_INDEX], glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
             matrices[PLAYER_INDEX] = glm::scale(matrices[PLAYER_INDEX], glm::vec3(0.03f, 0.03f, 0.03f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
+            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
 
             //---  DRAW PLAYER 
-            models[PLAYER_INDEX].Draw();
+            models[PLAYER_INDEX].Draw(locations[LOCATION_INSTANCED]);
             
             // WRITE ON STENCIL BUFFER 
             glStencilMask(0xFF);
@@ -612,18 +567,17 @@ int main()
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
             //--- SET PLAYER TEXTURE 
-            glBindTexture(GL_TEXTURE_2D, textures[PLAYER_INDEX]);
-            glUniform1f(repeatLocation, 1.0);
+            setTexture(PLAYER_INDEX, locations[LOCATION_REPEAT], 1.0f);
 
             //---  SET PLAYER MATRICES 
             matrices[PLAYER_INDEX] = glm::mat4(1.0f);
             matrices[PLAYER_INDEX] = glm::translate(matrices[PLAYER_INDEX], glm::vec3(deltaX, 0.0f, deltaZ));
             matrices[PLAYER_INDEX] = glm::rotate(matrices[PLAYER_INDEX], glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
             matrices[PLAYER_INDEX] = glm::scale(matrices[PLAYER_INDEX], glm::vec3(0.0305f, 0.0305f, 0.0305f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
+            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
 
             //---  DRAW PLAYER 
-            models[PLAYER_INDEX].Draw();
+            models[PLAYER_INDEX].Draw(locations[LOCATION_INSTANCED]);
 
             glColorMask(true, true, true, true);
             glDepthMask(true);
@@ -641,43 +595,40 @@ int main()
             matrices[CART_INDEX] = glm::mat4(1.0f);
             matrices[CART_INDEX] = glm::translate(matrices[CART_INDEX], glm::vec3(cartX, 0.0f, cartZ));
             matrices[CART_INDEX] = glm::scale(matrices[CART_INDEX], glm::vec3(1.27f, 1.27f, 1.27f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
+            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
 
             //---  DRAW CART 
-            models[CART_INDEX].Draw();
+            models[CART_INDEX].Draw(locations[LOCATION_INSTANCED]);
 
         } else {
             //--- SET CART TEXTURE
-            glBindTexture(GL_TEXTURE_2D, textures[CART_INDEX]);
-            glUniform1f(repeatLocation, 1.0);
-            glUniform1i(instancedLocation, false);
+            setTexture(CART_INDEX, locations[LOCATION_REPEAT], 1.0f);
 
             //---  SET CART MATRICES 
             matrices[CART_INDEX] = glm::mat4(1.0f);
             matrices[CART_INDEX] = glm::translate(matrices[CART_INDEX], glm::vec3(cartX, 0.0f, cartZ));
             matrices[CART_INDEX] = glm::scale(matrices[CART_INDEX], glm::vec3(1.25f, 1.25f, 1.25f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
+            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
 
             //---  DRAW CART 
-            models[CART_INDEX].Draw();
+            models[CART_INDEX].Draw(locations[LOCATION_INSTANCED]);
 
             //--- DRAW PLAYER
             subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
             //--- SET PLAYER TEXTURE 
-            glBindTexture(GL_TEXTURE_2D, textures[PLAYER_INDEX]);
-            glUniform1f(repeatLocation, 1.0);
+            setTexture(PLAYER_INDEX, locations[LOCATION_REPEAT], 1.0f);
 
             //---  SET PLAYER MATRICES 
             matrices[PLAYER_INDEX] = glm::mat4(1.0f);
             matrices[PLAYER_INDEX] = glm::translate(matrices[PLAYER_INDEX], glm::vec3(deltaX, 0.0f, deltaZ));
             matrices[PLAYER_INDEX] = glm::rotate(matrices[PLAYER_INDEX], glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
             matrices[PLAYER_INDEX] = glm::scale(matrices[PLAYER_INDEX], glm::vec3(0.03f, 0.03f, 0.03f));
-            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
+            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
 
             //---  DRAW PLAYER 
-            models[PLAYER_INDEX].Draw();
+            models[PLAYER_INDEX].Draw(locations[LOCATION_INSTANCED]);
         }
 
         //--- RENDER TO QUAD
@@ -695,11 +646,8 @@ int main()
         glBindTexture(GL_TEXTURE_2D, quadTexture);
 
         //--- PASS VALUES TO SHADER 
-        glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(view));
-        glUniform1i(textureLocation, 1);
-        glUniform1f(repeatLocation, 1.0);
-        glUniform1i(instancedLocation, false);
+        glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
         
         glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
         planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(0.0f, 1.0f, -10.0f));
@@ -707,10 +655,10 @@ int main()
         planeModelMatrix2 = glm::scale(planeModelMatrix2, glm::vec3(1/16.0f * 17.0f, 1.0f, 1/16.0f * 10.0f));
 
         //---  SET PLANE MATRIX
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));
+        glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));
 
         //---  DRAW PLANE 
-        models[PLANE_INDEX].Draw();
+        models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
 
         //--- SWAP BUFFERS
         glfwSwapBuffers(window);
@@ -913,4 +861,59 @@ void clear() {
     glStencilMask(0xFF);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glStencilMask(0x00);
+}
+
+void setTexture(int index, GLint repeatLocation, float repeatValue) {
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textures[index]);
+    glUniform1f(repeatLocation, repeatValue);
+}
+
+void loadAABBs() {
+    cout << "Calculating trees AABBs" << endl;
+    for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
+        glm::mat4 matrix = *i;
+        glm::vec3 treePos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z);
+        float treeSize = matrix[0].x / 1.5f;
+        GLfloat dy = 5.0f * treeSize;
+        AABB aabb = AABB(VerticesBuilder().build(treePos, dy, glm::vec3(treeSize)));
+        AABBs.push_back(aabb);
+    }
+
+    glm::vec3 cartPos = glm::vec3(cartX, 0.0f, cartZ);
+    float dy = 2.0f;
+    glm::vec3 cartSize = glm::vec3(1.75f, 0.0f, 1.25f);
+    AABB aabb = AABB(VerticesBuilder().build(cartPos, dy, glm::vec3(cartSize)));
+    AABBs.push_back(aabb);
+
+    appState = AppStates::CreatingAABBsHierarchy;
+}
+
+void loadNextRow() {
+    cout << "Loading map row #" << currentCell << endl;
+    for (auto i=content[currentCell].begin(); i!=content[currentCell].end(); ++i) {
+        float position = i-content[currentCell].begin();
+        if(*i == "T") {
+            //--- TREES ARE RANDOMLY DISPLACED FROM THEIR 0.5x0.5 cell by a random value between -0.5f and 0.5f
+            float randX = (rand() % 10 - 5) / 10.f;
+            float randZ = (rand() % 10 - 5) / 10.f;
+            //--- TREES ARE RANDOMLY SCALED FROM 100% TO 150%
+            float randomScale = (100 + (rand() % 50)) / 100.f;
+            glm::mat4 treeMatrix = glm::mat4(1.0f);
+            treeMatrix = glm::translate(treeMatrix, glm::vec3(currentCell * 2 + 0.5 + randX, 0.0f, position * 2 + 0.5f + randZ));
+            treeMatrix = glm::scale(treeMatrix, glm::vec3(randomScale, randomScale, randomScale));
+            treesMatrixes.push_back(treeMatrix);
+        }
+        if(*i == "S") {
+            deltaX = currentCell * 2;
+            deltaZ = position * 2;
+        }
+        if(*i == "C") {
+            cartX = currentCell * 2;
+            cartZ = position * 2;
+        }
+        if(*i == "P") {
+            paths.push_back(glm::vec2(currentCell-16, position-16));
+        }
+    }
 }

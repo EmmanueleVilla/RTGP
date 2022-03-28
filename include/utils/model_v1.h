@@ -82,16 +82,20 @@ public:
     //////////////////////////////////////////
 
     // model rendering: calls rendering methods of each instance of Mesh class in the vector
-    void Draw()
+    void Draw(GLint instancedLocation)
     {
-        for(GLuint i = 0; i < this->meshes.size(); i++)
+        glUniform1i(instancedLocation, false);
+        for(GLuint i = 0; i < this->meshes.size(); i++) {
             this->meshes[i].Draw();
+        }
     }
 
-    void DrawInstanced(int instances)
+    void DrawInstanced(int instances, GLint instancedLocation)
     {
-        for(GLuint i = 0; i < this->meshes.size(); i++)
+        glUniform1i(instancedLocation, true);
+        for(GLuint i = 0; i < this->meshes.size(); i++) {
             this->meshes[i].DrawInstanced(instances);
+        }
     }
 
     //////////////////////////////////////////
