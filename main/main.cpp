@@ -136,6 +136,8 @@ void clear();
 void setTexture(int index, GLint repeatLocation, float repeatValue);
 void loadAABBs();
 void loadNextRow();
+void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier);
+void drawCart(Shader shader, vector<GLint> locations, float scaleModifier);
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -314,7 +316,7 @@ int main()
 
     cout << "Press WASD to move" << endl;
 
-    cout << "Keep pressing mouseR and move mouse to rotate camera" << endl;
+    cout << "Move mouse while pressing mouseR to rotate camera" << endl;
 
     //--- TO APPLY THE LENS EFFECT, WE RENDER TO A RENDER TARGET
     //--- LATER TO BE USED AS A TEXTURE
@@ -537,22 +539,7 @@ int main()
             // DON'T WRITE ON STENCIL BUFFER 
             glStencilMask(0x00);
 
-            //--- DRAW BASE PLAYER
-            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
-            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
-
-            //--- SET PLAYER TEXTURE 
-            setTexture(PLAYER_INDEX, locations[LOCATION_REPEAT], 1.0f);
-
-            //---  SET PLAYER MATRICES 
-            matrices[PLAYER_INDEX] = glm::mat4(1.0f);
-            matrices[PLAYER_INDEX] = glm::translate(matrices[PLAYER_INDEX], glm::vec3(deltaX, 0.0f, deltaZ));
-            matrices[PLAYER_INDEX] = glm::rotate(matrices[PLAYER_INDEX], glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
-            matrices[PLAYER_INDEX] = glm::scale(matrices[PLAYER_INDEX], glm::vec3(0.03f, 0.03f, 0.03f));
-            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
-
-            //---  DRAW PLAYER 
-            models[PLAYER_INDEX].Draw(locations[LOCATION_INSTANCED]);
+            drawPlayer(shader, locations, 1.0f);
             
             // WRITE ON STENCIL BUFFER 
             glStencilMask(0xFF);
@@ -563,21 +550,7 @@ int main()
             glColorMask(false, false, false, false);
             glDepthMask(false);
 
-            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
-            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
-
-            //--- SET PLAYER TEXTURE 
-            setTexture(PLAYER_INDEX, locations[LOCATION_REPEAT], 1.0f);
-
-            //---  SET PLAYER MATRICES 
-            matrices[PLAYER_INDEX] = glm::mat4(1.0f);
-            matrices[PLAYER_INDEX] = glm::translate(matrices[PLAYER_INDEX], glm::vec3(deltaX, 0.0f, deltaZ));
-            matrices[PLAYER_INDEX] = glm::rotate(matrices[PLAYER_INDEX], glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
-            matrices[PLAYER_INDEX] = glm::scale(matrices[PLAYER_INDEX], glm::vec3(0.0305f, 0.0305f, 0.0305f));
-            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
-
-            //---  DRAW PLAYER 
-            models[PLAYER_INDEX].Draw(locations[LOCATION_INSTANCED]);
+            drawPlayer(shader, locations, 1.013f);
 
             glColorMask(true, true, true, true);
             glDepthMask(true);
@@ -613,22 +586,7 @@ int main()
             //---  DRAW CART 
             models[CART_INDEX].Draw(locations[LOCATION_INSTANCED]);
 
-            //--- DRAW PLAYER
-            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
-            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
-
-            //--- SET PLAYER TEXTURE 
-            setTexture(PLAYER_INDEX, locations[LOCATION_REPEAT], 1.0f);
-
-            //---  SET PLAYER MATRICES 
-            matrices[PLAYER_INDEX] = glm::mat4(1.0f);
-            matrices[PLAYER_INDEX] = glm::translate(matrices[PLAYER_INDEX], glm::vec3(deltaX, 0.0f, deltaZ));
-            matrices[PLAYER_INDEX] = glm::rotate(matrices[PLAYER_INDEX], glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
-            matrices[PLAYER_INDEX] = glm::scale(matrices[PLAYER_INDEX], glm::vec3(0.03f, 0.03f, 0.03f));
-            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
-
-            //---  DRAW PLAYER 
-            models[PLAYER_INDEX].Draw(locations[LOCATION_INSTANCED]);
+            drawPlayer(shader, locations, 1.0f);
         }
 
         //--- RENDER TO QUAD
@@ -916,4 +874,23 @@ void loadNextRow() {
             paths.push_back(glm::vec2(currentCell-16, position-16));
         }
     }
+}
+
+void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier) {
+    //--- DRAW PLAYER
+    GLuint subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
+    glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+
+    //--- SET PLAYER TEXTURE 
+    setTexture(PLAYER_INDEX, locations[LOCATION_REPEAT], 1.0f);
+
+    //---  SET PLAYER MATRICES 
+    matrices[PLAYER_INDEX] = glm::mat4(1.0f);
+    matrices[PLAYER_INDEX] = glm::translate(matrices[PLAYER_INDEX], glm::vec3(deltaX, 0.0f, deltaZ));
+    matrices[PLAYER_INDEX] = glm::rotate(matrices[PLAYER_INDEX], glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
+    matrices[PLAYER_INDEX] = glm::scale(matrices[PLAYER_INDEX], glm::vec3(0.03f * scaleModifier, 0.03f * scaleModifier, 0.03f * scaleModifier));
+    glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
+
+    //---  DRAW PLAYER 
+    models[PLAYER_INDEX].Draw(locations[LOCATION_INSTANCED]);
 }
