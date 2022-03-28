@@ -736,20 +736,6 @@ int main()
         GLuint subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
         glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
-        //--- SET PLAYER TEXTURE 
-        glBindTexture(GL_TEXTURE_2D, textureId[playerTextureIndex]);
-        glUniform1f(repeatLocation, 1.0);
-
-        //---  SET PLAYER MATRICES 
-        playerModelMatrix = glm::mat4(1.0f);
-        playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, deltaZ));
-        playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
-        playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
-        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
-
-        //---  DRAW PLAYER 
-        playerModel.Draw();
-
         //--- SET TREE TEXTURE 
         glBindTexture(GL_TEXTURE_2D, textureId[treeTextureIndex]);
         glUniform1f(repeatLocation, 1.0);
@@ -764,7 +750,6 @@ int main()
         //--- TODO: OPTIMIZE BY REMOVING Y
         float distancePlayerCart = distance(playerPos, glm::vec3(cartX, 0.0f, cartZ));
         if(keys[GLFW_KEY_SPACE] && distancePlayerCart < 5) {
-            //--- TODO WRITE CART TO STENCIL ONLY WHEN IT NEEDS TO BE OUTLINED
             //--- IN THE FIRST PASS, ALL FRAGMENTS PASS THE STENCIL TEST
             //--- ACTION WHEN STENCIL FAILS, DEPTH FAILS AND BOTH PASS
             glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -784,6 +769,57 @@ int main()
 
             //---  DRAW CART 
             cartModel.Draw();
+
+            // DON'T WRITE ON STENCIL BUFFER 
+            glStencilMask(0x00);
+
+            //--- DRAW BASE PLAYER
+            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
+            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+
+            //--- SET PLAYER TEXTURE 
+            glBindTexture(GL_TEXTURE_2D, textureId[playerTextureIndex]);
+            glUniform1f(repeatLocation, 1.0);
+
+            //---  SET PLAYER MATRICES 
+            playerModelMatrix = glm::mat4(1.0f);
+            playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, deltaZ));
+            playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
+            playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
+
+            //---  DRAW PLAYER 
+            playerModel.Draw();
+
+            
+            // WRITE ON STENCIL BUFFER 
+            glStencilMask(0xFF);
+
+            //--- REMOVE PLAYER FROM STENCIL
+            glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
+
+            glColorMask(false, false, false, false);
+            glDepthMask(false);
+
+            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
+            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+
+            //--- SET PLAYER TEXTURE 
+            glBindTexture(GL_TEXTURE_2D, textureId[playerTextureIndex]);
+            glUniform1f(repeatLocation, 1.0);
+
+            //---  SET PLAYER MATRICES 
+            playerModelMatrix = glm::mat4(1.0f);
+            playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, deltaZ));
+            playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
+            playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.0305f, 0.0305f, 0.0305f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
+
+            //---  DRAW PLAYER 
+            playerModel.Draw();
+
+            glColorMask(true, true, true, true);
+            glDepthMask(true);
 
             // ONLY DRAW PARTS WHERE STENCIL BUFFER IS != 1
             glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
@@ -817,6 +853,24 @@ int main()
 
             //---  DRAW CART 
             cartModel.Draw();
+
+            //--- DRAW PLAYER
+            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
+            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+
+            //--- SET PLAYER TEXTURE 
+            glBindTexture(GL_TEXTURE_2D, textureId[playerTextureIndex]);
+            glUniform1f(repeatLocation, 1.0);
+
+            //---  SET PLAYER MATRICES 
+            playerModelMatrix = glm::mat4(1.0f);
+            playerModelMatrix = glm::translate(playerModelMatrix, glm::vec3(deltaX, 0.0f, deltaZ));
+            playerModelMatrix = glm::rotate(playerModelMatrix, glm::radians(rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
+            playerModelMatrix = glm::scale(playerModelMatrix, glm::vec3(0.03f, 0.03f, 0.03f));
+            glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(playerModelMatrix));
+
+            //---  DRAW PLAYER 
+            playerModel.Draw();
         }
 
         //--- RENDER TO QUAD
