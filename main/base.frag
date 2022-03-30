@@ -133,6 +133,24 @@ vec4 redOutline() {
     return vec4(1.0f, 0.0f, 0.0f, alpha);
 }
 
+subroutine(fragshader)
+vec4 tracePlane() {
+    vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
+    float newX = interp_UV.x - 1.0f;
+    float y = pow(newX, 2) + newX + 0.1;
+    y = clamp(y, 0.0f, 1.0f);
+    vec2 uv = interp_UV.xy - vec2(0.5, 0.5);
+	float uva = atan(uv.x, uv.y);
+    float uvd = sqrt(dot(uv, uv));
+    uvd = uvd * (1.0 + distorsion * uvd * uvd);
+    vec3 col = vec3(texture(tex, vec2(0.5) + vec2(sin(uva), cos(uva)) * uvd).xyz);
+    vec3 color = col + vec3(distorsion/20.0f) + vec3(distorsion * y);
+    if(color.r < 0.001f) {
+        discard;
+    }
+    return vec4(color, 1.0f);
+}
+
 void main() {
     color = fragShaderImpl();
 }

@@ -289,8 +289,6 @@ int main()
 
     cout << "Loading ended, binding new loop values" << endl;
 
-    glClearColor(135.0f / 255.f, 206.0f / 255.f, 235.0f / 255.f, 1.0f);
-
     //delete &coinModel;
 
     //---  INIT UNIFORM BUFFER FOR TREES
@@ -373,6 +371,8 @@ int main()
     {
         //--- RENDER TO FRAME BUFFER
         glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
+        glClearColor(135.0f / 255.f, 206.0f / 255.f, 235.0f / 255.f, 1.0f);
 
         //---  UPDATE TIME 
         GLfloat currentFrame = glfwGetTime();
@@ -535,8 +535,13 @@ int main()
         //if(keys[GLFW_KEY_SPACE] && distancePlayerCart < 5) {
 
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
-            
+
+            glClearColor(0.0f, 1.0f, 0.0f, 0.0f);
+
             clear();
+
+            glColorMask(false, false, false, false);
+            glDepthMask(false);
 
             //--- IN THE FIRST PASS, ALL FRAGMENTS PASS THE STENCIL TEST
             //--- ACTION WHEN STENCIL FAILS, DEPTH FAILS AND BOTH PASS
@@ -549,22 +554,41 @@ int main()
             //--- REMOVE PLAYER FROM STENCIL
             glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
 
-            glColorMask(false, false, false, false);
-            glDepthMask(false);
-
-            drawPlayer(shader, locations, 1.013f);
-
+            drawPlayer(shader, locations, 1.0f);
+            
             glColorMask(true, true, true, true);
             glDepthMask(true);
 
-            // ONLY DRAW PARTS WHERE STENCIL BUFFER IS != 1
-            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-
-            // DON'T WRITE ON STENCIL BUFFER 
             glStencilMask(0x00);
 
-            drawCart(shader, locations, 1.013f, "redOutline");
+            //--- DRAW PLANE ONLY WHERE STENCIL IS !=1
+            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            glStencilFunc(GL_EQUAL, 1, 0xFF);
 
+            view = glm::lookAt(glm::vec3(0.0f, 1.0f, 7.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+             //--- PASS VALUES TO SHADER 
+            glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
+            glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
+
+            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
+            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+            GLfloat white[] = { 1.0f, 0.0f, 0.0f };
+            glUniform3fv(locations[LOCATION_COLOR], 1, white);
+
+            glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
+            planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(0.0f, 1.0f, -10.0f));
+            planeModelMatrix2 = glm::rotate(planeModelMatrix2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            planeModelMatrix2 = glm::scale(planeModelMatrix2, glm::vec3(1/16.0f * 17.0f, 1.0f, 1/16.0f * 10.0f));
+
+            //---  SET PLANE MATRIX
+            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));
+
+            //---  DRAW PLANE 
+            models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
+
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            
         //}
 
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, firstTexture, 0);
@@ -572,6 +596,8 @@ int main()
         //--- RENDER TO QUAD
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
+        glClearColor(135.0f / 255.f, 206.0f / 255.f, 235.0f / 255.f, 1.0f);
+
         clear();
 
         view = glm::lookAt(glm::vec3(0.0f, 1.0f, 7.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -579,21 +605,39 @@ int main()
         subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "pincushion");
         glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
-        //--- SET PLANE TEXTURE 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, firstTexture);
-
         //--- PASS VALUES TO SHADER 
         glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
+
+        //--- SET PLANE TEXTURE 
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, firstTexture);
         
-        glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
+        planeModelMatrix2 = glm::mat4(1.0f);
         planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(0.0f, 1.0f, -10.0f));
         planeModelMatrix2 = glm::rotate(planeModelMatrix2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         planeModelMatrix2 = glm::scale(planeModelMatrix2, glm::vec3(1/16.0f * 17.0f, 1.0f, 1/16.0f * 10.0f));
 
         //---  SET PLANE MATRIX
         glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));
+
+        //---  DRAW PLANE 
+        models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
+
+        //--- SET PLANE TEXTURE 
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, secondTexture);
+
+        subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "tracePlane");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+        
+        glm::mat4 planeModelMatrix3 = glm::mat4(1.0f);
+        planeModelMatrix3 = glm::translate(planeModelMatrix3, glm::vec3(0.0f, 1.0f, -9.95f));
+        planeModelMatrix3 = glm::rotate(planeModelMatrix3, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        planeModelMatrix3 = glm::scale(planeModelMatrix3, glm::vec3(1/16.0f * 17.0f, 1.0f, 1/16.0f * 10.0f));
+
+        //---  SET PLANE MATRIX
+        glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(planeModelMatrix3));
 
         //---  DRAW PLANE 
         models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
