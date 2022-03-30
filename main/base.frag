@@ -149,10 +149,10 @@ vec3 distortedColorByUv(vec2 interp_UV) {
 subroutine(fragshader)
 vec4 tracePlane() {
 
+
     //if(distorsion == 0) {
     //    discard;
-    //}
-    
+    //}    
     vec3 color = distortedColorByUv(interp_UV);
 
     float texel = 1.0f / 1280.0f * 5.0f;
@@ -194,14 +194,14 @@ vec4 tracePlane() {
     color = vec3(1.0f, 0.0f, 0.0f);
 
     if(
-        topColor.y < 0.998
-        && bottomColor.y < 0.998
-        && leftColor.y < 0.998
-        && rightColor.y < 0.998
-        && topLeftColor.y < 0.998
-        && topRightColor.y < 0.998
-        && bottomLeftColor.y < 0.998
-        && bottomRightColor.y < 0.998) {
+        topColor.y < 0.998 + distorsion / 10
+        && bottomColor.y < 0.998 + distorsion / 10
+        && leftColor.y < 0.998 + distorsion / 10
+        && rightColor.y < 0.998 + distorsion / 10
+        && topLeftColor.y < 0.998 + distorsion / 10
+        && topRightColor.y < 0.998 + distorsion / 10
+        && bottomLeftColor.y < 0.998 + distorsion / 10
+        && bottomRightColor.y < 0.998 + distorsion / 10) {
         discard;
     }
 
