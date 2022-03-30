@@ -326,10 +326,10 @@ int main()
     glGenFramebuffers(1, &frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
-    //--- CREATING THE TEXTURE
-    GLuint quadTexture;
-    glGenTextures(1, &quadTexture);
-    glBindTexture(GL_TEXTURE_2D, quadTexture);
+    //--- CREATING THE TEXTURES
+    GLuint firstTexture;
+    glGenTextures(1, &firstTexture);
+    glBindTexture(GL_TEXTURE_2D, firstTexture);
 
     //--- PASSING AN EMPTY IMAGE
     glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
@@ -346,10 +346,10 @@ int main()
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
 
     //--- SET TEXTURE AS COLOR ATTACHMENT
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, quadTexture, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, firstTexture, 0);
 
     //--- SET THE LIST OF DRAW BUFFERS
-    GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+    GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
     glDrawBuffers(1, drawBuffers);
 
     //--- CHECK FRAME BUFFER SANITY
@@ -515,9 +515,47 @@ int main()
         //---  DRAW TREE
         models[TREE_INDEX].DrawInstanced(treesMatrixes.size(), locations[LOCATION_INSTANCED]);
 
+        drawCart(shader, locations, 1.0f, "textured");
+
+        drawPlayer(shader, locations, 1.0f);
+
+        //--- RENDER TO QUAD
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        
+        clear();
+
+        view = glm::lookAt(glm::vec3(0.0f, 1.0f, 7.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "pincushion");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+
+        //--- SET PLANE TEXTURE 
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, firstTexture);
+
+        //--- PASS VALUES TO SHADER 
+        glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
+        
+        glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
+        planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(0.0f, 1.0f, -10.0f));
+        planeModelMatrix2 = glm::rotate(planeModelMatrix2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        planeModelMatrix2 = glm::scale(planeModelMatrix2, glm::vec3(1/16.0f * 17.0f, 1.0f, 1/16.0f * 10.0f));
+
+        //---  SET PLANE MATRIX
+        glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));
+
+        //---  DRAW PLANE 
+        models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
+
         //--- TODO: OPTIMIZE BY REMOVING Y
         float distancePlayerCart = distance(playerPos, glm::vec3(cartX, 0.0f, cartZ));
         if(keys[GLFW_KEY_SPACE] && distancePlayerCart < 5) {
+
+            glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
+            clear();
+            
             //--- IN THE FIRST PASS, ALL FRAGMENTS PASS THE STENCIL TEST
             //--- ACTION WHEN STENCIL FAILS, DEPTH FAILS AND BOTH PASS
             glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -544,41 +582,8 @@ int main()
             glStencilMask(0x00);
 
             drawCart(shader, locations, 1.013f, "redOutline");
-
-        } else {
-            drawCart(shader, locations, 1.0f, "textured");
         }
 
-        drawPlayer(shader, locations, 1.0f);
-
-        //--- RENDER TO QUAD
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        
-        clear();
-
-        view = glm::lookAt(glm::vec3(0.0f, 1.0f, 7.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-        subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "pincushion");
-        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
-
-        //--- SET PLANE TEXTURE 
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, quadTexture);
-
-        //--- PASS VALUES TO SHADER 
-        glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
-        
-        glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
-        planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(0.0f, 1.0f, -10.0f));
-        planeModelMatrix2 = glm::rotate(planeModelMatrix2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        planeModelMatrix2 = glm::scale(planeModelMatrix2, glm::vec3(1/16.0f * 17.0f, 1.0f, 1/16.0f * 10.0f));
-
-        //---  SET PLANE MATRIX
-        glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));
-
-        //---  DRAW PLANE 
-        models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
 
         //--- SWAP BUFFERS
         glfwSwapBuffers(window);
