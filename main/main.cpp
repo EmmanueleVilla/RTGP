@@ -338,6 +338,17 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+    GLuint secondTexture;
+    glGenTextures(1, &secondTexture);
+    glBindTexture(GL_TEXTURE_2D, secondTexture);
+
+    //--- PASSING AN EMPTY IMAGE
+    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGB, width, height, 0,GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+    //--- FILTERING
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
     //--- DEPTH-STENCIL BUFFER   
     GLuint depthBuffer;
     glGenRenderbuffers(1, &depthBuffer);
@@ -519,6 +530,45 @@ int main()
 
         drawPlayer(shader, locations, 1.0f);
 
+        //--- TODO: OPTIMIZE BY REMOVING Y
+        float distancePlayerCart = distance(playerPos, glm::vec3(cartX, 0.0f, cartZ));
+        //if(keys[GLFW_KEY_SPACE] && distancePlayerCart < 5) {
+
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
+            
+            clear();
+
+            //--- IN THE FIRST PASS, ALL FRAGMENTS PASS THE STENCIL TEST
+            //--- ACTION WHEN STENCIL FAILS, DEPTH FAILS AND BOTH PASS
+            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilMask(0xFF);
+
+            drawCart(shader, locations, 1.0f, "textured");
+
+            //--- REMOVE PLAYER FROM STENCIL
+            glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
+
+            glColorMask(false, false, false, false);
+            glDepthMask(false);
+
+            drawPlayer(shader, locations, 1.013f);
+
+            glColorMask(true, true, true, true);
+            glDepthMask(true);
+
+            // ONLY DRAW PARTS WHERE STENCIL BUFFER IS != 1
+            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+
+            // DON'T WRITE ON STENCIL BUFFER 
+            glStencilMask(0x00);
+
+            drawCart(shader, locations, 1.013f, "redOutline");
+
+        //}
+
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, firstTexture, 0);
+
         //--- RENDER TO QUAD
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
@@ -547,43 +597,6 @@ int main()
 
         //---  DRAW PLANE 
         models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
-
-        //--- TODO: OPTIMIZE BY REMOVING Y
-        float distancePlayerCart = distance(playerPos, glm::vec3(cartX, 0.0f, cartZ));
-        if(keys[GLFW_KEY_SPACE] && distancePlayerCart < 5) {
-
-            glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-
-            clear();
-            
-            //--- IN THE FIRST PASS, ALL FRAGMENTS PASS THE STENCIL TEST
-            //--- ACTION WHEN STENCIL FAILS, DEPTH FAILS AND BOTH PASS
-            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-            glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            glStencilMask(0xFF);
-
-            drawCart(shader, locations, 1.0f, "textured");
-
-            //--- REMOVE PLAYER FROM STENCIL
-            glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
-
-            glColorMask(false, false, false, false);
-            glDepthMask(false);
-
-            drawPlayer(shader, locations, 1.013f);
-
-            glColorMask(true, true, true, true);
-            glDepthMask(true);
-
-            // ONLY DRAW PARTS WHERE STENCIL BUFFER IS != 1
-            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-
-            // DON'T WRITE ON STENCIL BUFFER 
-            glStencilMask(0x00);
-
-            drawCart(shader, locations, 1.013f, "redOutline");
-        }
-
 
         //--- SWAP BUFFERS
         glfwSwapBuffers(window);
