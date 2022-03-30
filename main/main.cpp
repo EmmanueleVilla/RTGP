@@ -536,7 +536,7 @@ int main()
 
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
 
-            glClearColor(0.0f, 1.0f, 0.0f, 0.0f);
+            glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
 
             clear();
 

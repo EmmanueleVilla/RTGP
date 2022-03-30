@@ -130,7 +130,7 @@ vec4 redOutline() {
     float alphaMin = 0.5f;
     float alphaMax = 1.0f;
     alpha = ((alpha - noiseMin) / (noiseMax - noiseMin)) * (alphaMax - alphaMin) + alphaMin;
-    return vec4(alpha, 0.0f, 0.0f, 1.0f);
+    return vec4(1.0f, 0.0f, 0.0f, alpha);
 }
 
 
@@ -152,6 +152,16 @@ vec4 tracePlane() {
     if(distorsion == 0) {
         discard;
     }
+    
+    vec3 color = distortedColorByUv(interp_UV);
+
+    if(color.r < 0.00001f) {
+        discard;
+    }
+
+    float newAlfa = color.g;
+
+    color = vec3(1.0f, 0.0f, 0.0f);
 
     //--- 5 "pixels" distance
     float texel = 1.0f / 1280.0f * 10.0f;
@@ -162,16 +172,7 @@ vec4 tracePlane() {
     vec2 bottomTexel = interp_UV + vec2(0.0f, texel);
     vec3 bottomColor = distortedColorByUv(bottomTexel);
 
-    vec3 color = distortedColorByUv(interp_UV);
-
-    if(bottomColor.r > 0.999) {
-        discard;
-    }
-
-    if(color.r < 0.001f) {
-        discard;
-    }
-    return vec4(color, 1.0f);
+    return vec4(color, newAlfa);
 }
 
 void main() {
