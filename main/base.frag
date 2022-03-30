@@ -150,9 +150,10 @@ subroutine(fragshader)
 vec4 tracePlane() {
 
 
-    //if(distorsion == 0) {
-    //    discard;
-    //}    
+    if(distorsion == 0) {
+        discard;
+    }
+       
     vec3 color = distortedColorByUv(interp_UV);
 
     float texel = 1.0f / 1280.0f * 5.0f;
@@ -214,7 +215,7 @@ vec4 tracePlane() {
         discard;
     }
 
-    return vec4(color, newAlfa);
+    return vec4(color, newAlfa * distorsion * -1);
 }
 
 void main() {
