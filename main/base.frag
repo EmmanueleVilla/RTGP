@@ -133,9 +133,8 @@ vec4 redOutline() {
     return vec4(1.0f, 0.0f, 0.0f, alpha);
 }
 
-subroutine(fragshader)
-vec4 tracePlane() {
-    vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
+
+vec3 distortedColorByUv(vec2 interp_UV) {
     float newX = interp_UV.x - 1.0f;
     float y = pow(newX, 2) + newX + 0.1;
     y = clamp(y, 0.0f, 1.0f);
@@ -144,7 +143,31 @@ vec4 tracePlane() {
     float uvd = sqrt(dot(uv, uv));
     uvd = uvd * (1.0 + distorsion * uvd * uvd);
     vec3 col = vec3(texture(tex, vec2(0.5) + vec2(sin(uva), cos(uva)) * uvd).xyz);
-    vec3 color = col + vec3(distorsion/20.0f) + vec3(distorsion * y);
+    return col + vec3(distorsion/20.0f) + vec3(distorsion * y);
+}
+
+subroutine(fragshader)
+vec4 tracePlane() {
+
+    if(distorsion == 0) {
+        discard;
+    }
+
+    //--- 5 "pixels" distance
+    float texel = 1.0f / 1280.0f * 10.0f;
+
+    vec2 topTexel = interp_UV + vec2(0.0f, texel);
+    vec3 topColor = distortedColorByUv(topTexel);
+
+    vec2 bottomTexel = interp_UV + vec2(0.0f, texel);
+    vec3 bottomColor = distortedColorByUv(bottomTexel);
+
+    vec3 color = distortedColorByUv(interp_UV);
+
+    if(bottomColor.r > 0.999) {
+        discard;
+    }
+
     if(color.r < 0.001f) {
         discard;
     }
