@@ -184,11 +184,19 @@ vec4 tracePlane() {
     float newAlfa = color.g;
 
     if(color.r < 0.00001f) {
-        //if(topColor.r < 0.1 && bottomColor.r < 0.1 && leftColor.r < 0.1 && rightColor.r < 0.1) {
-        //    discard;
-        //}
-        //newAlfa = 0.5f;
-        discard;
+        if(
+            topColor.r < 0.1
+            && bottomColor.r < 0.1
+            && leftColor.r < 0.1
+            && rightColor.r < 0.1
+            && topRightColor.r < 0.1
+            && topLeftColor.r < 0.1
+            && bottomRightColor.r < 0.1
+            && bottomLeftColor.r < 0.1
+            ) {
+            discard;
+        }
+        newAlfa = 0.5f;
     }
 
     color = vec3(1.0f, 0.0f, 0.0f);
@@ -201,7 +209,8 @@ vec4 tracePlane() {
         && topLeftColor.y < 0.998 + distorsion / 10
         && topRightColor.y < 0.998 + distorsion / 10
         && bottomLeftColor.y < 0.998 + distorsion / 10
-        && bottomRightColor.y < 0.998 + distorsion / 10) {
+        && bottomRightColor.y < 0.998 + distorsion / 10
+        ) {
         discard;
     }
 
