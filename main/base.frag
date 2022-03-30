@@ -1,23 +1,23 @@
 #version 410 core
 
-/* OUTPUT TO FRAME BUFFER */
+//--- OUTPUT TO FRAME BUFFER
 layout(location = 0) out vec4 color;
 
-/* INPUT FROM APP */
+//--- INPUT FROM APP
 uniform sampler2D tex;
 uniform float repeat;
 uniform vec3 colorIn;
 uniform float distorsion;
 uniform float time;
 
-/* INPUT FROM SHADERS */
+//--- INPUT FROM SHADERS
 in vec2 interp_UV;
 
-/* SUBROUTINES */
+//--- SUBROUTINES
 subroutine vec4 fragshader();
 subroutine uniform fragshader fragShaderImpl;
 
-/* CONSTANTS */
+//--- CONSTANTS
 const float PI = 3.1415926535;
 
 vec3 mod289(vec3 x) {
