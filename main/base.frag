@@ -155,7 +155,7 @@ vec4 tracePlane() {
 
     vec3 color = distortedColorByUv(interp_UV);
 
-    float texel = 1.0f / 1280.0f * 3.0f;
+    float texel = 1.0f / 1280.0f * 5.5f;
 
     vec2 topTexel = interp_UV + vec2(0.0f, texel);
     vec3 topColor = distortedColorByUv(topTexel);
@@ -207,12 +207,68 @@ vec4 tracePlane() {
         }
     }
 
-    float alpha = snoise(vec3(interp_UV * 10, time));
-    float noiseMin = 0.0f;
-    float noiseMax = 1.0f;
-    float alphaMin = 0.5f;
-    float alphaMax = 1.0f;
-    alpha = ((alpha - noiseMin) / (noiseMax - noiseMin)) * (alphaMax - alphaMin) + alphaMin;
+    //--- NOW SAME, BUT WITH A STRICTER RANGE
+    texel = 1.0f / 1280.0f * 1.0f;
+
+    topTexel = interp_UV + vec2(0.0f, texel);
+    topColor = distortedColorByUv(topTexel);
+
+    bottomTexel = interp_UV + vec2(0.0f, -texel);
+    bottomColor = distortedColorByUv(bottomTexel);
+
+    leftTexel = interp_UV + vec2(-texel, 0.0f);
+    leftColor = distortedColorByUv(leftTexel);
+
+    rightTexel = interp_UV + vec2(-texel, 0.0f);
+    rightColor = distortedColorByUv(rightTexel);
+
+    topLeftTexel = interp_UV + vec2(-texel, texel);
+    topLeftColor = distortedColorByUv(topLeftTexel);
+
+    topRightTexel = interp_UV + vec2(texel, texel);
+    topRightColor = distortedColorByUv(topRightTexel);
+
+    bottomLeftTexel = interp_UV + vec2(-texel, -texel);
+    bottomLeftColor = distortedColorByUv(bottomLeftTexel);
+
+    bottomRightTexel = interp_UV + vec2(texel, -texel);
+    bottomRightColor = distortedColorByUv(bottomRightTexel);
+
+    bool variableAlpha = false;
+
+    if(color.y > 0) {
+        if(topColor.r < 0.01
+            && bottomColor.r < 0.9
+            && leftColor.r < 0.9
+            && rightColor.r < 0.9
+            && topRightColor.r < 0.9
+            && topLeftColor.r < 0.9
+            && bottomRightColor.r < 0.9
+            && bottomLeftColor.r < 0.9) {
+            variableAlpha = true;
+        }
+    } else {
+        if(topColor.r > 0.1
+            && bottomColor.r > 0.1
+            && leftColor.r > 0.1
+            && rightColor.r > 0.1
+            && topRightColor.r > 0.1
+            && topLeftColor.r > 0.1
+            && bottomRightColor.r > 0.1
+            && bottomLeftColor.r > 0.1) {
+            variableAlpha = true;
+        }
+    }
+
+    float alpha = 1.0f;
+    if(variableAlpha) {
+        alpha = snoise(vec3(interp_UV * 15, time));
+        float noiseMin = 0.0f;
+        float noiseMax = 1.0f;
+        float alphaMin = 0.35f;
+        float alphaMax = 0.85f;
+        alpha = ((alpha - noiseMin) / (noiseMax - noiseMin)) * (alphaMax - alphaMin) + alphaMin;
+    }
 
     color = vec3(1.0f, 0.0f, 0.0f);
    
