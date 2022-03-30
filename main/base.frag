@@ -130,7 +130,7 @@ vec4 redOutline() {
     float alphaMin = 0.5f;
     float alphaMax = 1.0f;
     alpha = ((alpha - noiseMin) / (noiseMax - noiseMin)) * (alphaMax - alphaMin) + alphaMin;
-    return vec4(1.0f, 0.0f, 0.0f, alpha);
+    return vec4(1.0f, 0.0f, 0.0f, 1.0f);
 }
 
 
@@ -149,14 +149,13 @@ vec3 distortedColorByUv(vec2 interp_UV) {
 subroutine(fragshader)
 vec4 tracePlane() {
 
-
     if(distorsion == 0) {
         discard;
     }
-       
+
     vec3 color = distortedColorByUv(interp_UV);
 
-    float texel = 1.0f / 1280.0f * 5.0f;
+    float texel = 1.0f / 1280.0f * 3.0f;
 
     vec2 topTexel = interp_UV + vec2(0.0f, texel);
     vec3 topColor = distortedColorByUv(topTexel);
@@ -182,40 +181,42 @@ vec4 tracePlane() {
     vec2 bottomRightTexel = interp_UV + vec2(texel, -texel);
     vec3 bottomRightColor = distortedColorByUv(bottomRightTexel);
 
-    float newAlfa = color.g;
-
-    if(color.r < 0.00001f) {
-        if(
-            topColor.r < 0.1
-            && bottomColor.r < 0.1
-            && leftColor.r < 0.1
-            && rightColor.r < 0.1
-            && topRightColor.r < 0.1
-            && topLeftColor.r < 0.1
-            && bottomRightColor.r < 0.1
-            && bottomLeftColor.r < 0.1
-            ) {
+    if(color.y > 0) {
+        //--- IF IT'S A GREEN PIXEL SURROUNDED BY ONLY GREEN PIXELS, I DISCARD IT
+        if(topColor.r < 0.01
+            && bottomColor.r < 0.9
+            && leftColor.r < 0.9
+            && rightColor.r < 0.9
+            && topRightColor.r < 0.9
+            && topLeftColor.r < 0.9
+            && bottomRightColor.r < 0.9
+            && bottomLeftColor.r < 0.9) {
             discard;
         }
-        newAlfa = 0.5f;
+    } else {
+        //--- IF IT'S A RED PIXEL SURROUNDED BY ONLY RED PIXELS, I DISCARD IT
+        if(topColor.r > 0.1
+            && bottomColor.r > 0.1
+            && leftColor.r > 0.1
+            && rightColor.r > 0.1
+            && topRightColor.r > 0.1
+            && topLeftColor.r > 0.1
+            && bottomRightColor.r > 0.1
+            && bottomLeftColor.r > 0.1) {
+            discard;
+        }
     }
+
+    float alpha = snoise(vec3(interp_UV * 10, time));
+    float noiseMin = 0.0f;
+    float noiseMax = 1.0f;
+    float alphaMin = 0.5f;
+    float alphaMax = 1.0f;
+    alpha = ((alpha - noiseMin) / (noiseMax - noiseMin)) * (alphaMax - alphaMin) + alphaMin;
 
     color = vec3(1.0f, 0.0f, 0.0f);
-
-    if(
-        topColor.y < 0.998 + distorsion / 10
-        && bottomColor.y < 0.998 + distorsion / 10
-        && leftColor.y < 0.998 + distorsion / 10
-        && rightColor.y < 0.998 + distorsion / 10
-        && topLeftColor.y < 0.998 + distorsion / 10
-        && topRightColor.y < 0.998 + distorsion / 10
-        && bottomLeftColor.y < 0.998 + distorsion / 10
-        && bottomRightColor.y < 0.998 + distorsion / 10
-        ) {
-        discard;
-    }
-
-    return vec4(color, newAlfa * distorsion * -1);
+   
+    return vec4(color, alpha * distorsion * -1);
 }
 
 void main() {
