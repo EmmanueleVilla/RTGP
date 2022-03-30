@@ -97,12 +97,15 @@ float snoise(vec3 v) {
     return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
 }
 
+//--- SUBROUTINE THAT APPLIES THE GIVEN TEXTURE
 subroutine(fragshader)
 vec4 textured() {
     vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
     return vec4(texture(tex, repeatedUV).xyz, 1.0f);
 }
 
+
+//--- SUBROUTING THAT APPLIES A PINCUSHION DISTORSION
 subroutine(fragshader)
 vec4 pincushion() {
     vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
@@ -117,23 +120,21 @@ vec4 pincushion() {
     return vec4(col + vec3(distorsion/20.0f) + vec3(distorsion * y), 1.0f);
 }
 
+//--- SUBROUTINE THAT ALWAYS RETURNS THE GIVEN COLOR
 subroutine(fragshader)
 vec4 fixedColor() {
     return vec4(colorIn, 1.0f);
 }
 
+//--- SUBROUTINE THAT JUST RETURNS RED COLOR
 subroutine(fragshader)
 vec4 redOutline() {
-    float alpha = snoise(vec3(interp_UV * 10, time));
-    float noiseMin = 0.0f;
-    float noiseMax = 1.0f;
-    float alphaMin = 0.5f;
-    float alphaMax = 1.0f;
-    alpha = ((alpha - noiseMin) / (noiseMax - noiseMin)) * (alphaMax - alphaMin) + alphaMin;
     return vec4(1.0f, 0.0f, 0.0f, 1.0f);
 }
 
 
+//--- RETURNS THE COLOR OF THE TEXTURE
+//--- BY PINCUSHION DISTORTING THE GIVEN UVs
 vec3 distortedColorByUv(vec2 interp_UV) {
     float newX = interp_UV.x - 1.0f;
     float y = pow(newX, 2) + newX + 0.1;
@@ -146,17 +147,22 @@ vec3 distortedColorByUv(vec2 interp_UV) {
     return col + vec3(distorsion/10.0f) + vec3(distorsion * y);
 }
 
+//--- SUBROUTINE THAT COLORS THE TRACE OF THE GREEN/RED TRACE TEXTURE
 subroutine(fragshader)
 vec4 tracePlane() {
 
+    //--- IF I'M NOT IN WITCHER SENSES MODE, DISCARD ALL
     if(distorsion == 0) {
         discard;
     }
 
+    //--- GET CURRENT COLOR, GREEN OR RED
     vec3 color = distortedColorByUv(interp_UV);
 
+    //--- DISTANCE FROM THE NEIGHBOURS TO BE CHECKED
     float texel = 1.0f / 1280.0f * 5.5f;
 
+    //--- NEIGHBOURS
     vec2 topTexel = interp_UV + vec2(0.0f, texel);
     vec3 topColor = distortedColorByUv(topTexel);
 
@@ -234,6 +240,7 @@ vec4 tracePlane() {
     bottomRightTexel = interp_UV + vec2(texel, -texel);
     bottomRightColor = distortedColorByUv(bottomRightTexel);
 
+    //--- IF I'M IN THE INTERNAL BORDER, MY ALPHA WILL ALWAYS BE 1
     bool variableAlpha = false;
 
     if(color.y > 0) {
@@ -260,18 +267,23 @@ vec4 tracePlane() {
         }
     }
 
-    float alpha = 1.0f;
+    float alpha = 0.8f;
     if(variableAlpha) {
+        //--- OTHERWISE, I GET A NOISE FROM 0 TO 1
         alpha = snoise(vec3(interp_UV * 15, time));
         float noiseMin = 0.0f;
         float noiseMax = 1.0f;
-        float alphaMin = 0.35f;
-        float alphaMax = 0.85f;
+        float alphaMin = 0.5f;
+        float alphaMax = 0.8f;
+
+        //--- AND MOVE IT TO THE ALPHA_MIN - ALPHA_MAX RANGE
         alpha = ((alpha - noiseMin) / (noiseMax - noiseMin)) * (alphaMax - alphaMin) + alphaMin;
     }
 
+    //--- BASE OUTPUT COLOR IS ALWAYS RED
     color = vec3(1.0f, 0.0f, 0.0f);
    
+    //--- APPLY NEGATIVE DISTORSION (FROM 0 TO 1) TO FADE IN/OUT THE TRACE
     return vec4(color, alpha * distorsion * -1);
 }
 
