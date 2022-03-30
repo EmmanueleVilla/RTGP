@@ -130,7 +130,7 @@ vec4 redOutline() {
     float alphaMin = 0.5f;
     float alphaMax = 1.0f;
     alpha = ((alpha - noiseMin) / (noiseMax - noiseMin)) * (alphaMax - alphaMin) + alphaMin;
-    return vec4(1.0f, 0.0f, 0.0f, alpha);
+    return vec4(alpha, 0.0f, 0.0f, 1.0f);
 }
 
 

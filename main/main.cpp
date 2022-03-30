@@ -536,7 +536,7 @@ int main()
 
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
 
-            glClearColor(0.0f, 1.0f, 1.0f, 0.0f);
+            glClearColor(0.0f, 1.0f, 0.0f, 0.0f);
 
             clear();
 
@@ -571,10 +571,8 @@ int main()
             glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
             glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
 
-            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
+            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "redOutline");
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
-            GLfloat white[] = { 1.0f, 0.0f, 0.0f };
-            glUniform3fv(locations[LOCATION_COLOR], 1, white);
 
             glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
             planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(0.0f, 1.0f, -10.0f));
