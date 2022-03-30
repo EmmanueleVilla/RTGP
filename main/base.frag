@@ -149,13 +149,13 @@ vec3 distortedColorByUv(vec2 interp_UV) {
 subroutine(fragshader)
 vec4 tracePlane() {
 
-    if(distorsion == 0) {
-        discard;
-    }
+    //if(distorsion == 0) {
+    //    discard;
+    //}
     
     vec3 color = distortedColorByUv(interp_UV);
 
-    float texel = 1.0f / 1280.0f * 10.0f;
+    float texel = 1.0f / 1280.0f * 5.0f;
 
     vec2 topTexel = interp_UV + vec2(0.0f, texel);
     vec3 topColor = distortedColorByUv(topTexel);
@@ -169,18 +169,39 @@ vec4 tracePlane() {
     vec2 rightTexel = interp_UV + vec2(-texel, 0.0f);
     vec3 rightColor = distortedColorByUv(rightTexel);
 
+    vec2 topLeftTexel = interp_UV + vec2(-texel, texel);
+    vec3 topLeftColor = distortedColorByUv(topLeftTexel);
+
+    vec2 topRightTexel = interp_UV + vec2(texel, texel);
+    vec3 topRightColor = distortedColorByUv(topRightTexel);
+
+    vec2 bottomLeftTexel = interp_UV + vec2(-texel, -texel);
+    vec3 bottomLeftColor = distortedColorByUv(bottomLeftTexel);
+
+    vec2 bottomRightTexel = interp_UV + vec2(texel, -texel);
+    vec3 bottomRightColor = distortedColorByUv(bottomRightTexel);
+
     float newAlfa = color.g;
 
     if(color.r < 0.00001f) {
-        if(topColor.r < 0.1 && bottomColor.r < 0.1 && leftColor.r < 0.1 && rightColor.r < 0.1) {
-            discard;
-        }
-        newAlfa = 0.5f;
+        //if(topColor.r < 0.1 && bottomColor.r < 0.1 && leftColor.r < 0.1 && rightColor.r < 0.1) {
+        //    discard;
+        //}
+        //newAlfa = 0.5f;
+        discard;
     }
 
     color = vec3(1.0f, 0.0f, 0.0f);
 
-    if(topColor.y < 0.9 && bottomColor.y < 0.9 && leftColor.y < 0.9 && rightColor.y < 0.9) {
+    if(
+        topColor.y < 0.998
+        && bottomColor.y < 0.998
+        && leftColor.y < 0.998
+        && rightColor.y < 0.998
+        && topLeftColor.y < 0.998
+        && topRightColor.y < 0.998
+        && bottomLeftColor.y < 0.998
+        && bottomRightColor.y < 0.998) {
         discard;
     }
 
