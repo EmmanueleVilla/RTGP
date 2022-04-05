@@ -99,7 +99,7 @@ vector<glm::mat4> treesMatrixes;
 
 //--- AABBs list
 vector<AABB> AABBs;
-AABBNode AABBhierarchy = AABBNode();
+AABB AABBhierarchy = AABB();
 GLuint AABBsIndices[] = { 0, 1, 3,1, 2, 3, 2, 3, 6, 3, 6, 7, 5, 6, 7, 4, 5, 7, 0, 4, 5, 0, 1, 5, 0, 3, 4, 0, 4, 7, 1, 2, 6, 1, 5, 6 };
 
 //--- CART DATA
@@ -135,6 +135,7 @@ string locationNames[] { "projectionMatrix", "viewMatrix", "tex", "repeat", "mod
 void clear();
 void setTexture(int index, GLint repeatLocation, float repeatValue);
 void loadAABBs();
+void addToAABBsHierarchy(vector<AABB> aabb);
 void loadNextRow();
 void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier);
 void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine);
@@ -231,7 +232,14 @@ int main()
         }
 
         if(appState == AppStates::CreatingAABBsHierarchy) {
-            cout << "Creating AABBs' hierarchy" << endl;
+            addToAABBsHierarchy( { AABBs.begin(), AABBs.begin() + 1 } );
+            cout << "******************" << endl;
+            cout << "******************" << endl;
+            cout << "                  " << endl;
+            cout << AABBhierarchy.fullPrint(0) << endl;
+            cout << "                  " << endl;
+            cout << "******************" << endl;
+            cout << "******************" << endl;
             appState = AppStates::Loaded;
         }
 
@@ -532,7 +540,7 @@ int main()
 
         //--- TODO: OPTIMIZE BY REMOVING Y
         float distancePlayerCart = distance(playerPos, glm::vec3(cartX, 0.0f, cartZ));
-        //if(keys[GLFW_KEY_SPACE] && distancePlayerCart < 5) {
+        if(keys[GLFW_KEY_SPACE] && distancePlayerCart < 7.5) {
 
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
 
@@ -587,7 +595,7 @@ int main()
 
             glStencilFunc(GL_ALWAYS, 1, 0xFF);
             
-        //}
+        }
 
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, firstTexture, 0);
 
@@ -611,7 +619,7 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, firstTexture);
         
-        planeModelMatrix2 = glm::mat4(1.0f);
+        glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
         planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(0.0f, 1.0f, -10.0f));
         planeModelMatrix2 = glm::rotate(planeModelMatrix2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         planeModelMatrix2 = glm::scale(planeModelMatrix2, glm::vec3(1/16.0f * 17.0f, 1.0f, 1/16.0f * 10.0f));
@@ -704,9 +712,7 @@ void SetupShader(int program)
 //////////////////////////////////////////
 // callback for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
-{
-  GLuint new_subroutine;
-  
+{  
     // if ESC is pressed, we close the application
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
@@ -847,6 +853,16 @@ void setTexture(int index, GLint repeatLocation, float repeatValue) {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, textures[index]);
     glUniform1f(repeatLocation, repeatValue);
+}
+
+void addToAABBsHierarchy(vector<AABB> AABBlist) {
+    cout << "***********************" << endl;
+    cout << "Adding AABB to AABBs' hierarchy" << endl;
+    for (auto i=AABBlist.begin(); i!=AABBlist.end(); ++i) {
+        AABB current = *i;
+        cout << "Check collision of " << current.toString() << endl;
+        AABBhierarchy.addAABBToHierarchy(current);
+    }
 }
 
 void loadAABBs() {
