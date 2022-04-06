@@ -502,14 +502,12 @@ int main()
         //--- TODO: OPTIMIZE BY REMOVING Y
         float distancePlayerCart = distance(playerPos, glm::vec3(cartX, 0.0f, cartZ));
 
-        //--- TODO: FIX WHEN MOVING AWAY
-        //if(keys[GLFW_KEY_SPACE] && distancePlayerCart < 7.5) {
+        //--- CLEAR SECOND TEXTURE OF FRAME BUFFER
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
+        glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+        clear();
 
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
-
-            glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
-
-            clear();
+        if(distorsion > 0.01f || (keys[GLFW_KEY_SPACE] && distancePlayerCart < 7.5)) {
 
             glColorMask(false, false, false, false);
             glDepthMask(false);
@@ -557,9 +555,9 @@ int main()
             models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
 
             glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            
-        //}
+        }
 
+        //--- BIND BACK TO FIRST TEXTURE
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, firstTexture, 0);
 
         //--- RENDER TO QUAD
@@ -582,7 +580,7 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, firstTexture);
         
-        planeModelMatrix2 = glm::mat4(1.0f);
+        glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
         planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(0.0f, 1.0f, -10.0f));
         planeModelMatrix2 = glm::rotate(planeModelMatrix2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         planeModelMatrix2 = glm::scale(planeModelMatrix2, glm::vec3(1/16.0f * 17.0f, 1.0f, 1/16.0f * 10.0f));
