@@ -188,6 +188,32 @@ class AABB {
     bool AcceptChildren = false;
     int Hash;
 
+    bool checkXZCollision(AABB& collider) {
+        //--- TRY COLLISION AGAINST ME
+        bool collisionX = (MinX <= collider.MaxX && MaxX >= collider.MinX);
+        if(collisionX) {
+            bool collisionZ = (MinZ <= collider.MaxZ && MaxZ >= collider.MinZ);
+            //--- COLLIDES AGAINST ME
+            if(collisionZ) {
+                //--- IF I'M A LEAF, RETURN TRUE
+                if(IsLeaf) {
+                    return true;
+                }
+                //--- ELSE, PASS THE CHECK TO MY CHILDREN
+                for(AABB& child : children) {
+                    bool childCollision = checkXZCollision(collider);
+                    if(childCollision) {
+                        return true;
+                    }
+                }
+                return false;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+
     void addAABBToHierarchy(AABB& collider) {
 
         bool isLastLevel = false;
@@ -198,20 +224,16 @@ class AABB {
             return;
         }
 
-        bool collision = false;
-
         //--- TRY COLLISION AGAINST EACH CHILD
         for(AABB& child : children) {
             bool collisionX = (child.MinX <= collider.MaxX && child.MaxX >= collider.MinX);
-            bool collisionZ = (child.MinZ <= collider.MaxZ && child.MaxZ >= collider.MinZ);
-            if(collisionX && collisionZ) {
+            if(collisionX) {
+                bool collisionZ = (child.MinZ <= collider.MaxZ && child.MaxZ >= collider.MinZ);
                 //--- I PASS THE AABB TO MY CHILDREN, IF THEY COLLIDE WITH IT
-                child.addAABBToHierarchy(collider);
-                collision = true;
+                if(collisionZ) {
+                    child.addAABBToHierarchy(collider);
+                }
             }
-        }
-        if(!collision) {
-            cout << "No collision between " << collider.toString() << " and " << toString() << endl;
         }
     }
 
