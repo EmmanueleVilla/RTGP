@@ -8,18 +8,7 @@ class AABB {
 
     public:
 
-    AABB(GLfloat minX, GLfloat maxX, GLfloat minY, GLfloat maxY, GLfloat minZ, GLfloat maxZ) {
-        MinX = minX;
-        MaxX = maxX;
-        MinY = minY;
-        MaxY = maxY;
-        MinZ = minZ;
-        MaxZ = maxZ;
-        IsLeaf = true;
-        Hash = rand() % 10000;
-    }
-
-    AABB(GLfloat minX, GLfloat maxX, GLfloat minY, GLfloat maxY, GLfloat minZ, GLfloat maxZ, bool isLeaf) {
+    void initWithValues(GLfloat minX, GLfloat maxX, GLfloat minY, GLfloat maxY, GLfloat minZ, GLfloat maxZ, bool isLeaf, bool acceptChildren) {
         MinX = minX;
         MaxX = maxX;
         MinY = minY;
@@ -27,7 +16,20 @@ class AABB {
         MinZ = minZ;
         MaxZ = maxZ;
         IsLeaf = isLeaf;
+        AcceptChildren = acceptChildren;
         Hash = rand() % 10000;
+    }
+
+    AABB(GLfloat minX, GLfloat maxX, GLfloat minY, GLfloat maxY, GLfloat minZ, GLfloat maxZ) {
+        initWithValues(minX, maxX, minY, maxY, minZ, maxZ, false, false); 
+    }
+
+    AABB(GLfloat minX, GLfloat maxX, GLfloat minY, GLfloat maxY, GLfloat minZ, GLfloat maxZ, bool isLeaf) {
+        initWithValues(minX, maxX, minY, maxY, minZ, maxZ, isLeaf, false); 
+    }
+
+    AABB(GLfloat minX, GLfloat maxX, GLfloat minY, GLfloat maxY, GLfloat minZ, GLfloat maxZ, bool isLeaf, bool acceptChildren) {
+        initWithValues(minX, maxX, minY, maxY, minZ, maxZ, isLeaf, acceptChildren); 
     }
 
     AABB(vector<GLfloat> vertices) {
@@ -101,22 +103,27 @@ class AABB {
      */
     AABB() {
         
-        MinX = -20.0f;
-        MaxX = 20.0f;
-        MinY = 0.0f;
-        MaxY = 12.0f;
-        MinZ = -20.0f;
-        MaxZ = 20.0f;
+        int side = 64;
+        int half = side / 2;
+
+        MinX = -side;
+        MaxX = side;
+        MinY = 0;
+        MaxY = 12;
+        MinZ = -side;
+        MaxZ = side;
         IsLeaf = false;
+        AcceptChildren = false;
+        Hash = rand() % 10000;
 
         //--- FIRST QUARTER OF THE WHOLE AABB
-        AABB firstQuarter = AABB(-20.0f, 0.0f, 0.0f, 12.0f,  -20.0f, 0.0f, false);
+        AABB firstQuarter = AABB(-side, 0, 0, 12, -side, 0, false);
 
         //--- QUARTERS OF THE FIRST QUARTER
-        AABB firstQuarterFirstQuarter = AABB(-20, -10, 0, 12, -20, -10, false);
-        AABB firstQuarterSecondQuarter = AABB(-10, 0, 0, 12, -20, -10, false);
-        AABB firstQuarterThirdQuarter = AABB(-20, -10, 0, 12, -10, 0, false);
-        AABB firstQuarterForthQuarter = AABB(-10, 0, 0, 12, -10, 0, false);
+        AABB firstQuarterFirstQuarter = AABB(-side, -half, 0, 12, -side, -half, false, true);
+        AABB firstQuarterSecondQuarter = AABB(-half, 0, 0, 12, -side, -half, false, true);
+        AABB firstQuarterThirdQuarter = AABB(-side, -half, 0, 12, -half, 0, false, true);
+        AABB firstQuarterForthQuarter = AABB(-half, 0, 0, 12, -half, 0, false, true);
 
         firstQuarter.add_children(firstQuarterFirstQuarter);
         firstQuarter.add_children(firstQuarterSecondQuarter);
@@ -124,13 +131,13 @@ class AABB {
         firstQuarter.add_children(firstQuarterForthQuarter);
 
         //--- SECOND QUARTER OF THE WHOLE AABB
-        AABB secondQuarter = AABB(0.0f, 20.0f, 0.0f, 12.0f,  0.0f, 20.0f, false);
+        AABB secondQuarter = AABB(0, side, 0, 12,  0, side, false);
 
         //--- QUARTERS OF THE SECOND QUARTER
-        AABB secondQuarterFirstQuarter = AABB(0, 10, 0, 12, 0, 10, false);
-        AABB secondQuarterSecondQuarter = AABB(0, 10, 0, 12, 10, 20, false);
-        AABB secondQuarterThirdQuarter = AABB(10, 20, 0, 12, 0, 10, false);
-        AABB secondQuarterForthQuarter = AABB(10, 20, 0, 12, 10, 20, false);
+        AABB secondQuarterFirstQuarter = AABB(0, half, 0, 12, 0, half, false, true);
+        AABB secondQuarterSecondQuarter = AABB(0, half, 0, 12, half, side, false, true);
+        AABB secondQuarterThirdQuarter = AABB(half, side, 0, 12, 0, half, false, true);
+        AABB secondQuarterForthQuarter = AABB(half, side, 0, 12, half, side, false, true);
 
         secondQuarter.add_children(secondQuarterFirstQuarter);
         secondQuarter.add_children(secondQuarterSecondQuarter);
@@ -138,13 +145,13 @@ class AABB {
         secondQuarter.add_children(secondQuarterForthQuarter);
 
         //--- THIRD QUARTER OF THE WHOLE AABB
-        AABB thirdQuarter = AABB(-20.0f, 0.0f, 0.0f, 12.0f,  0.0f, 20.0f, false);
+        AABB thirdQuarter = AABB(-side, 0, 0, 12,  0, side, false);
 
         //--- QUARTERS OF THE THIRD QUARTER
-        AABB thirdQuarterFirstQuarter = AABB(-20, -10, 0, 12, 0, 10, false);
-        AABB thirdQuarterSecondQuarter = AABB(-20, -10, 0, 12, 10, 20, false);
-        AABB thirdQuarterThirdQuarter = AABB(-10, 0, 0, 12, 0, 10, false);
-        AABB thirdQuarterForthQuarter = AABB(-10, 0, 0, 12, 10, 20, false);
+        AABB thirdQuarterFirstQuarter = AABB(-side, -half, 0, 12, 0, half, false, true);
+        AABB thirdQuarterSecondQuarter = AABB(-side, -half, 0, 12, half, side, false, true);
+        AABB thirdQuarterThirdQuarter = AABB(-half, 0, 0, 12, 0, half, false, true);
+        AABB thirdQuarterForthQuarter = AABB(-half, 0, 0, 12, half, side, false, true);
 
         thirdQuarter.add_children(thirdQuarterFirstQuarter);
         thirdQuarter.add_children(thirdQuarterSecondQuarter);
@@ -152,13 +159,13 @@ class AABB {
         thirdQuarter.add_children(thirdQuarterForthQuarter);
         
         //--- FORTH QUARTER OF THE WHOLE AABB
-        AABB forthQuarter = AABB(0.0f, 20.0f, 0.0f, 12.0f,  -20.0f, 0.0f, false);
+        AABB forthQuarter = AABB(0, side, 0, 12,  -side, 0, false);
 
          //--- QUARTERS OF THE FORTH QUARTER
-        AABB forthQuarterFirstQuarter = AABB(0, 10, 0, 12, -20, -10, false);
-        AABB forthQuarterSecondQuarter = AABB(0, 10, 0, 12, -10, 0, false);
-        AABB forthQuarterThirdQuarter = AABB(10, 20, 0, 12, -20, -10, false);
-        AABB forthQuarterForthQuarter = AABB(10, 20, 0, 12, -10, 0, false);
+        AABB forthQuarterFirstQuarter = AABB(0, half, 0, 12, -side, -half, false, true);
+        AABB forthQuarterSecondQuarter = AABB(0, half, 0, 12, -half, 0, false, true);
+        AABB forthQuarterThirdQuarter = AABB(half, side, 0, 12, -side, -half, false, true);
+        AABB forthQuarterForthQuarter = AABB(half, side, 0, 12, -half, 0, false, true);
 
         forthQuarter.add_children(forthQuarterFirstQuarter);
         forthQuarter.add_children(forthQuarterSecondQuarter);
@@ -169,7 +176,6 @@ class AABB {
         add_children(secondQuarter);
         add_children(thirdQuarter);
         add_children(forthQuarter);
-        Hash = rand() % 10000;
     }
 
     float MinX = 9999;
@@ -179,54 +185,33 @@ class AABB {
     float MaxY = -9999;
     float MaxZ = -9999;
     bool IsLeaf = false;
+    bool AcceptChildren = false;
     int Hash;
 
     void addAABBToHierarchy(AABB& collider) {
 
-        cout << "Try add aabb to " << this->toString() << endl;
-
         bool isLastLevel = false;
 
-        //--- CHECK IF I AM THE LAST LEVEL IN THE AAB HIERARCHY
-        if(children.size() == 0) {
-            //--- I'M LAST LEVEL IF I DON'T HAVE CHILDER
-            isLastLevel = true;
-        } else {
-            isLastLevel = false;
-            //--- OR IF MY CHILDREN ARE LEAVES
-            //--- I CHECK ONLY ONE BECAUSE IF ONE IS A LEAF, THEN ALL ARE LEAVES
-            for (auto i= children.begin(); i!=children.end(); ++i) {
-                AABB child = *i;
-                if(child.IsLeaf) {
-                    isLastLevel = true;
-                }
-            }
-        }
-
-        cout << "Am I the last level? " << isLastLevel << endl;
-
         //--- SINCE I'M THE LAST LEVEL, I ADD THIS AABB TO MY CHILDREN
-        if(isLastLevel) {
-            cout << "Child added to me: " << std::to_string(Hash) << endl;
+        if(AcceptChildren) {
             add_children(collider);
-
-            cout << "---00000000000000000000---" << endl;
-            cout << fullPrint(0) << endl;
-
             return;
         }
 
+        bool collision = false;
+
         //--- TRY COLLISION AGAINST EACH CHILD
-        for (auto i= children.begin(); i!=children.end(); ++i) {
-            AABB child = *i;
-            cout << "Checking against " << child.toString() << endl;
+        for(AABB& child : children) {
             bool collisionX = (child.MinX <= collider.MaxX && child.MaxX >= collider.MinX);
             bool collisionZ = (child.MinZ <= collider.MaxZ && child.MaxZ >= collider.MinZ);
             if(collisionX && collisionZ) {
-                cout << "COLLISION!" << endl;
                 //--- I PASS THE AABB TO MY CHILDREN, IF THEY COLLIDE WITH IT
                 child.addAABBToHierarchy(collider);
+                collision = true;
             }
+        }
+        if(!collision) {
+            cout << "No collision between " << collider.toString() << " and " << toString() << endl;
         }
     }
 

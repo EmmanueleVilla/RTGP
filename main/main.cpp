@@ -232,7 +232,7 @@ int main()
         }
 
         if(appState == AppStates::CreatingAABBsHierarchy) {
-            addToAABBsHierarchy( { AABBs.begin(), AABBs.begin() + 1 } );
+            addToAABBsHierarchy( { AABBs.begin(), AABBs.end() } );
             appState = AppStates::Loaded;
         }
 
@@ -857,12 +857,14 @@ void setTexture(int index, GLint repeatLocation, float repeatValue) {
 }
 
 void addToAABBsHierarchy(vector<AABB> AABBlist) {
-    cout << "***********************" << endl;
     cout << "Adding AABB to AABBs' hierarchy" << endl;
+    int count = 0;
     for (auto i=AABBlist.begin(); i!=AABBlist.end(); ++i) {
         AABB current = *i;
+        count++;
         AABBhierarchy.addAABBToHierarchy(current);
     }
+    cout << "TREES COUNT " << count << endl;
 }
 
 void loadAABBs() {
