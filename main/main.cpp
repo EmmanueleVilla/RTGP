@@ -408,22 +408,7 @@ int main()
         AABB playerAABB = AABB(VerticesBuilder().build(playerPos, dy, glm::vec3(playerSize)));
 
         //--- DEFAULT VALUE OF COLLISION DETECTED
-        bool collision = false;
-
-        //--- VERY LOW PERFORMANCE AABB CHECK
-        //--- CPU TIME BETWEEN 50 AND 300 MICROSECONDS
-        for (auto i= AABBs.begin(); i!=AABBs.end(); ++i) {
-            AABB tree = *i;
-            bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
-            if(collisionX) {
-                bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
-                //--- THE PLAYER COLLIDES WITH SOMETHING
-                if(collisionZ) {
-                    collision = true;
-                    break;
-                }
-            }
-        }
+        bool collision = AABBhierarchy.checkXZCollision(playerAABB);
         
         if(collision) {
 
@@ -434,21 +419,7 @@ int main()
             playerAABB = AABB(VerticesBuilder().build(playerPos, dy, glm::vec3(playerSize)));
 
             //--- DEFAULT VALUE OF COLLISION DETECTED
-            bool ZmovementCollision = false;
-
-            //--- VERY LOW PERFORMANCE AABB CHECK
-            for (auto i= AABBs.begin(); i!=AABBs.end(); ++i) {
-                AABB tree = *i;
-                bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
-                if(collisionX) {
-                    bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
-                    //--- THE PLAYER COLLIDES WITH SOMETHING
-                    if(collisionZ) {
-                        ZmovementCollision = true;
-                        break;
-                    }
-                }
-            }
+            bool ZmovementCollision = AABBhierarchy.checkXZCollision(playerAABB);
 
             //--- CHECK COLLISION IF I MOVE ONLY IN THE X DIRECTION
             playerPos = glm::vec3(deltaX, 0, oldDeltaZ);
@@ -457,21 +428,7 @@ int main()
             playerAABB = AABB(VerticesBuilder().build(playerPos, dy, glm::vec3(playerSize)));
 
             //--- DEFAULT VALUE OF COLLISION DETECTED
-            bool XmovementCollision = false;
-
-            //--- VERY LOW PERFORMANCE AABB CHECK
-            for (auto i= AABBs.begin(); i!=AABBs.end(); ++i) {
-                AABB tree = *i;
-                bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
-                if(collisionX) {
-                    bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
-                    //--- THE PLAYER COLLIDES WITH SOMETHING
-                    if(collisionZ) {
-                        XmovementCollision = true;
-                        break;
-                    }
-                }
-            }
+            bool XmovementCollision = AABBhierarchy.checkXZCollision(playerAABB);
 
             if(XmovementCollision) {
                 deltaX = oldDeltaX;
