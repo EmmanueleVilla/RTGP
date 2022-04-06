@@ -233,13 +233,6 @@ int main()
 
         if(appState == AppStates::CreatingAABBsHierarchy) {
             addToAABBsHierarchy( { AABBs.begin(), AABBs.begin() + 1 } );
-            cout << "******************" << endl;
-            cout << "******************" << endl;
-            cout << "                  " << endl;
-            cout << AABBhierarchy.fullPrint(0) << endl;
-            cout << "                  " << endl;
-            cout << "******************" << endl;
-            cout << "******************" << endl;
             appState = AppStates::Loaded;
         }
 
@@ -294,6 +287,14 @@ int main()
 
         glfwSwapBuffers(window);
     }
+
+    cout << "******************" << endl;
+    cout << "******************" << endl;
+    cout << "                  " << endl;
+    cout << AABBhierarchy.fullPrint(0) << endl;
+    cout << "                  " << endl;
+    cout << "******************" << endl;
+    cout << "******************" << endl;
 
     cout << "Loading ended, binding new loop values" << endl;
 
@@ -860,7 +861,6 @@ void addToAABBsHierarchy(vector<AABB> AABBlist) {
     cout << "Adding AABB to AABBs' hierarchy" << endl;
     for (auto i=AABBlist.begin(); i!=AABBlist.end(); ++i) {
         AABB current = *i;
-        cout << "Check collision of " << current.toString() << endl;
         AABBhierarchy.addAABBToHierarchy(current);
     }
 }
