@@ -411,18 +411,17 @@ int main()
         bool collision = false;
 
         //--- VERY LOW PERFORMANCE AABB CHECK
-        //--- BEST CASE MEASURED ON MAC: 34 microseconds
-        //--- WORST CASE MEASURED ON MAC: 372 microseconds
-        //--- BEST CASE MEASURED ON PC: 196 microseconds
-        //--- WORST CASE MEASURED ON PC: 45 microseconds
+        //--- CPU TIME BETWEEN 50 AND 300 MICROSECONDS
         for (auto i= AABBs.begin(); i!=AABBs.end(); ++i) {
             AABB tree = *i;
             bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
-            bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
-            if(collisionX && collisionZ) {
+            if(collisionX) {
+                bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
                 //--- THE PLAYER COLLIDES WITH SOMETHING
-                collision = true;
-                break;
+                if(collisionZ) {
+                    collision = true;
+                    break;
+                }
             }
         }
         
@@ -441,11 +440,13 @@ int main()
             for (auto i= AABBs.begin(); i!=AABBs.end(); ++i) {
                 AABB tree = *i;
                 bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
-                bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
-                if(collisionX && collisionZ) {
+                if(collisionX) {
+                    bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
                     //--- THE PLAYER COLLIDES WITH SOMETHING
-                    ZmovementCollision = true;
-                    break;
+                    if(collisionZ) {
+                        ZmovementCollision = true;
+                        break;
+                    }
                 }
             }
 
@@ -462,11 +463,13 @@ int main()
             for (auto i= AABBs.begin(); i!=AABBs.end(); ++i) {
                 AABB tree = *i;
                 bool collisionX = (tree.MinX <= playerAABB.MaxX && tree.MaxX >= playerAABB.MinX);
-                bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
-                if(collisionX && collisionZ) {
+                if(collisionX) {
+                    bool collisionZ = (tree.MinZ <= playerAABB.MaxZ && tree.MaxZ >= playerAABB.MinZ);
                     //--- THE PLAYER COLLIDES WITH SOMETHING
-                    XmovementCollision = true;
-                    break;
+                    if(collisionZ) {
+                        XmovementCollision = true;
+                        break;
+                    }
                 }
             }
 
@@ -858,13 +861,10 @@ void setTexture(int index, GLint repeatLocation, float repeatValue) {
 
 void addToAABBsHierarchy(vector<AABB> AABBlist) {
     cout << "Adding AABB to AABBs' hierarchy" << endl;
-    int count = 0;
     for (auto i=AABBlist.begin(); i!=AABBlist.end(); ++i) {
         AABB current = *i;
-        count++;
         AABBhierarchy.addAABBToHierarchy(current);
     }
-    cout << "TREES COUNT " << count << endl;
 }
 
 void loadAABBs() {
