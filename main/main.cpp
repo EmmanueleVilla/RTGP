@@ -40,6 +40,7 @@
 #define PLAYER_INDEX 2
 #define CART_INDEX 3
 #define TREE_INDEX 4
+#define HOUSE_INDEX 5
 
 //---  APPLICATION WINDOW 
 GLuint screenWidth = 1280, screenHeight = 720;
@@ -105,7 +106,10 @@ GLuint AABBsIndices[] = { 0, 1, 3,1, 2, 3, 2, 3, 6, 3, 6, 7, 5, 6, 7, 4, 5, 7, 0
 //--- CART DATA
 float cartX = 0.0f;
 float cartZ = 0.0f;
-GLfloat cartColor[] = { 0.65f, 0.16f, 0.16f };
+
+//--- HOUSE DATA
+float houseX = 0.0f;
+float houseZ = 0.0f;
 
 //--- INDEX TO KEEP TRACK OF THE CURRENT ROW TO LOAD ONE ROW PER RENDER LOOP
 int currentCell = 0;
@@ -195,7 +199,7 @@ int main()
     SetupShader(shader.Program);
 
     //--- LOAD TEXTURES MODELS, MATRICES
-    string names[] { "coin", "plane", "dog", "cart", "tree" }; 
+    string names[] { "coin", "plane", "dog", "cart", "tree", "house" }; 
     for (string name : names) {
         textures.push_back(LoadTexture(("../textures/" + name + ".jpg").c_str()));
         models.push_back(Model("../models/" + name + ".obj"));
@@ -486,6 +490,20 @@ int main()
         GLuint subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
         glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
+        //--- SET HOUSE TEXTURE
+        setTexture(HOUSE_INDEX, locations[LOCATION_REPEAT], 1.0f);
+
+        //---  SET HOUSE MATRICES 
+        matrices[HOUSE_INDEX] = glm::mat4(1.0f);
+        matrices[HOUSE_INDEX] = glm::translate(matrices[HOUSE_INDEX], glm::vec3(houseX, 2.8f, houseZ));
+        matrices[HOUSE_INDEX] = glm::rotate(matrices[HOUSE_INDEX], glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        matrices[HOUSE_INDEX] = glm::rotate(matrices[HOUSE_INDEX], glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        matrices[HOUSE_INDEX] = glm::scale(matrices[HOUSE_INDEX], glm::vec3(5.0f, 5.0f, 5.0f));
+        glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[HOUSE_INDEX]));
+
+        //---  DRAW HOUSE 
+        models[HOUSE_INDEX].Draw(locations[LOCATION_INSTANCED]);
+
         //--- SET TREE TEXTURE 
         setTexture(TREE_INDEX, locations[LOCATION_REPEAT], 1.0f);
 
@@ -499,14 +517,13 @@ int main()
 
         drawPlayer(shader, locations, 1.0f);
 
-        //--- TODO: OPTIMIZE BY REMOVING Y
-        float distancePlayerCart = distance(playerPos, glm::vec3(cartX, 0.0f, cartZ));
-
         //--- CLEAR SECOND TEXTURE OF FRAME BUFFER
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
         glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
         clear();
 
+        float distancePlayerCart = distance(glm::vec2(playerPos.x, playerPos.z), glm::vec2(cartX, cartZ));
+        
         if(distorsion > 0.01f || (keys[GLFW_KEY_SPACE] && distancePlayerCart < 7.5)) {
 
             glColorMask(false, false, false, false);
@@ -866,6 +883,10 @@ void loadNextRow() {
         if(*i == "C") {
             cartX = currentCell * 2;
             cartZ = position * 2;
+        }
+        if(*i == "H") {
+            houseX = currentCell * 2;
+            houseZ = position * 2;
         }
         if(*i == "P") {
             paths.push_back(glm::vec2(currentCell-16, position-16));
