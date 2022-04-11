@@ -7,6 +7,7 @@
 #endif
 
 #include <chrono>
+#include <cmath>
 
 #include <glad/glad.h>
 
@@ -122,6 +123,7 @@ vector<glm::vec2> paths;
 
 //--- ODOR PATH DATA
 vector<glm::vec2> odor;
+vector<glm::vec2> points;
 
 //--- LOAD CSV DATA FILE
 //--- I EXPECT A 32x32 CSV LIKE THE PLANE OF THE SIZE
@@ -238,7 +240,7 @@ int main()
     long long maxMicroseconds = -1;
 
     //--- LOADING RENDER LOOP
-    while(appState == AppStates::LoadingMap || appState == AppStates::LoadingAABBs || appState == AppStates::CreatingAABBsHierarchy)
+    while(appState != AppStates::Loaded)
     {
         if(glfwWindowShouldClose(window)) {
             shader.Delete();
@@ -848,20 +850,27 @@ void setTexture(int index, GLint repeatLocation, float repeatValue) {
 }
 
 void interpolateOdorPath() {
-    /*
-    cout << "uhm" << endl;
     int numPoints = odor.size();
     vector<glm::vec2> tangents;
-    tangents.push_back(glm::vec2((rand() % 10 - 5), (rand() % 10 - 5)));
+    tangents.push_back(glm::vec2((rand() % 30 - 15), (rand() % 30 - 15)));
     for (std::size_t i = 1; i != odor.size() - 1; ++i) {
         tangents.push_back(glm::vec2(odor[i].x - odor[i-1].x, odor[i].y - odor[i-1].y) + glm::vec2(odor[i+1].x - odor[i].x, odor[i+1].y - odor[i].y));
     }
-    tangents.push_back(glm::vec2((rand() % 10 - 5), (rand() % 10 - 5)));
-    cout << "TANGENTS" << endl;
-    for (auto i: tangents) {
-        cout << i.x << "," << i.y << endl;
+    tangents.push_back(glm::vec2((rand() % 30 - 15), (rand() % 30 - 15)));
+    for (std::size_t i = 0; i != odor.size() - 1; ++i) {
+        for(int index = 0; index <= 10; ++index) {
+            float value = index / 10.0f;
+            glm::vec2 p0 = ((float)((2 * pow(value, 3) - 3 * pow(value, 2) + 1))) * odor[i];
+            glm::vec2 m0 = ((float)((pow(value, 3) - 2 * pow(value, 2) + value))) * tangents[i];
+            glm::vec2 m1 = ((float)((pow(value, 3) - pow(value, 2)))) * tangents[i + 1];
+            glm::vec2 p1 = ((float)((-2 * pow(value, 3) + 3 * pow(value, 2)))) * odor[i + 1];
+            points.push_back(p0 + m0 + m1 + p1);
+        }
     }
-    */
+
+    for (int i = points.size() - 1; i >= 0; i--) {
+        cout << points[i].x << "," << points[i].y << endl;;
+    }
 }
 
 void addToAABBsHierarchy(vector<AABB> AABBlist) {
