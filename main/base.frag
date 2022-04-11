@@ -126,13 +126,6 @@ vec4 fixedColor() {
     return vec4(colorIn, 1.0f);
 }
 
-//--- SUBROUTINE THAT JUST RETURNS RED COLOR
-subroutine(fragshader)
-vec4 redOutline() {
-    return vec4(1.0f, 0.0f, 0.0f, 1.0f);
-}
-
-
 //--- RETURNS THE COLOR OF THE TEXTURE
 //--- BY PINCUSHION DISTORTING THE GIVEN UVs
 vec3 distortedColorByUv(vec2 interp_UV) {
@@ -187,8 +180,8 @@ vec4 tracePlane() {
     vec2 bottomRightTexel = interp_UV + vec2(texel, -texel);
     vec3 bottomRightColor = distortedColorByUv(bottomRightTexel);
 
-    if(color.y > 0) {
-        //--- IF IT'S A GREEN PIXEL SURROUNDED BY ONLY GREEN PIXELS, I DISCARD IT
+    if(color.z > 0) {
+        //--- IF IT'S A BLUE PIXEL SURROUNDED BY ONLY GREEN PIXELS, I DISCARD IT
         if(topColor.r < 0.01
             && bottomColor.r < 0.9
             && leftColor.r < 0.9
@@ -243,7 +236,7 @@ vec4 tracePlane() {
     //--- IF I'M IN THE INTERNAL BORDER, MY ALPHA WILL ALWAYS BE 1
     bool variableAlpha = false;
 
-    if(color.y > 0) {
+    if(color.z > 0) {
         if(topColor.r < 0.01
             && bottomColor.r < 0.9
             && leftColor.r < 0.9
@@ -280,11 +273,8 @@ vec4 tracePlane() {
         alpha = ((alpha - noiseMin) / (noiseMax - noiseMin)) * (alphaMax - alphaMin) + alphaMin;
     }
 
-    //--- BASE OUTPUT COLOR IS ALWAYS RED
-    color = vec3(1.0f, 0.0f, 0.0f);
-   
     //--- APPLY NEGATIVE DISTORSION (FROM 0 TO 1) TO FADE IN/OUT THE TRACE
-    return vec4(color, alpha * distorsion * -1);
+    return vec4(colorIn, alpha * distorsion * -1);
 }
 
 void main() {

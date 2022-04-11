@@ -95,6 +95,9 @@ GLfloat distorsionSpeed = 0.75f;
 enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, Loaded };
 AppStates appState = AppStates::LoadingMap;
 
+enum class QuestStates { Cart, CartInspected, Odor };
+QuestStates questState = QuestStates::Cart;
+
 //--- MATRIXES FOR INSTANCED DRAWING 
 vector<glm::mat4> treesMatrixes;
 
@@ -134,6 +137,10 @@ string locationNames[] { "projectionMatrix", "viewMatrix", "tex", "repeat", "mod
 #define LOCATION_INSTANCED 7
 #define LOCATION_DISTORSION 8
 #define LOCATION_TIME 9
+
+//--- OUTLINE COLORS
+GLfloat redColor[] = { 1.0f, 0.0f, 0.0f };
+GLfloat yellowColor[] = { 1.0f, 1.0f, 0.0f };
 
 //--- UTILS METHODS
 void clear();
@@ -519,13 +526,15 @@ int main()
 
         //--- CLEAR SECOND TEXTURE OF FRAME BUFFER
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
-        glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+        glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
         clear();
 
         float distancePlayerCart = distance(glm::vec2(playerPos.x, playerPos.z), glm::vec2(cartX, cartZ));
         
-        if(distorsion > 0.01f || (keys[GLFW_KEY_SPACE] && distancePlayerCart < 7.5)) {
-
+        if((distorsion > -0.99f || keys[GLFW_KEY_SPACE]) && distancePlayerCart < 7.5) {
+            if(questState == QuestStates::Cart && keys[GLFW_KEY_ENTER]) {
+                questState = QuestStates::CartInspected;
+            }
             glColorMask(false, false, false, false);
             glDepthMask(false);
 
@@ -557,7 +566,8 @@ int main()
             glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
             glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
 
-            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "redOutline");
+            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
+            glUniform3fv(locations[LOCATION_COLOR], 1, questState == QuestStates::Cart ? redColor : yellowColor);
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
 
             glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
@@ -705,7 +715,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-
 void process_keys(GLFWwindow* window) {
 
     oldDeltaX = deltaX;
@@ -737,6 +746,9 @@ void process_keys(GLFWwindow* window) {
             }
             if(distorsion > MAX_DISTORSION) {
                 distorsion = MAX_DISTORSION;
+                if(questState == QuestStates::CartInspected) {
+                    questState = QuestStates::Odor;
+                }
             }
         }
 
