@@ -92,7 +92,7 @@ GLfloat distorsion = MAX_DISTORSION;
 GLfloat distorsionSpeed = 0.75f;
 
 //---  APP_STATE 
-enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, Loaded };
+enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, InterpolateOdorPath, Loaded };
 AppStates appState = AppStates::LoadingMap;
 
 enum class QuestStates { Cart, CartInspected, Odor };
@@ -119,6 +119,9 @@ int currentCell = 0;
 
 //--- PLANE PATH DATA
 vector<glm::vec2> paths;
+
+//--- ODOR PATH DATA
+vector<glm::vec2> odor;
 
 //--- LOAD CSV DATA FILE
 //--- I EXPECT A 32x32 CSV LIKE THE PLANE OF THE SIZE
@@ -148,6 +151,7 @@ void setTexture(int index, GLint repeatLocation, float repeatValue);
 void loadAABBs();
 void addToAABBsHierarchy(vector<AABB> aabb);
 void loadNextRow();
+void interpolateOdorPath();
 void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier);
 void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine);
 
@@ -242,9 +246,15 @@ int main()
             return 0;
         }
 
+        if(appState == AppStates::InterpolateOdorPath) {
+            interpolateOdorPath();
+            appState = AppStates::Loaded;
+        }
+
+
         if(appState == AppStates::CreatingAABBsHierarchy) {
             addToAABBsHierarchy( { AABBs.begin(), AABBs.end() } );
-            appState = AppStates::Loaded;
+            appState = AppStates::InterpolateOdorPath;
         }
 
         if(appState == AppStates::LoadingAABBs) {
@@ -298,14 +308,6 @@ int main()
 
         glfwSwapBuffers(window);
     }
-
-    cout << "******************" << endl;
-    cout << "******************" << endl;
-    cout << "                  " << endl;
-    cout << AABBhierarchy.fullPrint(0) << endl;
-    cout << "                  " << endl;
-    cout << "******************" << endl;
-    cout << "******************" << endl;
 
     cout << "Loading ended, binding new loop values" << endl;
 
@@ -845,6 +847,23 @@ void setTexture(int index, GLint repeatLocation, float repeatValue) {
     glUniform1f(repeatLocation, repeatValue);
 }
 
+void interpolateOdorPath() {
+    /*
+    cout << "uhm" << endl;
+    int numPoints = odor.size();
+    vector<glm::vec2> tangents;
+    tangents.push_back(glm::vec2((rand() % 10 - 5), (rand() % 10 - 5)));
+    for (std::size_t i = 1; i != odor.size() - 1; ++i) {
+        tangents.push_back(glm::vec2(odor[i].x - odor[i-1].x, odor[i].y - odor[i-1].y) + glm::vec2(odor[i+1].x - odor[i].x, odor[i+1].y - odor[i].y));
+    }
+    tangents.push_back(glm::vec2((rand() % 10 - 5), (rand() % 10 - 5)));
+    cout << "TANGENTS" << endl;
+    for (auto i: tangents) {
+        cout << i.x << "," << i.y << endl;
+    }
+    */
+}
+
 void addToAABBsHierarchy(vector<AABB> AABBlist) {
     cout << "Adding AABB to AABBs' hierarchy" << endl;
     for (auto i=AABBlist.begin(); i!=AABBlist.end(); ++i) {
@@ -901,7 +920,10 @@ void loadNextRow() {
             houseZ = position * 2;
         }
         if(*i == "P") {
-            paths.push_back(glm::vec2(currentCell-16, position-16));
+            paths.push_back(glm::vec2(currentCell, position));
+        }
+        if(*i == "O") {
+            odor.push_back(glm::vec2(currentCell * 2, position * 2));
         }
     }
 }
