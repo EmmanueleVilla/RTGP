@@ -18,15 +18,11 @@ layout (std140) uniform Matrices {
 };
 
 //--- OUTPUT TO FRAGMENT SHADER
-out vec3 N;
 out vec2 interp_UV;
-out vec3 interp_color;
 
 void main() {
 
     interp_UV = UV;
-
-    N = normalize(normalMatrix * normal);
 
     if(instanced == 1) {
         gl_Position = projectionMatrix * viewMatrix * modelMatrices[gl_InstanceID] * vec4(position, 1.0);
