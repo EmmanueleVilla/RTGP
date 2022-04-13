@@ -123,7 +123,7 @@ vector<glm::vec2> paths;
 
 //--- ODOR PATH DATA
 vector<glm::vec2> odor;
-vector<glm::vec2> points;
+vector<glm::vec3> points;
 
 //--- LOAD CSV DATA FILE
 //--- I EXPECT A 32x32 CSV LIKE THE PLANE OF THE SIZE
@@ -208,7 +208,7 @@ int main()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     //---  INIT SHADERS 
-    Shader shader = Shader("base.vert", "base.frag");
+    Shader shader = Shader("base.vert", "base.frag", "base.geom");
     SetupShader(shader.Program);
 
     //--- LOAD TEXTURES MODELS, MATRICES
@@ -852,24 +852,32 @@ void setTexture(int index, GLint repeatLocation, float repeatValue) {
 void interpolateOdorPath() {
     int numPoints = odor.size();
     vector<glm::vec2> tangents;
+    vector<glm::vec2> slopes;
     tangents.push_back(glm::vec2((rand() % 30 - 15), (rand() % 30 - 15)));
+    slopes.push_back(glm::vec2((rand() % 50) / 10.0f, (rand() % 20) / 10.0f));
     for (std::size_t i = 1; i != odor.size() - 1; ++i) {
         tangents.push_back(glm::vec2(odor[i].x - odor[i-1].x, odor[i].y - odor[i-1].y) + glm::vec2(odor[i+1].x - odor[i].x, odor[i+1].y - odor[i].y));
+        slopes.push_back(glm::vec2((rand() % 50) / 10.0f, (rand() % 20) / 10.0f));
     }
     tangents.push_back(glm::vec2((rand() % 30 - 15), (rand() % 30 - 15)));
+    slopes.push_back(glm::vec2((rand() % 50) / 10.0f, (rand() % 20) / 10.0f));
+
     for (std::size_t i = 0; i != odor.size() - 1; ++i) {
-        for(int index = 0; index <= 10; ++index) {
+        points.push_back(glm::vec3(odor[i].x, odor[i].y, 2.0f));
+        for(int index = 1; index < 10; ++index) {
             float value = index / 10.0f;
             glm::vec2 p0 = ((float)((2 * pow(value, 3) - 3 * pow(value, 2) + 1))) * odor[i];
             glm::vec2 m0 = ((float)((pow(value, 3) - 2 * pow(value, 2) + value))) * tangents[i];
             glm::vec2 m1 = ((float)((pow(value, 3) - pow(value, 2)))) * tangents[i + 1];
             glm::vec2 p1 = ((float)((-2 * pow(value, 3) + 3 * pow(value, 2)))) * odor[i + 1];
-            points.push_back(p0 + m0 + m1 + p1);
+            float y = 2.0f;
+            points.push_back(glm::vec3(p0 + m0 + m1 + p1, y));
         }
     }
+    points.push_back(glm::vec3(odor[numPoints - 1].x, odor[ numPoints - 1].y, 2.0f));
 
-    for (int i = points.size() - 1; i >= 0; i--) {
-        cout << points[i].x << "," << points[i].y << endl;;
+    for (int i = 0; i < points.size() ; i++) {
+        cout << points[i].x << "\t" << points[i].y << "\t" << points[i].z << endl;;
     }
 }
 
