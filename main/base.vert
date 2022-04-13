@@ -17,7 +17,7 @@ layout (std140) uniform Matrices {
     mat4 modelMatrices[1024];
 };
 
-//--- OUTPUT TO FRAGMENT SHADER
+//--- OUTPUT TO GEOMETRY SHADER
 out vec2 interp_UV;
 
 void main() {
