@@ -463,11 +463,50 @@ int main()
             maxMicroseconds = microseconds;
         }
 
-        //** UPDATE CAMERA POSITION TO FOLLOW PLAYER
+        //--- UPDATE CAMERA POSITION TO FOLLOW PLAYER
         GLfloat distX = -sin(glm::radians(rotationY)) * cameraDistance;
         GLfloat distZ = cos(glm::radians(rotationY)) * cameraDistance;
-        view = glm::lookAt(glm::vec3(deltaX + distX, 1.5f, deltaZ - distZ), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
+        GLfloat cameraX = deltaX + distX;
+        GLfloat cameraZ = deltaZ - distZ;
+        view = glm::lookAt(glm::vec3(cameraX, 1.5f, cameraZ), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
 
+        //--- CHECK IF THE NEW CAMERA POSITION COLLIDES WITH ANYTHING IN X AND Z
+        //--- TODO: SKIP CALCULATION IF PLAYER ISN'T MOVING
+        glm::vec2 pos = glm::vec2(cameraX, cameraZ);
+        glm::vec2 delta = glm::vec2(playerPos.x, playerPos.z) - pos;
+
+        GLfloat scaleX = 1.0 / delta.x;
+        GLfloat scaleY = 1.0 / delta.y;
+        GLfloat signX = scaleX / scaleX;
+        GLfloat signY = scaleY / scaleY;
+
+        if(AABBhierarchy.checkSegmentXZCollision(pos, glm::vec2(playerPos.x, playerPos.z))) {
+            cout << "Approximated collision!!" << endl;
+        }
+
+        /*
+        //-- CHECK FOR EACH AABB
+        for (auto &aabb : AABBs) {
+            GLfloat nearTimeX = (aabb.Center.x - signX * aabb.HalfSize.x - pos.x) * scaleX;
+            GLfloat nearTimeY = (aabb.Center.y - signY * aabb.HalfSize.y - pos.y) * scaleY;
+            GLfloat farTimeX = (aabb.Center.x + signX * aabb.HalfSize.x - pos.x) * scaleX;
+            GLfloat farTimeY = (aabb.Center.y + signY * aabb. HalfSize.y - pos.y) * scaleY;
+
+            if (nearTimeX > farTimeY || nearTimeY > farTimeX) {
+                continue;
+            }
+
+            GLfloat nearTime = nearTimeX > nearTimeY ? nearTimeX : nearTimeY;
+            GLfloat farTime = farTimeX < farTimeY ? farTimeX : farTimeY;
+
+            if (nearTime >= 1 || farTime <= 0) {
+                continue;
+            }
+        
+            cout << "OBJECT BETWEEN CAMERA AND PLAYER: " << aabb.toString() << endl;
+            break;
+        }
+        */
         //TODO:
         // 1) RAYCAST FROM CAMERA TO PLAYER
         // 2a) IF THERE'S AN OBJECT IN THE MIDDLE, MOVE CAMERA TOWARDS THE PLAYER INSTANTLY
@@ -897,6 +936,7 @@ void loadAABBs() {
         float treeSize = matrix[0].x / 1.5f;
         GLfloat dy = 5.0f * treeSize;
         AABB aabb = AABB(VerticesBuilder().build(treePos, dy, glm::vec3(treeSize)));
+        cout << aabb.toString() << endl;
         AABBs.push_back(aabb);
     }
 
