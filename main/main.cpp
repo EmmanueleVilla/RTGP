@@ -78,10 +78,12 @@ GLfloat rotationY = 90.0f;
 GLfloat rotationSpeed = 2.0f;
 
 //--- CAMERA
+#define CAMERA_DISTANCE_DELTA 0.1f
 #define MAX_CAMERA_DISTANCE 5.0f
-#define MIN_CAMERA_DISTANCE 2.5f
+#define MIN_CAMERA_DISTANCE 0.0f
 #define MAX_CAMERA_Y_DELTA 1.0f
 #define MIN_CAMERA_Y_DELTA 0.0f
+GLfloat collidedCameraDistance = MAX_CAMERA_DISTANCE;
 GLfloat cameraDistance = MAX_CAMERA_DISTANCE;
 GLfloat cameraY = MAX_CAMERA_Y_DELTA;
 GLfloat cameraZoomSpeed = 3.0f;
@@ -156,6 +158,7 @@ void loadNextRow();
 void interpolateOdorPath();
 void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier);
 void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine);
+glm::vec2 buildCameraPosition(GLfloat distance);
 string vecToString(glm::vec2 vector);
 string vecToString(glm::vec3 vector);
 
@@ -466,54 +469,37 @@ int main()
         }
 
         //--- UPDATE CAMERA POSITION TO FOLLOW PLAYER
-        GLfloat distX = -sin(glm::radians(rotationY)) * cameraDistance;
-        GLfloat distZ = cos(glm::radians(rotationY)) * cameraDistance;
-        GLfloat cameraX = deltaX + distX;
-        GLfloat cameraZ = deltaZ - distZ;
-        view = glm::lookAt(glm::vec3(cameraX, 1.5f, cameraZ), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        
-        //--- CHECK IF THE NEW CAMERA POSITION COLLIDES WITH ANYTHING IN X AND Z
-        //--- TODO: SKIP CALCULATION IF PLAYER ISN'T MOVING
-        glm::vec2 camPos = glm::vec2(cameraX, cameraZ);
-        glm::vec2 playPos = glm::vec2(playerPos.x, playerPos.z);
-        glm::vec2 delta = playPos - camPos;
+        glm::vec2 currentCamera = buildCameraPosition(cameraDistance);
+        glm::vec2 farCamera = buildCameraPosition(min(MAX_CAMERA_DISTANCE, cameraDistance + CAMERA_DISTANCE_DELTA));
+        glm::vec2 nearCamera = buildCameraPosition(max(MIN_CAMERA_DISTANCE, cameraDistance - CAMERA_DISTANCE_DELTA));
+        bool currentCollision = AABBhierarchy.checkSegmentXZCollision(currentCamera, glm::vec2(playerPos.x, playerPos.z));
+        bool farCameraCollision = AABBhierarchy.checkSegmentXZCollision(farCamera, glm::vec2(playerPos.x, playerPos.z));
+        bool nearCameraCollision = AABBhierarchy.checkSegmentXZCollision(nearCamera, glm::vec2(playerPos.x, playerPos.z));
 
-        cout << "*********************" << endl;
-        cout << "Camera pos: " << vecToString(camPos) << endl;
-        cout << "Player pos: " << vecToString(playPos) << endl;
-
-        if(AABBhierarchy.checkSegmentXZCollision(camPos, glm::vec2(playerPos.x, playerPos.z))) {
-            cout << "Approximated collision!!" << endl;
+        if(!currentCollision && !farCameraCollision && cameraDistance < MAX_CAMERA_DISTANCE - EPSILON) {
+            cameraDistance += CAMERA_DISTANCE_DELTA;
+            view = glm::lookAt(glm::vec3(farCamera.x, 1.5f, farCamera.y), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
+        } else if(currentCollision) {
+            while(nearCameraCollision && cameraDistance > MIN_CAMERA_DISTANCE + EPSILON) {
+                cameraDistance -= CAMERA_DISTANCE_DELTA;
+                nearCamera = buildCameraPosition(cameraDistance);
+                nearCameraCollision = AABBhierarchy.checkSegmentXZCollision(nearCamera, glm::vec2(playerPos.x, playerPos.z));
+            }
+            view = glm::lookAt(glm::vec3(nearCamera.x, 1.5f, nearCamera.y), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
+        } else {
+            view = glm::lookAt(glm::vec3(currentCamera.x, 1.5f, currentCamera.y), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
         }
-
         /*
-        //-- CHECK FOR EACH AABB
-        for (auto &aabb : AABBs) {
-            GLfloat nearTimeX = (aabb.Center.x - signX * aabb.HalfSize.x - pos.x) * scaleX;
-            GLfloat nearTimeY = (aabb.Center.y - signY * aabb.HalfSize.y - pos.y) * scaleY;
-            GLfloat farTimeX = (aabb.Center.x + signX * aabb.HalfSize.x - pos.x) * scaleX;
-            GLfloat farTimeY = (aabb.Center.y + signY * aabb. HalfSize.y - pos.y) * scaleY;
-
-            if (nearTimeX > farTimeY || nearTimeY > farTimeX) {
-                continue;
-            }
-
-            GLfloat nearTime = nearTimeX > nearTimeY ? nearTimeX : nearTimeY;
-            GLfloat farTime = farTimeX < farTimeY ? farTimeX : farTimeY;
-
-            if (nearTime >= 1 || farTime <= 0) {
-                continue;
-            }
-        
-            cout << "OBJECT BETWEEN CAMERA AND PLAYER: " << aabb.toString() << endl;
-            break;
+        if(farCameraCollision) {
+            cout << "camera far collides" << endl;
+        }
+        if(nearCameraCollision) {
+            cout << "camera near collides" << endl;
         }
         */
-        //TODO:
-        // 1) RAYCAST FROM CAMERA TO PLAYER
-        // 2a) IF THERE'S AN OBJECT IN THE MIDDLE, MOVE CAMERA TOWARDS THE PLAYER INSTANTLY
-        // 3a) IF THERE'S NOTHING IN THE MIDDLE, MOVE CAMERA BACK GRADUALLY UNTIL MAX_DISTANCE IS REACHED
+        glm::vec2 playPos = glm::vec2(playerPos.x, playerPos.z);
+
 
         //--- USE SHADER 
         shader.Use();
@@ -769,11 +755,11 @@ void process_keys(GLFWwindow* window) {
     if(appState == AppStates::Loaded) {
         if(keys[GLFW_KEY_SPACE]) {
             distorsion -= distorsionSpeed * deltaTime;
-            cameraDistance -= cameraZoomSpeed * deltaTime;
+            //cameraDistance -= cameraZoomSpeed * deltaTime;
             cameraY -= cameraZoomSpeed * deltaTime;
-            if(cameraDistance < MIN_CAMERA_DISTANCE) {
-                cameraDistance = MIN_CAMERA_DISTANCE;
-            }
+            //if(cameraDistance < MIN_CAMERA_DISTANCE) {
+            //    cameraDistance = MIN_CAMERA_DISTANCE;
+            //}
             if(cameraY < MIN_CAMERA_Y_DELTA) {
                 cameraY = MIN_CAMERA_Y_DELTA;
             }
@@ -782,11 +768,14 @@ void process_keys(GLFWwindow* window) {
             }
         } else {
             distorsion += distorsionSpeed * deltaTime;
-            cameraDistance += cameraZoomSpeed * deltaTime;
+            //cameraDistance += cameraZoomSpeed * deltaTime;
             cameraY += cameraZoomSpeed * deltaTime;
-            if(cameraDistance > MAX_CAMERA_DISTANCE) {
-                cameraDistance = MAX_CAMERA_DISTANCE;
-            }
+            //if(cameraDistance > MAX_CAMERA_DISTANCE) {
+            //    cameraDistance = MAX_CAMERA_DISTANCE;
+            //}
+            //if(cameraDistance > collidedCameraDistance) {
+            //    cameraDistance = collidedCameraDistance;
+            //}
             if(cameraY > MAX_CAMERA_Y_DELTA) {
                 cameraY = MAX_CAMERA_Y_DELTA;
             }
@@ -1031,4 +1020,12 @@ string vecToString(glm::vec2 vector) {
 
 string vecToString(glm::vec3 vector) {
     return "[ " + std::to_string(vector.x) + " :: " + std::to_string(vector.y) + " :: " + std::to_string(vector.z) + " ]";
+}
+
+glm::vec2 buildCameraPosition(GLfloat distance) {
+    GLfloat distX = -sin(glm::radians(rotationY)) * distance;
+    GLfloat distZ = cos(glm::radians(rotationY)) * distance;
+    GLfloat cameraX = deltaX + distX;
+    GLfloat cameraZ = deltaZ - distZ;
+    return glm::vec2(cameraX, cameraZ);
 }
