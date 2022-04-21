@@ -1,3 +1,5 @@
+#define EPSILON 0.01
+
 class AABB {
 
     private:
@@ -203,18 +205,8 @@ class AABB {
     //--- WITH AABB TO AABB COLLISION CHECK TO PRUNE RESULTS
     bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end) {
         AABB collider = AABB(start, end);
-        cout << "Player-Camera AABB:: " << collider.toString() << endl;
         return checkSegmentXZCollision(start, end, collider);
     }
-
-    string vecToString(glm::vec2 vector) {
-        return "[ " + std::to_string(vector.x) + " :: " + std::to_string(vector.y) + " ]";
-    }
-
-    string vecToString(glm::vec3 vector) {
-        return "[ " + std::to_string(vector.x) + " :: " + std::to_string(vector.y) + " :: " + std::to_string(vector.z) + " ]";
-    }
-
 
     bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end, AABB& collider) {
 
@@ -228,41 +220,27 @@ class AABB {
                 //--- IF I'M A LEAF, TRY THE DEEPER COLLISION CHECK
                 if(IsLeaf) {
 
-                    cout << "ME: " << toString() << endl;
-
                     //--- CALCULATING EQUATION FROM POINTS IN FORM y = mx + c
                     GLfloat m = (end.y - start.y) / (end.x - start.x);
                     GLfloat c = start.y - m * start.x;
 
-                    cout << "y = " << m << " * x + " << c << endl;
-
-                    GLfloat epsilon = 0.01;
-
                     GLfloat intersectionXMin = m * MinX + c;
-                    cout << "intersectionXMin: " << intersectionXMin << endl;
-                    if(intersectionXMin <= (MaxZ + epsilon) && intersectionXMin >= (MinZ - epsilon)) {
-                        cout << "intersectionXMin collision" << endl;
+                    if(intersectionXMin <= (MaxZ + EPSILON) && intersectionXMin >= (MinZ - EPSILON)) {
                         return true;
                     }
 
                     GLfloat intersectionXMax = m * MaxX + c;
-                    cout << "intersectionXMax: " << intersectionXMax << endl;
-                    if(intersectionXMax <= (MaxZ + epsilon) && intersectionXMax >= (MinZ - epsilon)) {
-                        cout << "intersectionXMax collision" << endl;
+                    if(intersectionXMax <= (MaxZ + EPSILON) && intersectionXMax >= (MinZ - EPSILON)) {
                         return true;
                     }
 
                     GLfloat intersectionZMin = (MinZ - c) / m;
-                    cout << "intersectionZMin: " << intersectionZMin << endl;
-                    if(intersectionZMin <= (MaxX + epsilon) && intersectionZMin >= (MinX - epsilon)) {
-                        cout << "intersectionZMin collision" << endl;
+                    if(intersectionZMin <= (MaxX + EPSILON) && intersectionZMin >= (MinX - EPSILON)) {
                         return true;
                     }
 
                     GLfloat intersectionZMax = (MaxZ - c) / m;
-                    cout << "intersectionZMax: " << intersectionZMax << endl;
-                    if(intersectionZMax <= (MaxX + epsilon) && intersectionZMax >= (MinX - epsilon)) {
-                        cout << "intersectionZMax collision" << endl;
+                    if(intersectionZMax <= (MaxX + EPSILON) && intersectionZMax >= (MinX - EPSILON)) {
                         return true;
                     }
 
