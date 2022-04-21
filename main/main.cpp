@@ -156,6 +156,8 @@ void loadNextRow();
 void interpolateOdorPath();
 void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier);
 void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine);
+string vecToString(glm::vec2 vector);
+string vecToString(glm::vec3 vector);
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -470,17 +472,18 @@ int main()
         GLfloat cameraZ = deltaZ - distZ;
         view = glm::lookAt(glm::vec3(cameraX, 1.5f, cameraZ), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
 
+        
         //--- CHECK IF THE NEW CAMERA POSITION COLLIDES WITH ANYTHING IN X AND Z
         //--- TODO: SKIP CALCULATION IF PLAYER ISN'T MOVING
-        glm::vec2 pos = glm::vec2(cameraX, cameraZ);
-        glm::vec2 delta = glm::vec2(playerPos.x, playerPos.z) - pos;
+        glm::vec2 camPos = glm::vec2(cameraX, cameraZ);
+        glm::vec2 playPos = glm::vec2(playerPos.x, playerPos.z);
+        glm::vec2 delta = playPos - camPos;
 
-        GLfloat scaleX = 1.0 / delta.x;
-        GLfloat scaleY = 1.0 / delta.y;
-        GLfloat signX = scaleX / scaleX;
-        GLfloat signY = scaleY / scaleY;
+        cout << "*********************" << endl;
+        cout << "Camera pos: " << vecToString(camPos) << endl;
+        cout << "Player pos: " << vecToString(playPos) << endl;
 
-        if(AABBhierarchy.checkSegmentXZCollision(pos, glm::vec2(playerPos.x, playerPos.z))) {
+        if(AABBhierarchy.checkSegmentXZCollision(camPos, glm::vec2(playerPos.x, playerPos.z))) {
             cout << "Approximated collision!!" << endl;
         }
 
@@ -1020,4 +1023,12 @@ void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, strin
 
     //---  DRAW CART 
     models[CART_INDEX].Draw(locations[LOCATION_INSTANCED]);
+}
+
+string vecToString(glm::vec2 vector) {
+    return "[ " + std::to_string(vector.x) + " :: " + std::to_string(vector.y) + " ]";
+}
+
+string vecToString(glm::vec3 vector) {
+    return "[ " + std::to_string(vector.x) + " :: " + std::to_string(vector.y) + " :: " + std::to_string(vector.z) + " ]";
 }

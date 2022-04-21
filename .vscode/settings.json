@@ -3,7 +3,7 @@
     "**/*.dSYM": true,
     "**/*.out": true
   },
-  "C_Cpp.errorSquiggles": "Enabled",
+  "C_Cpp.errorSquiggles": "Disabled",
   "files.associations": {
     "vector": "cpp",
     "__bit_reference": "cpp",

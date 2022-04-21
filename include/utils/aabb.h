@@ -15,9 +15,28 @@ class AABB {
         MaxY = maxY;
         MinZ = minZ;
         MaxZ = maxZ;
+        HalfSize = glm::vec3(
+            (MaxX - MinX) / 2.0f,
+            (MaxY - MinY) / 2.0f,
+            (MaxZ - MinZ) / 2.0f);
+        Center = glm::vec3(
+            MinX + HalfSize.x,
+            MinY + HalfSize.y,
+            MinZ + HalfSize.z);
         IsLeaf = isLeaf;
         AcceptChildren = acceptChildren;
         Hash = rand() % 10000;
+    }
+
+    AABB(glm::vec2 pos1, glm::vec2 pos2) {
+        MinX = min(pos1.x, pos2.x);
+        MaxX = max(pos1.x, pos2.x);
+        MinY = 0;
+        MaxY = 0;
+        MinZ = min(pos1.y, pos2.y);
+        MaxZ = max(pos1.y, pos2.y);
+
+        initWithValues(MinX, MaxX, MinY, MaxY, MinZ, MaxZ, false, false);
     }
 
     AABB(GLfloat minX, GLfloat maxX, GLfloat minY, GLfloat maxY, GLfloat minZ, GLfloat maxZ) {
@@ -62,8 +81,7 @@ class AABB {
             }
             index++;
         }
-        IsLeaf = true;
-        Hash = rand() % 10000;
+        initWithValues(MinX, MaxX, MinY, MaxY, MinZ, MaxZ, true, false);
     }
 
     AABB(GLfloat vertices[]) {
@@ -94,8 +112,7 @@ class AABB {
                 }
             }
         }
-        IsLeaf = true;
-        Hash = rand() % 10000;
+        initWithValues(MinX, MaxX, MinY, MaxY, MinZ, MaxZ, true, false);
     }
 
     /**
@@ -106,15 +123,7 @@ class AABB {
         int side = 64;
         int half = side / 2;
 
-        MinX = -side;
-        MaxX = side;
-        MinY = 0;
-        MaxY = 12;
-        MinZ = -side;
-        MaxZ = side;
-        IsLeaf = false;
-        AcceptChildren = false;
-        Hash = rand() % 10000;
+        initWithValues(-side, side, 0, 12, -side, side, false, false);
 
         //--- FIRST QUARTER OF THE WHOLE AABB
         AABB firstQuarter = AABB(-side, 0, 0, 12, -side, 0, false);
@@ -184,11 +193,101 @@ class AABB {
     float MaxX = -9999;
     float MaxY = -9999;
     float MaxZ = -9999;
+    glm::vec3 Center;
+    glm::vec3 HalfSize;
     bool IsLeaf = false;
     bool AcceptChildren = false;
     int Hash;
 
-    //--- OPTIMIZED COLLISION BETWEEN 30 AND 75 MICROSECONDS
+    //--- SEGMENT TO AABB COLLISION
+    //--- WITH AABB TO AABB COLLISION CHECK TO PRUNE RESULTS
+    bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end) {
+        AABB collider = AABB(start, end);
+        cout << "Player-Camera AABB:: " << collider.toString() << endl;
+        return checkSegmentXZCollision(start, end, collider);
+    }
+
+    string vecToString(glm::vec2 vector) {
+        return "[ " + std::to_string(vector.x) + " :: " + std::to_string(vector.y) + " ]";
+    }
+
+    string vecToString(glm::vec3 vector) {
+        return "[ " + std::to_string(vector.x) + " :: " + std::to_string(vector.y) + " :: " + std::to_string(vector.z) + " ]";
+    }
+
+
+    bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end, AABB& collider) {
+
+        //--- TRY COLLISION AGAINST ME
+        bool collisionX = (MinX <= collider.MaxX && MaxX >= collider.MinX);
+        
+        if(collisionX) {
+            bool collisionZ = (MinZ <= collider.MaxZ && MaxZ >= collider.MinZ);
+            //--- COLLIDES AGAINST ME
+            if(collisionZ) {
+                //--- IF I'M A LEAF, TRY THE DEEPER COLLISION CHECK
+                if(IsLeaf) {
+
+                    cout << "ME: " << toString() << endl;
+
+                    //--- CALCULATING EQUATION FROM POINTS IN FORM y = mx + c
+                    GLfloat m = (end.y - start.y) / (end.x - start.x);
+                    GLfloat c = start.y - m * start.x;
+
+                    cout << "y = " << m << " * x + " << c << endl;
+
+                    GLfloat epsilon = 0.01;
+
+                    GLfloat intersectionXMin = m * MinX + c;
+                    cout << "intersectionXMin: " << intersectionXMin << endl;
+                    if(intersectionXMin <= (MaxZ + epsilon) && intersectionXMin >= (MinZ - epsilon)) {
+                        cout << "intersectionXMin collision" << endl;
+                        return true;
+                    }
+
+                    GLfloat intersectionXMax = m * MaxX + c;
+                    cout << "intersectionXMax: " << intersectionXMax << endl;
+                    if(intersectionXMax <= (MaxZ + epsilon) && intersectionXMax >= (MinZ - epsilon)) {
+                        cout << "intersectionXMax collision" << endl;
+                        return true;
+                    }
+
+                    GLfloat intersectionZMin = (MinZ - c) / m;
+                    cout << "intersectionZMin: " << intersectionZMin << endl;
+                    if(intersectionZMin <= (MaxX + epsilon) && intersectionZMin >= (MinX - epsilon)) {
+                        cout << "intersectionZMin collision" << endl;
+                        return true;
+                    }
+
+                    GLfloat intersectionZMax = (MaxZ - c) / m;
+                    cout << "intersectionZMax: " << intersectionZMax << endl;
+                    if(intersectionZMax <= (MaxX + epsilon) && intersectionZMax >= (MinX - epsilon)) {
+                        cout << "intersectionZMax collision" << endl;
+                        return true;
+                    }
+
+                    return false;
+                }
+                if(children.size() == 0) {
+                    return false;
+                }
+                //--- ELSE, PASS THE CHECK TO MY CHILDREN
+                for(AABB& child : children) {
+                    bool childCollision = child.checkSegmentXZCollision(start, end, collider);
+                    if(childCollision) {
+                        return true;
+                    }
+                }
+                return false;
+            } else {
+                return false;
+            }
+            
+        }
+        return false;
+    }
+
+    //--- OPTIMIZED COLLISION
     bool checkXZCollision(AABB& collider) {
         //--- TRY COLLISION AGAINST ME
         bool collisionX = (MinX <= collider.MaxX && MaxX >= collider.MinX);
@@ -244,7 +343,7 @@ class AABB {
     }
 
     string toString() {
-        return "[" + std::to_string(Hash) + "] X: { " + std::to_string(MinX) + "  " + std::to_string(MaxX) + " } Z: { " + std::to_string(MinZ) + "  " + std::to_string(MaxZ) + " } (" + std::to_string(children.size()) + " children)";
+        return "[" + std::to_string(Hash) + "] X: { " + std::to_string(MinX) + "  " + std::to_string(MaxX) + " } Z: { " + std::to_string(MinZ) + "  " + std::to_string(MaxZ) + " } SizeX: { " + std::to_string(HalfSize.x) + + " } SizeY: { " + std::to_string(HalfSize.y) + " } SizeZ: { " + std::to_string(HalfSize.z) + " } (" + std::to_string(children.size()) + " children)";
     }
 
     string fullPrint(int offset) {
