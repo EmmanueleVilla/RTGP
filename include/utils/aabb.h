@@ -17,14 +17,6 @@ class AABB {
         MaxY = maxY;
         MinZ = minZ;
         MaxZ = maxZ;
-        HalfSize = glm::vec3(
-            (MaxX - MinX) / 2.0f,
-            (MaxY - MinY) / 2.0f,
-            (MaxZ - MinZ) / 2.0f);
-        Center = glm::vec3(
-            MinX + HalfSize.x,
-            MinY + HalfSize.y,
-            MinZ + HalfSize.z);
         IsLeaf = isLeaf;
         AcceptChildren = acceptChildren;
         Hash = rand() % 10000;
@@ -195,8 +187,6 @@ class AABB {
     float MaxX = -9999;
     float MaxY = -9999;
     float MaxZ = -9999;
-    glm::vec3 Center;
-    glm::vec3 HalfSize;
     bool IsLeaf = false;
     bool AcceptChildren = false;
     int Hash;
@@ -205,10 +195,13 @@ class AABB {
     //--- WITH AABB TO AABB COLLISION CHECK TO PRUNE RESULTS
     bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end) {
         AABB collider = AABB(start, end);
-        return checkSegmentXZCollision(start, end, collider);
+        //--- CALCULATING EQUATION FROM POINTS IN FORM y = mx + c
+        GLfloat m = (end.y - start.y) / (end.x - start.x);
+        GLfloat c = start.y - m * start.x;
+        return checkSegmentXZCollision(start, end, m, c, collider);
     }
 
-    bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end, AABB& collider) {
+    bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end, GLfloat m, GLfloat c, AABB& collider) {
 
         //--- TRY COLLISION AGAINST ME
         bool collisionX = (MinX <= collider.MaxX && MaxX >= collider.MinX);
@@ -219,11 +212,6 @@ class AABB {
             if(collisionZ) {
                 //--- IF I'M A LEAF, TRY THE DEEPER COLLISION CHECK
                 if(IsLeaf) {
-
-                    //--- CALCULATING EQUATION FROM POINTS IN FORM y = mx + c
-                    GLfloat m = (end.y - start.y) / (end.x - start.x);
-                    GLfloat c = start.y - m * start.x;
-
                     GLfloat intersectionXMin = m * MinX + c;
                     if(intersectionXMin <= (MaxZ + EPSILON) && intersectionXMin >= (MinZ - EPSILON)) {
                         return true;
@@ -251,7 +239,7 @@ class AABB {
                 }
                 //--- ELSE, PASS THE CHECK TO MY CHILDREN
                 for(AABB& child : children) {
-                    bool childCollision = child.checkSegmentXZCollision(start, end, collider);
+                    bool childCollision = child.checkSegmentXZCollision(start, end, m, c, collider);
                     if(childCollision) {
                         return true;
                     }
@@ -299,8 +287,6 @@ class AABB {
 
     void addAABBToHierarchy(AABB& collider) {
 
-        bool isLastLevel = false;
-
         //--- SINCE I'M THE LAST LEVEL, I ADD THIS AABB TO MY CHILDREN
         if(AcceptChildren) {
             add_children(collider);
@@ -321,7 +307,7 @@ class AABB {
     }
 
     string toString() {
-        return "[" + std::to_string(Hash) + "] X: { " + std::to_string(MinX) + "  " + std::to_string(MaxX) + " } Z: { " + std::to_string(MinZ) + "  " + std::to_string(MaxZ) + " } SizeX: { " + std::to_string(HalfSize.x) + + " } SizeY: { " + std::to_string(HalfSize.y) + " } SizeZ: { " + std::to_string(HalfSize.z) + " } (" + std::to_string(children.size()) + " children)";
+        return "[" + std::to_string(Hash) + "] X: { " + std::to_string(MinX) + "  " + std::to_string(MaxX) + " } Z: { " + std::to_string(MinZ) + "  " + std::to_string(MaxZ) + " } (" + std::to_string(children.size()) + " children)";
     }
 
     string fullPrint(int offset) {
