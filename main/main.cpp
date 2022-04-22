@@ -241,7 +241,8 @@ int main()
     cout << "Starting loading loop" << endl;
 
     //--- TIME MEASUREMENT
-    long long maxMicroseconds = -1;
+    long long playerCollisionµs = -1;
+    long long cameraCollisionµs = -1;
 
     //--- LOADING RENDER LOOP
     while(appState != AppStates::Loaded)
@@ -462,10 +463,11 @@ int main()
         auto elapsed = std::chrono::high_resolution_clock::now() - start;
         long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 
-        if(maxMicroseconds < microseconds) {
-            cout << microseconds << endl;
-            maxMicroseconds = microseconds;
+        if(playerCollisionµs < microseconds) {
+            playerCollisionµs = microseconds;
         }
+
+        start = std::chrono::high_resolution_clock::now();
         
         //--- IF CAMERADISTANCE IS LESS THAN MAX CAMERA DISTANCE, I REDUCE IT
         if(cameraDistance > maxCameraDistance) {
@@ -496,6 +498,15 @@ int main()
             //--- IF I DON'T COLLIDE AND I CAN'T MOVE THE CAMERA AWAY, I KEEP THE CURRENT CAMERA
             view = glm::lookAt(glm::vec3(currentCamera.x, 1.5f, currentCamera.y), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
         }
+
+        elapsed = std::chrono::high_resolution_clock::now() - start;
+        microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+
+        if(cameraCollisionµs < microseconds) {
+            cameraCollisionµs = microseconds;
+        }
+
+        cout << "Camera collision: " << cameraCollisionµs << "µs\tPlayer collision: " << playerCollisionµs << "µs" << endl;
 
         //--- USE SHADER 
         shader.Use();
@@ -806,7 +817,6 @@ void process_keys(GLFWwindow* window) {
             rotationY += diffX * rotationSpeed;
         }
     }
-    cout << "maxCameraDistance: " << maxCameraDistance << endl;
 }
 
 GLint LoadTexture(const char* path)
@@ -922,7 +932,6 @@ void loadAABBs() {
         float treeSize = matrix[0].x / 1.5f;
         GLfloat dy = 5.0f * treeSize;
         AABB aabb = AABB(VerticesBuilder().build(treePos, dy, glm::vec3(treeSize)));
-        cout << aabb.toString() << endl;
         AABBs.push_back(aabb);
     }
 
