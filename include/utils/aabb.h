@@ -12,11 +12,17 @@ class AABB {
 
     void initWithValues(GLfloat minX, GLfloat maxX, GLfloat minY, GLfloat maxY, GLfloat minZ, GLfloat maxZ, bool isLeaf, bool acceptChildren) {
         MinX = minX;
+        PaddedMinX = minX - EPSILON;
         MaxX = maxX;
+        PaddedMaxX = MaxX + EPSILON;
         MinY = minY;
+        PaddedMinY = MinY - EPSILON;
         MaxY = maxY;
+        PaddedMaxY = MaxY + EPSILON;
         MinZ = minZ;
+        PaddedMinZ = MinZ - EPSILON;
         MaxZ = maxZ;
+        PaddedMaxZ = MaxZ + EPSILON;
         IsLeaf = isLeaf;
         AcceptChildren = acceptChildren;
         Hash = rand() % 10000;
@@ -184,9 +190,15 @@ class AABB {
     float MinX = 9999;
     float MinY = 9999;
     float MinZ = 9999;
+    float PaddedMinX = 9999;
+    float PaddedMinY = 9999;
+    float PaddedMinZ = 9999;
     float MaxX = -9999;
     float MaxY = -9999;
     float MaxZ = -9999;
+    float PaddedMaxX = -9999;
+    float PaddedMaxY = -9999;
+    float PaddedMaxZ = -9999;
     bool IsLeaf = false;
     bool AcceptChildren = false;
     int Hash;
@@ -204,39 +216,41 @@ class AABB {
     bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end, GLfloat m, GLfloat c, AABB& collider) {
 
         //--- TRY COLLISION AGAINST ME
-        bool collisionX = (MinX <= collider.MaxX && MaxX >= collider.MinX);
+        bool collisionX = MinX <= collider.MaxX && MaxX >= collider.MinX;
         
         if(collisionX) {
-            bool collisionZ = (MinZ <= collider.MaxZ && MaxZ >= collider.MinZ);
+            bool collisionZ = MinZ <= collider.MaxZ && MaxZ >= collider.MinZ;
             //--- COLLIDES AGAINST ME
             if(collisionZ) {
                 //--- IF I'M A LEAF, TRY THE DEEPER COLLISION CHECK
                 if(IsLeaf) {
                     GLfloat intersectionXMin = m * MinX + c;
-                    if(intersectionXMin <= (MaxZ + EPSILON) && intersectionXMin >= (MinZ - EPSILON)) {
+                    if(intersectionXMin <= PaddedMaxZ && intersectionXMin >= PaddedMinZ) {
                         return true;
                     }
 
                     GLfloat intersectionXMax = m * MaxX + c;
-                    if(intersectionXMax <= (MaxZ + EPSILON) && intersectionXMax >= (MinZ - EPSILON)) {
+                    if(intersectionXMax <= PaddedMaxZ && intersectionXMax >= PaddedMinZ) {
                         return true;
                     }
 
                     GLfloat intersectionZMin = (MinZ - c) / m;
-                    if(intersectionZMin <= (MaxX + EPSILON) && intersectionZMin >= (MinX - EPSILON)) {
+                    if(intersectionZMin <= PaddedMaxX && intersectionZMin >= PaddedMinX) {
                         return true;
                     }
 
                     GLfloat intersectionZMax = (MaxZ - c) / m;
-                    if(intersectionZMax <= (MaxX + EPSILON) && intersectionZMax >= (MinX - EPSILON)) {
+                    if(intersectionZMax <= PaddedMaxX && intersectionZMax >= PaddedMinX) {
                         return true;
                     }
 
                     return false;
                 }
+
                 if(children.size() == 0) {
                     return false;
                 }
+
                 //--- ELSE, PASS THE CHECK TO MY CHILDREN
                 for(AABB& child : children) {
                     bool childCollision = child.checkSegmentXZCollision(start, end, m, c, collider);
@@ -244,22 +258,26 @@ class AABB {
                         return true;
                     }
                 }
+
                 return false;
+
             } else {
                 return false;
             }
             
         }
+
         return false;
+
     }
 
     //--- OPTIMIZED COLLISION
     bool checkXZCollision(AABB& collider) {
         //--- TRY COLLISION AGAINST ME
-        bool collisionX = (MinX <= collider.MaxX && MaxX >= collider.MinX);
+        bool collisionX = MinX <= collider.MaxX && MaxX >= collider.MinX;
         
         if(collisionX) {
-            bool collisionZ = (MinZ <= collider.MaxZ && MaxZ >= collider.MinZ);
+            bool collisionZ = MinZ <= collider.MaxZ && MaxZ >= collider.MinZ;
             //--- COLLIDES AGAINST ME
             if(collisionZ) {
                 //--- IF I'M A LEAF, RETURN TRUE
