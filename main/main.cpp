@@ -473,6 +473,7 @@ int main()
         glm::vec2 currentCamera = buildCameraPosition(cameraDistance);
         glm::vec2 farCamera = buildCameraPosition(min(MAX_CAMERA_DISTANCE, cameraDistance + CAMERA_DISTANCE_DELTA));
         glm::vec2 nearCamera = buildCameraPosition(max(MIN_CAMERA_DISTANCE, cameraDistance - CAMERA_DISTANCE_DELTA));
+
         bool currentCollision = AABBhierarchy.checkSegmentXZCollision(currentCamera, glm::vec2(playerPos.x, playerPos.z));
         bool farCameraCollision = AABBhierarchy.checkSegmentXZCollision(farCamera, glm::vec2(playerPos.x, playerPos.z));
         bool nearCameraCollision = AABBhierarchy.checkSegmentXZCollision(nearCamera, glm::vec2(playerPos.x, playerPos.z));
@@ -490,16 +491,6 @@ int main()
         } else {
             view = glm::lookAt(glm::vec3(currentCamera.x, 1.5f, currentCamera.y), glm::vec3(deltaX, 1.5f, deltaZ), glm::vec3(0.0f, 1.0f, 0.0f));
         }
-        /*
-        if(farCameraCollision) {
-            cout << "camera far collides" << endl;
-        }
-        if(nearCameraCollision) {
-            cout << "camera near collides" << endl;
-        }
-        */
-        glm::vec2 playPos = glm::vec2(playerPos.x, playerPos.z);
-
 
         //--- USE SHADER 
         shader.Use();
