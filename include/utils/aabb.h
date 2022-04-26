@@ -12,19 +12,17 @@ class AABB {
 
     void initWithValues(GLfloat minX, GLfloat maxX, GLfloat minY, GLfloat maxY, GLfloat minZ, GLfloat maxZ, bool isLeaf, bool acceptChildren) {
         MinX = minX;
+        PaddedMinX = minX - EPSILON;
         MaxX = maxX;
+        PaddedMaxX = MaxX + EPSILON;
         MinY = minY;
+        PaddedMinY = MinY - EPSILON;
         MaxY = maxY;
+        PaddedMaxY = MaxY + EPSILON;
         MinZ = minZ;
+        PaddedMinZ = MinZ - EPSILON;
         MaxZ = maxZ;
-        HalfSize = glm::vec3(
-            (MaxX - MinX) / 2.0f,
-            (MaxY - MinY) / 2.0f,
-            (MaxZ - MinZ) / 2.0f);
-        Center = glm::vec3(
-            MinX + HalfSize.x,
-            MinY + HalfSize.y,
-            MinZ + HalfSize.z);
+        PaddedMaxZ = MaxZ + EPSILON;
         IsLeaf = isLeaf;
         AcceptChildren = acceptChildren;
         Hash = rand() % 10000;
@@ -192,11 +190,15 @@ class AABB {
     float MinX = 9999;
     float MinY = 9999;
     float MinZ = 9999;
+    float PaddedMinX = 9999;
+    float PaddedMinY = 9999;
+    float PaddedMinZ = 9999;
     float MaxX = -9999;
     float MaxY = -9999;
     float MaxZ = -9999;
-    glm::vec3 Center;
-    glm::vec3 HalfSize;
+    float PaddedMaxX = -9999;
+    float PaddedMaxY = -9999;
+    float PaddedMaxZ = -9999;
     bool IsLeaf = false;
     bool AcceptChildren = false;
     int Hash;
@@ -205,16 +207,19 @@ class AABB {
     //--- WITH AABB TO AABB COLLISION CHECK TO PRUNE RESULTS
     bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end) {
         AABB collider = AABB(start, end);
-        return checkSegmentXZCollision(start, end, collider);
+        //--- CALCULATING EQUATION FROM POINTS IN FORM y = mx + c
+        GLfloat m = (end.y - start.y) / (end.x - start.x);
+        GLfloat c = start.y - m * start.x;
+        return checkSegmentXZCollision(start, end, m, c, collider);
     }
 
-    bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end, AABB& collider) {
+    bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end, GLfloat m, GLfloat c, AABB& collider) {
 
         //--- TRY COLLISION AGAINST ME
-        bool collisionX = (MinX <= collider.MaxX && MaxX >= collider.MinX);
+        bool collisionX = MinX <= collider.MaxX && MaxX >= collider.MinX;
         
         if(collisionX) {
-            bool collisionZ = (MinZ <= collider.MaxZ && MaxZ >= collider.MinZ);
+            bool collisionZ = MinZ <= collider.MaxZ && MaxZ >= collider.MinZ;
             //--- COLLIDES AGAINST ME
             if(collisionZ) {
                 //--- IF I'M A LEAF, TRY THE DEEPER COLLISION CHECK
@@ -229,58 +234,60 @@ class AABB {
                         return true;
                     }
 
-                    //--- CALCULATING EQUATION FROM POINTS IN FORM y = mx + c
-                    GLfloat m = (end.y - start.y) / (end.x - start.x);
-                    GLfloat c = start.y - m * start.x;
-
                     GLfloat intersectionXMin = m * MinX + c;
-                    if(intersectionXMin <= (MaxZ + EPSILON) && intersectionXMin >= (MinZ - EPSILON)) {
+                    if(intersectionXMin <= PaddedMaxZ && intersectionXMin >= PaddedMinZ) {
                         return true;
                     }
 
                     GLfloat intersectionXMax = m * MaxX + c;
-                    if(intersectionXMax <= (MaxZ + EPSILON) && intersectionXMax >= (MinZ - EPSILON)) {
+                    if(intersectionXMax <= PaddedMaxZ && intersectionXMax >= PaddedMinZ) {
                         return true;
                     }
 
                     GLfloat intersectionZMin = (MinZ - c) / m;
-                    if(intersectionZMin <= (MaxX + EPSILON) && intersectionZMin >= (MinX - EPSILON)) {
+                    if(intersectionZMin <= PaddedMaxX && intersectionZMin >= PaddedMinX) {
                         return true;
                     }
 
                     GLfloat intersectionZMax = (MaxZ - c) / m;
-                    if(intersectionZMax <= (MaxX + EPSILON) && intersectionZMax >= (MinX - EPSILON)) {
+                    if(intersectionZMax <= PaddedMaxX && intersectionZMax >= PaddedMinX) {
                         return true;
                     }
 
                     return false;
                 }
+
                 if(children.size() == 0) {
                     return false;
                 }
+
                 //--- ELSE, PASS THE CHECK TO MY CHILDREN
                 for(AABB& child : children) {
-                    bool childCollision = child.checkSegmentXZCollision(start, end, collider);
+                    bool childCollision = child.checkSegmentXZCollision(start, end, m, c, collider);
                     if(childCollision) {
                         return true;
                     }
                 }
+
                 return false;
+
             } else {
                 return false;
             }
             
         }
+
         return false;
+
     }
 
     //--- OPTIMIZED COLLISION
     bool checkXZCollision(AABB& collider) {
         //--- TRY COLLISION AGAINST ME
-        bool collisionX = (MinX <= collider.MaxX && MaxX >= collider.MinX);
+        bool collisionX = MinX <= collider.MaxX && MaxX >= collider.MinX;
         
         if(collisionX) {
-            bool collisionZ = (MinZ <= collider.MaxZ && MaxZ >= collider.MinZ);
+            bool collisionZ = MinZ <= collider.MaxZ && MaxZ >= collider.MinZ;
             //--- COLLIDES AGAINST ME
             if(collisionZ) {
                 //--- IF I'M A LEAF, RETURN TRUE
@@ -308,8 +315,6 @@ class AABB {
 
     void addAABBToHierarchy(AABB& collider) {
 
-        bool isLastLevel = false;
-
         //--- SINCE I'M THE LAST LEVEL, I ADD THIS AABB TO MY CHILDREN
         if(AcceptChildren) {
             add_children(collider);
@@ -330,7 +335,7 @@ class AABB {
     }
 
     string toString() {
-        return "[" + std::to_string(Hash) + "] X: { " + std::to_string(MinX) + "  " + std::to_string(MaxX) + " } Z: { " + std::to_string(MinZ) + "  " + std::to_string(MaxZ) + " } SizeX: { " + std::to_string(HalfSize.x) + + " } SizeY: { " + std::to_string(HalfSize.y) + " } SizeZ: { " + std::to_string(HalfSize.z) + " } (" + std::to_string(children.size()) + " children)";
+        return "[" + std::to_string(Hash) + "] X: { " + std::to_string(MinX) + "  " + std::to_string(MaxX) + " } Z: { " + std::to_string(MinZ) + "  " + std::to_string(MaxZ) + " } (" + std::to_string(children.size()) + " children)";
     }
 
     string fullPrint(int offset) {
