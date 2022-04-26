@@ -9,7 +9,7 @@ in vec2 interp_UV[];
 //--- OUTPUT TO FRAGMENT SHADER
 out vec2 texCoords;
 
-void main() {    
+void main() {
     gl_Position = gl_in[0].gl_Position;
     texCoords = interp_UV[0];
     EmitVertex();
@@ -23,4 +23,4 @@ void main() {
     EmitVertex();
 
     EndPrimitive();
-}  
+}

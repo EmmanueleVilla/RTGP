@@ -33,6 +33,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+#include <gl\GL.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include<stb_image/stb_image.h>
 
@@ -124,7 +126,7 @@ vector<glm::vec2> paths;
 
 //--- ODOR PATH DATA
 vector<glm::vec2> odor;
-vector<glm::vec3> points;
+vector<float> points;
 
 //--- LOAD CSV DATA FILE
 //--- I EXPECT A 32x32 CSV LIKE THE PLANE OF THE SIZE
@@ -211,7 +213,8 @@ int main()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     //---  INIT SHADERS 
-    Shader shader = Shader("base.vert", "base.frag", "base.geom");
+    Shader baseShader = Shader("base.vert", "base.frag", "base.geom");
+    Shader pointsShader = Shader("points.vert", "points.frag", "points.geom");
 
     //--- LOAD TEXTURES MODELS, MATRICES
     string names[] { "coin", "plane", "dog", "cart", "tree", "house" }; 
@@ -246,7 +249,7 @@ int main()
     while(appState != AppStates::Loaded)
     {
         if(glfwWindowShouldClose(window)) {
-            shader.Delete();
+            baseShader.Delete();
             glfwTerminate();
             return 0;
         }
@@ -287,12 +290,12 @@ int main()
 
         clear();
 
-        shader.Use();
+        baseShader.Use();
 
         //--- SHADER LOCATIONS
         vector<GLint> locations;
         for (string name : locationNames) {
-            locations.push_back(glGetUniformLocation(shader.Program, name.c_str()));
+            locations.push_back(glGetUniformLocation(baseShader.Program, name.c_str()));
         }
 
         setTexture(COIN_INDEX, locations[LOCATION_REPEAT], 1.0f);
@@ -309,7 +312,7 @@ int main()
         glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[COIN_INDEX]));
 
         //---  DRAW COIN 
-        GLuint vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "standard");
+        GLuint vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "standard");
         glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
         models[COIN_INDEX].Draw();
 
@@ -321,8 +324,8 @@ int main()
     //delete &coinModel;
 
     //---  INIT UNIFORM BUFFER FOR TREES
-    GLint uniformTreesMatrixBlockLocation = glGetUniformBlockIndex(shader.Program, "Matrices");
-    glUniformBlockBinding(shader.Program, uniformTreesMatrixBlockLocation, 0);
+    GLint uniformTreesMatrixBlockLocation = glGetUniformBlockIndex(baseShader.Program, "Matrices");
+    glUniformBlockBinding(baseShader.Program, uniformTreesMatrixBlockLocation, 0);
 
     GLuint uboTreesMatrixBlock;
     glGenBuffers(1, &uboTreesMatrixBlock);
@@ -509,12 +512,12 @@ int main()
         //cout << "Camera collision: " << cameraCollisionµs << "micros\tPlayer collision: " << playerCollisionµs << "micros" << endl;
 
         //--- USE SHADER 
-        shader.Use();
+        baseShader.Use();
 
         //--- SHADER LOCATIONS
         vector<GLint> locations;
         for (string name : locationNames) {
-            locations.push_back(glGetUniformLocation(shader.Program, name.c_str()));
+            locations.push_back(glGetUniformLocation(baseShader.Program, name.c_str()));
         }
 
         glUniform1i(locations[LOCATION_TEXTURE], 1);
@@ -530,13 +533,13 @@ int main()
         //---  SET PLANE MATRIX
         glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLANE_INDEX]));
 
-        GLuint vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "standard");
+        GLuint vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "standard");
         glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
 
         //---  DRAW PLANE 
         models[PLANE_INDEX].Draw();
 
-        GLuint fragmSubIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
+        GLuint fragmSubIndex = glGetSubroutineIndex(baseShader.Program, GL_FRAGMENT_SHADER, "textured");
         glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
 
         //--- SET HOUSE TEXTURE
@@ -560,13 +563,34 @@ int main()
         glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIXES], treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
 
         //---  DRAW TREE
-        vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "instanced");
+        vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "instanced");
         glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
         models[TREE_INDEX].DrawInstanced(treesMatrixes.size());
 
-        drawCart(shader, locations, 1.0f, "textured");
+        drawCart(baseShader, locations, 1.0f, "textured");
 
-        drawPlayer(shader, locations, 1.0f);
+        drawPlayer(baseShader, locations, 1.0f);
+
+        pointsShader.Use();
+
+        float vertices_position[] = {
+            -0.5f,  0.5f, // top-left
+            0.5f,  0.5f, // top-right
+            0.5f, -0.5f, // bottom-right
+            -0.5f, -0.5f  // bottom-left
+        };
+
+        // Create a Vector Buffer Object that will store the vertices on video memory
+        GLuint vbo;
+        glGenBuffers(1, &vbo);
+    
+        // Allocate space and upload the data from CPU to GPU
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_position), vertices_position, GL_STATIC_DRAW);
+
+        glDrawArrays(GL_POINTS, 0, 4);
+
+        baseShader.Use();
 
         //--- CLEAR SECOND TEXTURE OF FRAME BUFFER
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
@@ -574,7 +598,7 @@ int main()
         clear();
 
         float distancePlayerCart = distance(glm::vec2(playerPos.x, playerPos.z), glm::vec2(cartX, cartZ));
-        
+
         if((distorsion > -0.99f || keys[GLFW_KEY_SPACE]) && distancePlayerCart < 7.5) {
             if(questState == QuestStates::Cart && keys[GLFW_KEY_ENTER]) {
                 questState = QuestStates::CartInspected;
@@ -588,12 +612,12 @@ int main()
             glStencilFunc(GL_ALWAYS, 1, 0xFF);
             glStencilMask(0xFF);
 
-            drawCart(shader, locations, 1.0f, "textured");
+            drawCart(baseShader, locations, 1.0f, "textured");
 
             //--- REMOVE PLAYER FROM STENCIL
             glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
 
-            drawPlayer(shader, locations, 1.0f);
+            drawPlayer(baseShader, locations, 1.0f);
             
             glColorMask(true, true, true, true);
             glDepthMask(true);
@@ -610,7 +634,7 @@ int main()
             glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
             glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
 
-            fragmSubIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
+            fragmSubIndex = glGetSubroutineIndex(baseShader.Program, GL_FRAGMENT_SHADER, "fixedColor");
             glUniform3fv(locations[LOCATION_COLOR], 1, questState == QuestStates::Cart ? redColor : yellowColor);
             glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
 
@@ -623,7 +647,7 @@ int main()
             glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));
 
             //---  DRAW PLANE
-            vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "standard");
+            vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "standard");
             glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
             models[PLANE_INDEX].Draw();
 
@@ -642,7 +666,7 @@ int main()
 
         view = glm::lookAt(glm::vec3(0.0f, 1.0f, 7.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        fragmSubIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "pincushion");
+        fragmSubIndex = glGetSubroutineIndex(baseShader.Program, GL_FRAGMENT_SHADER, "pincushion");
         glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
 
         //--- PASS VALUES TO SHADER 
@@ -668,7 +692,7 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, secondTexture);
 
-        fragmSubIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "tracePlane");
+        fragmSubIndex = glGetSubroutineIndex(baseShader.Program, GL_FRAGMENT_SHADER, "tracePlane");
         glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
         
         glm::mat4 planeModelMatrix3 = glm::mat4(1.0f);
@@ -687,7 +711,7 @@ int main()
     }
 
     //--- DELETE USED SHADERS
-    shader.Delete();
+    baseShader.Delete();
     
     //--- CLOSE AND DELETE CONTEXT
     glfwTerminate();
@@ -857,7 +881,9 @@ void interpolateOdorPath() {
     slopes.push_back(glm::vec2((rand() % 50) / 10.0f, (rand() % 20) / 10.0f));
 
     for (std::size_t i = 0; i != odor.size() - 1; ++i) {
-        points.push_back(glm::vec3(odor[i].x, odor[i].y, 2.0f));
+        points.push_back(odor[i].x);
+        points.push_back(odor[i].y);
+        points.push_back(2.0f);
         for(int index = 1; index < 10; ++index) {
             float value = index / 10.0f;
             glm::vec2 p0 = ((float)((2 * pow(value, 3) - 3 * pow(value, 2) + 1))) * odor[i];
@@ -865,13 +891,20 @@ void interpolateOdorPath() {
             glm::vec2 m1 = ((float)((pow(value, 3) - pow(value, 2)))) * tangents[i + 1];
             glm::vec2 p1 = ((float)((-2 * pow(value, 3) + 3 * pow(value, 2)))) * odor[i + 1];
             float y = 2.0f;
-            points.push_back(glm::vec3(p0 + m0 + m1 + p1, y));
+            glm::vec3 result = glm::vec3(p0 + m0 + m1 + p1, y);
+            points.push_back(result.x);
+            points.push_back(result.y);
+            points.push_back(result.z);
         }
     }
-    points.push_back(glm::vec3(odor[numPoints - 1].x, odor[ numPoints - 1].y, 2.0f));
+    points.push_back(odor[numPoints - 1].x);
+    points.push_back(odor[numPoints - 1].y);
+    points.push_back(2.0f);
 
     for (int i = 0; i < points.size() ; i++) {
-        cout << points[i].x << "\t" << points[i].y << "\t" << points[i].z << endl;;
+        cout << points[i] << "\t" << points[i+1] << "\t" << points[i+2] << endl;
+        i++;
+        i++;
     }
 }
 
