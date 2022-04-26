@@ -9,7 +9,6 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 uniform mat3 normalMatrix;
-uniform int instanced;
 
 //--- UBO INPUT FROM APP
 layout (std140) uniform Matrices {
@@ -20,13 +19,21 @@ layout (std140) uniform Matrices {
 //--- OUTPUT TO GEOMETRY SHADER
 out vec2 interp_UV;
 
+//--- SUBROUTINES
+subroutine vec4 vertshader();
+subroutine uniform vertshader vertshaderImpl;
+
+subroutine(vertshader)
+vec4 standard() {
+    return projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+}
+
+subroutine(vertshader)
+vec4 instanced() {
+    return projectionMatrix * viewMatrix * modelMatrices[gl_InstanceID] * vec4(position, 1.0);
+}
+
 void main() {
-
     interp_UV = UV;
-
-    if(instanced == 1) {
-        gl_Position = projectionMatrix * viewMatrix * modelMatrices[gl_InstanceID] * vec4(position, 1.0);
-    } else {
-        gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
-    }
+    gl_Position = vertshaderImpl();
 }

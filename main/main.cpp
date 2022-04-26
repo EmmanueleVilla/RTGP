@@ -56,7 +56,6 @@ double mouseXPos;
 //---  SHADERS SUBROUTINES 
 GLuint current_subroutine = 0;
 vector<std::string> shaders;
-void SetupShader(int shader_program);
 
 //---  TIME 
 GLfloat deltaTime = 0.0f;
@@ -132,7 +131,7 @@ vector<glm::vec3> points;
 vector<vector<string>> content = CsvLoader().read("../data/map.csv");
 
 //--- SHADER LOCATIONS
-string locationNames[] { "projectionMatrix", "viewMatrix", "tex", "repeat", "modelMatrix", "modelMatrixes", "colorIn", "instanced", "distorsion", "time" }; 
+string locationNames[] { "projectionMatrix", "viewMatrix", "tex", "repeat", "modelMatrix", "modelMatrixes", "colorIn", "distorsion", "time" }; 
 
 #define LOCATION_PROJECTION_MATRIX 0
 #define LOCATION_VIEW_MATRIX 1
@@ -141,9 +140,8 @@ string locationNames[] { "projectionMatrix", "viewMatrix", "tex", "repeat", "mod
 #define LOCATION_MODEL_MATRIX 4
 #define LOCATION_MODEL_MATRIXES 5
 #define LOCATION_COLOR 6
-#define LOCATION_INSTANCED 7
-#define LOCATION_DISTORSION 8
-#define LOCATION_TIME 9
+#define LOCATION_DISTORSION 7
+#define LOCATION_TIME 8
 
 //--- OUTLINE COLORS
 GLfloat redColor[] = { 1.0f, 0.0f, 0.0f };
@@ -214,7 +212,6 @@ int main()
 
     //---  INIT SHADERS 
     Shader shader = Shader("base.vert", "base.frag", "base.geom");
-    SetupShader(shader.Program);
 
     //--- LOAD TEXTURES MODELS, MATRICES
     string names[] { "coin", "plane", "dog", "cart", "tree", "house" }; 
@@ -312,7 +309,9 @@ int main()
         glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[COIN_INDEX]));
 
         //---  DRAW COIN 
-        models[COIN_INDEX].Draw(locations[LOCATION_INSTANCED]);
+        GLuint vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "standard");
+        glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
+        models[COIN_INDEX].Draw();
 
         glfwSwapBuffers(window);
     }
@@ -531,11 +530,14 @@ int main()
         //---  SET PLANE MATRIX
         glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLANE_INDEX]));
 
-        //---  DRAW PLANE 
-        models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
+        GLuint vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "standard");
+        glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
 
-        GLuint subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
-        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+        //---  DRAW PLANE 
+        models[PLANE_INDEX].Draw();
+
+        GLuint fragmSubIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "textured");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
 
         //--- SET HOUSE TEXTURE
         setTexture(HOUSE_INDEX, locations[LOCATION_REPEAT], 1.0f);
@@ -549,7 +551,7 @@ int main()
         glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[HOUSE_INDEX]));
 
         //---  DRAW HOUSE 
-        models[HOUSE_INDEX].Draw(locations[LOCATION_INSTANCED]);
+        models[HOUSE_INDEX].Draw();
 
         //--- SET TREE TEXTURE 
         setTexture(TREE_INDEX, locations[LOCATION_REPEAT], 1.0f);
@@ -558,7 +560,9 @@ int main()
         glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIXES], treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
 
         //---  DRAW TREE
-        models[TREE_INDEX].DrawInstanced(treesMatrixes.size(), locations[LOCATION_INSTANCED]);
+        vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "instanced");
+        glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
+        models[TREE_INDEX].DrawInstanced(treesMatrixes.size());
 
         drawCart(shader, locations, 1.0f, "textured");
 
@@ -606,9 +610,9 @@ int main()
             glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
             glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
 
-            subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
+            fragmSubIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "fixedColor");
             glUniform3fv(locations[LOCATION_COLOR], 1, questState == QuestStates::Cart ? redColor : yellowColor);
-            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
 
             glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
             planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(0.0f, 1.0f, -10.0f));
@@ -618,8 +622,10 @@ int main()
             //---  SET PLANE MATRIX
             glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));
 
-            //---  DRAW PLANE 
-            models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
+            //---  DRAW PLANE
+            vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "standard");
+            glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
+            models[PLANE_INDEX].Draw();
 
             glStencilFunc(GL_ALWAYS, 1, 0xFF);
         }
@@ -636,8 +642,8 @@ int main()
 
         view = glm::lookAt(glm::vec3(0.0f, 1.0f, 7.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "pincushion");
-        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+        fragmSubIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "pincushion");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
 
         //--- PASS VALUES TO SHADER 
         glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
@@ -656,14 +662,14 @@ int main()
         glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));
 
         //---  DRAW PLANE 
-        models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
+        models[PLANE_INDEX].Draw();
 
         //--- SET PLANE TEXTURE 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, secondTexture);
 
-        subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "tracePlane");
-        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+        fragmSubIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, "tracePlane");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
         
         glm::mat4 planeModelMatrix3 = glm::mat4(1.0f);
         planeModelMatrix3 = glm::translate(planeModelMatrix3, glm::vec3(0.0f, 1.0f, -9.95f));
@@ -674,7 +680,7 @@ int main()
         glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(planeModelMatrix3));
 
         //---  DRAW PLANE 
-        models[PLANE_INDEX].Draw(locations[LOCATION_INSTANCED]);
+        models[PLANE_INDEX].Draw();
 
         //--- SWAP BUFFERS
         glfwSwapBuffers(window);
@@ -687,54 +693,6 @@ int main()
     glfwTerminate();
 
     return 0;
-}
-
-
-//////////////////////////////////////////
-// The function parses the content of the Shader Program, searches for the Subroutine type names, 
-// the subroutines implemented for each type, print the names of the subroutines on the terminal, and add the names of 
-// the subroutines to the shaders vector, which is used for the shaders swapping
-void SetupShader(int program)
-{
-    int maxSub,maxSubU,countActiveSU;
-    GLchar name[256]; 
-    int len, numCompS;
-    
-    // global parameters about the Subroutines parameters of the system
-    glGetIntegerv(GL_MAX_SUBROUTINES, &maxSub);
-    glGetIntegerv(GL_MAX_SUBROUTINE_UNIFORM_LOCATIONS, &maxSubU);
-    std::cout << "Max Subroutines:" << maxSub << " - Max Subroutine Uniforms:" << maxSubU << std::endl;
-
-    // get the number of Subroutine uniforms (only for the Fragment shader, due to the nature of the exercise)
-    // it is possible to add similar calls also for the Vertex shader
-    glGetProgramStageiv(program, GL_FRAGMENT_SHADER, GL_ACTIVE_SUBROUTINE_UNIFORMS, &countActiveSU);
-    
-    // print info for every Subroutine uniform
-    for (int i = 0; i < countActiveSU; i++) {
-        
-        // get the name of the Subroutine uniform (in this example, we have only one)
-        glGetActiveSubroutineUniformName(program, GL_FRAGMENT_SHADER, i, 256, &len, name);
-        // print index and name of the Subroutine uniform
-        std::cout << "Subroutine Uniform: " << i << " - name: " << name << std::endl;
-
-        // get the number of subroutines
-        glGetActiveSubroutineUniformiv(program, GL_FRAGMENT_SHADER, i, GL_NUM_COMPATIBLE_SUBROUTINES, &numCompS);
-        
-        // get the indices of the active subroutines info and write into the array s
-        int *s =  new int[numCompS];
-        glGetActiveSubroutineUniformiv(program, GL_FRAGMENT_SHADER, i, GL_COMPATIBLE_SUBROUTINES, s);
-        std::cout << "Compatible Subroutines:" << std::endl;
-        
-        // for each index, get the name of the subroutines, print info, and save the name in the shaders vector
-        for (int j=0; j < numCompS; ++j) {
-            glGetActiveSubroutineName(program, GL_FRAGMENT_SHADER, s[j], 256, &len, name);
-            std::cout << "\t" << s[j] << " - " << name << "\n";
-            shaders.push_back(name);
-        }
-        std::cout << std::endl;
-        
-        delete[] s;
-    }
 }
 
 //////////////////////////////////////////
@@ -997,7 +955,9 @@ void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier) {
     glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
 
     //---  DRAW PLAYER 
-    models[PLAYER_INDEX].Draw(locations[LOCATION_INSTANCED]);
+    GLuint vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "standard");
+    glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
+    models[PLAYER_INDEX].Draw();
 }
 
 void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine) {
@@ -1015,7 +975,9 @@ void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, strin
     glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[CART_INDEX]));
 
     //---  DRAW CART 
-    models[CART_INDEX].Draw(locations[LOCATION_INSTANCED]);
+    GLuint vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "standard");
+    glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
+    models[CART_INDEX].Draw();
 }
 
 string vecToString(glm::vec2 vector) {
