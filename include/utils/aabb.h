@@ -220,6 +220,15 @@ class AABB {
                 //--- IF I'M A LEAF, TRY THE DEEPER COLLISION CHECK
                 if(IsLeaf) {
 
+                    //--- FIRST, CHECK IF THE CAMERA POINT IS INSIDE THE AABB
+                    //--- BECAUSE THIS IS THE MOST COMMON CASE AND LET US SKIP
+                    //--- THE LINE EQUATION AND INTERSECTIONS
+                    bool fasterCheck = MinX <= end.x && MaxX >= end.x && MinZ <= end.y && MaxZ >= end.y;
+                    
+                    if(fasterCheck) {
+                        return true;
+                    }
+
                     //--- CALCULATING EQUATION FROM POINTS IN FORM y = mx + c
                     GLfloat m = (end.y - start.y) / (end.x - start.x);
                     GLfloat c = start.y - m * start.x;
