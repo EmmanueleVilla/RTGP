@@ -81,6 +81,7 @@ GLfloat rotationSpeed = 2.0f;
 #define CAMERA_DISTANCE_DELTA 0.1f
 #define MAX_CAMERA_DISTANCE 5.0f
 #define MIN_CAMERA_DISTANCE 0.1f
+#define MIN_CAMERA_DISTANCE_SENSES 1.5f
 #define MAX_CAMERA_Y_DELTA 1.0f
 #define MIN_CAMERA_Y_DELTA 0.0f
 GLfloat maxCameraDistance = MAX_CAMERA_DISTANCE;
@@ -506,7 +507,7 @@ int main()
             cameraCollisionµs = microseconds;
         }
 
-        cout << "Camera collision: " << cameraCollisionµs << "µs\tPlayer collision: " << playerCollisionµs << "µs" << endl;
+        //cout << "Camera collision: " << cameraCollisionµs << "micros\tPlayer collision: " << playerCollisionµs << "micros" << endl;
 
         //--- USE SHADER 
         shader.Use();
@@ -764,8 +765,8 @@ void process_keys(GLFWwindow* window) {
             distorsion -= distorsionSpeed * deltaTime;
             maxCameraDistance -= cameraZoomSpeed * deltaTime;
             cameraY -= cameraZoomSpeed * deltaTime;
-            if(maxCameraDistance < MIN_CAMERA_DISTANCE) {
-                maxCameraDistance = MIN_CAMERA_DISTANCE;
+            if(maxCameraDistance < MIN_CAMERA_DISTANCE_SENSES) {
+                maxCameraDistance = MIN_CAMERA_DISTANCE_SENSES;
             }
             if(cameraY < MIN_CAMERA_Y_DELTA) {
                 cameraY = MIN_CAMERA_Y_DELTA;
