@@ -44,6 +44,7 @@
 #define CART_INDEX 3
 #define TREE_INDEX 4
 #define HOUSE_INDEX 5
+#define ODOR_INDEX 6
 
 //---  APPLICATION WINDOW 
 GLuint screenWidth = 1280, screenHeight = 720;
@@ -208,16 +209,17 @@ int main()
     glEnable(GL_STENCIL_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+    glEnable(GL_POINT_SPRITE);
 
     //--- SET CLEAR COLOR
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     //---  INIT SHADERS 
     Shader baseShader = Shader("base.vert", "base.frag");
-    Shader pointsShader = Shader("points.vert", "points.frag", "points.geom");
+    Shader pointsShader = Shader("points.vert", "points.frag");
 
     //--- LOAD TEXTURES MODELS, MATRICES
-    string names[] { "coin", "plane", "dog", "cart", "tree", "house" }; 
+    string names[] { "coin", "plane", "dog", "cart", "tree", "house", "odor" }; 
     for (string name : names) {
         textures.push_back(LoadTexture(("../textures/" + name + ".jpg").c_str()));
         models.push_back(Model("../models/" + name + ".obj"));
@@ -573,6 +575,12 @@ int main()
 
         pointsShader.Use();
 
+        //--- SET POINTS SIZE
+        glPointSize(100.0f);
+
+        glUniform1i(glGetUniformLocation(pointsShader.Program, "tex"), 1);
+
+        //--- LIST OF POINTS
         float vertices_position[] = {
             -0.5f,  0.5f, // top-left
             0.5f,  0.5f, // top-right
@@ -580,14 +588,19 @@ int main()
             -0.5f, -0.5f  // bottom-left
         };
 
-        // Create a Vector Buffer Object that will store the vertices on video memory
+        //--- CREATE VBO
         GLuint vbo;
         glGenBuffers(1, &vbo);
     
-        // Allocate space and upload the data from CPU to GPU
+        //--- ALLOCATE BUFFER
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_position), vertices_position, GL_STATIC_DRAW);
 
+        //--- SET TEXTURE
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, textures[TREE_INDEX]);
+
+        //--- DRAW POINTS
         glDrawArrays(GL_POINTS, 0, 4);
 
         baseShader.Use();
