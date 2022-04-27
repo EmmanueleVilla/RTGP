@@ -213,7 +213,7 @@ int main()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     //---  INIT SHADERS 
-    Shader baseShader = Shader("base.vert", "base.frag", "base.geom");
+    Shader baseShader = Shader("base.vert", "base.frag");
     Shader pointsShader = Shader("points.vert", "points.frag", "points.geom");
 
     //--- LOAD TEXTURES MODELS, MATRICES

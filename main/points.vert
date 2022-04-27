@@ -1,6 +1,8 @@
 #version 410 core
 
-layout (location = 0) in vec2 aPos;
+in vec2 aPos;
+
+out vec2 interp_UV;
 
 void main()
 {

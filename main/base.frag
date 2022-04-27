@@ -11,7 +11,7 @@ uniform float distorsion;
 uniform float time;
 
 //--- INPUT FROM GEOMETRY SHADERS
-in vec2 texCoords;
+in vec2 interp_UV;
 
 //--- SUBROUTINES
 subroutine vec4 fragshader();
@@ -100,7 +100,7 @@ float snoise(vec3 v) {
 //--- SUBROUTINE THAT APPLIES THE GIVEN TEXTURE
 subroutine(fragshader)
 vec4 textured() {
-    vec2 repeatedUV = mod(texCoords * repeat, 1.0f);
+    vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
     return vec4(texture(tex, repeatedUV).xyz, 1.0f);
 }
 
@@ -108,11 +108,11 @@ vec4 textured() {
 //--- SUBROUTING THAT APPLIES A PINCUSHION DISTORSION
 subroutine(fragshader)
 vec4 pincushion() {
-    vec2 repeatedUV = mod(texCoords * repeat, 1.0f);
-    float newX = texCoords.x - 1.0f;
+    vec2 repeatedUV = mod(interp_UV * repeat, 1.0f);
+    float newX = interp_UV.x - 1.0f;
     float y = pow(newX, 2) + newX + 0.1;
     y = clamp(y, 0.0f, 1.0f);
-    vec2 uv = texCoords.xy - vec2(0.5, 0.5);
+    vec2 uv = interp_UV.xy - vec2(0.5, 0.5);
 	float uva = atan(uv.x, uv.y);
     float uvd = sqrt(dot(uv, uv));
     uvd = uvd * (1.0 + distorsion * uvd * uvd);
@@ -128,11 +128,11 @@ vec4 fixedColor() {
 
 //--- RETURNS THE COLOR OF THE TEXTURE
 //--- BY PINCUSHION DISTORTING THE GIVEN UVs
-vec3 distortedColorByUv(vec2 texCoords) {
-    float newX = texCoords.x - 1.0f;
+vec3 distortedColorByUv(vec2 interp_UV) {
+    float newX = interp_UV.x - 1.0f;
     float y = pow(newX, 2) + newX + 0.1;
     y = clamp(y, 0.0f, 1.0f);
-    vec2 uv = texCoords.xy - vec2(0.5, 0.5);
+    vec2 uv = interp_UV.xy - vec2(0.5, 0.5);
 	float uva = atan(uv.x, uv.y);
     float uvd = sqrt(dot(uv, uv));
     uvd = uvd * (1.0 + distorsion * uvd * uvd);
@@ -150,34 +150,34 @@ vec4 tracePlane() {
     }
 
     //--- GET CURRENT COLOR, GREEN OR RED
-    vec3 color = distortedColorByUv(texCoords);
+    vec3 color = distortedColorByUv(interp_UV);
 
     //--- DISTANCE FROM THE NEIGHBOURS TO BE CHECKED
     float texel = 1.0f / 1280.0f * 5.5f;
 
     //--- NEIGHBOURS
-    vec2 topTexel = texCoords + vec2(0.0f, texel);
+    vec2 topTexel = interp_UV + vec2(0.0f, texel);
     vec3 topColor = distortedColorByUv(topTexel);
 
-    vec2 bottomTexel = texCoords + vec2(0.0f, -texel);
+    vec2 bottomTexel = interp_UV + vec2(0.0f, -texel);
     vec3 bottomColor = distortedColorByUv(bottomTexel);
 
-    vec2 leftTexel = texCoords + vec2(-texel, 0.0f);
+    vec2 leftTexel = interp_UV + vec2(-texel, 0.0f);
     vec3 leftColor = distortedColorByUv(leftTexel);
 
-    vec2 rightTexel = texCoords + vec2(-texel, 0.0f);
+    vec2 rightTexel = interp_UV + vec2(-texel, 0.0f);
     vec3 rightColor = distortedColorByUv(rightTexel);
 
-    vec2 topLeftTexel = texCoords + vec2(-texel, texel);
+    vec2 topLeftTexel = interp_UV + vec2(-texel, texel);
     vec3 topLeftColor = distortedColorByUv(topLeftTexel);
 
-    vec2 topRightTexel = texCoords + vec2(texel, texel);
+    vec2 topRightTexel = interp_UV + vec2(texel, texel);
     vec3 topRightColor = distortedColorByUv(topRightTexel);
 
-    vec2 bottomLeftTexel = texCoords + vec2(-texel, -texel);
+    vec2 bottomLeftTexel = interp_UV + vec2(-texel, -texel);
     vec3 bottomLeftColor = distortedColorByUv(bottomLeftTexel);
 
-    vec2 bottomRightTexel = texCoords + vec2(texel, -texel);
+    vec2 bottomRightTexel = interp_UV + vec2(texel, -texel);
     vec3 bottomRightColor = distortedColorByUv(bottomRightTexel);
 
     if(color.z > 0) {
@@ -209,28 +209,28 @@ vec4 tracePlane() {
     //--- NOW SAME, BUT WITH A STRICTER RANGE
     texel = 1.0f / 1280.0f * 1.0f;
 
-    topTexel = texCoords + vec2(0.0f, texel);
+    topTexel = interp_UV + vec2(0.0f, texel);
     topColor = distortedColorByUv(topTexel);
 
-    bottomTexel = texCoords + vec2(0.0f, -texel);
+    bottomTexel = interp_UV + vec2(0.0f, -texel);
     bottomColor = distortedColorByUv(bottomTexel);
 
-    leftTexel = texCoords + vec2(-texel, 0.0f);
+    leftTexel = interp_UV + vec2(-texel, 0.0f);
     leftColor = distortedColorByUv(leftTexel);
 
-    rightTexel = texCoords + vec2(-texel, 0.0f);
+    rightTexel = interp_UV + vec2(-texel, 0.0f);
     rightColor = distortedColorByUv(rightTexel);
 
-    topLeftTexel = texCoords + vec2(-texel, texel);
+    topLeftTexel = interp_UV + vec2(-texel, texel);
     topLeftColor = distortedColorByUv(topLeftTexel);
 
-    topRightTexel = texCoords + vec2(texel, texel);
+    topRightTexel = interp_UV + vec2(texel, texel);
     topRightColor = distortedColorByUv(topRightTexel);
 
-    bottomLeftTexel = texCoords + vec2(-texel, -texel);
+    bottomLeftTexel = interp_UV + vec2(-texel, -texel);
     bottomLeftColor = distortedColorByUv(bottomLeftTexel);
 
-    bottomRightTexel = texCoords + vec2(texel, -texel);
+    bottomRightTexel = interp_UV + vec2(texel, -texel);
     bottomRightColor = distortedColorByUv(bottomRightTexel);
 
     //--- IF I'M IN THE INTERNAL BORDER, MY ALPHA WILL ALWAYS BE 1
@@ -263,7 +263,7 @@ vec4 tracePlane() {
     float alpha = 0.8f;
     if(variableAlpha) {
         //--- OTHERWISE, I GET A NOISE FROM 0 TO 1
-        alpha = snoise(vec3(texCoords * 15, time));
+        alpha = snoise(vec3(interp_UV * 15, time));
         float noiseMin = 0.0f;
         float noiseMax = 1.0f;
         float alphaMin = 0.5f;
