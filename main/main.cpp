@@ -216,7 +216,7 @@ int main()
 
     //---  INIT SHADERS 
     Shader baseShader = Shader("base.vert", "base.frag");
-    Shader pointsShader = Shader("points.vert", "points.frag");
+    Shader pointsShader = Shader("points.vert", "points.frag", "points.geom");
 
     //--- LOAD TEXTURES MODELS, MATRICES
     string names[] { "coin", "plane", "dog", "cart", "tree", "house", "odor" }; 
@@ -581,10 +581,8 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
-        //--- SET POINTS SIZE
-        glPointSize(100.0f);
-
         glUniform1i(glGetUniformLocation(pointsShader.Program, "tex"), 1);
+        glUniform1f(glGetUniformLocation(pointsShader.Program, "time"), glfwGetTime());
 
         //--- CREATE BUFFERS
         GLuint VAO, VBO;
@@ -604,7 +602,7 @@ int main()
 
         //--- SET TEXTURE
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, textures[TREE_INDEX]);
+        glBindTexture(GL_TEXTURE_2D, textures[ODOR_INDEX]);
 
         //--- DRAW
         glDrawArrays(GL_POINTS, 0, points.size());

@@ -7,5 +7,5 @@ uniform mat4 projectionMatrix;
 
 void main()
 {
-    gl_Position = projectionMatrix * viewMatrix * vec4(position.x, 0, position.z, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * vec4(position.x, position.y, position.z, 1.0);
 }
