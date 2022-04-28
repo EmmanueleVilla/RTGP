@@ -127,7 +127,7 @@ vector<glm::vec2> paths;
 
 //--- ODOR PATH DATA
 vector<glm::vec2> odor;
-vector<float> points;
+vector<Point> points;
 
 //--- LOAD CSV DATA FILE
 //--- I EXPECT A 32x32 CSV LIKE THE PLANE OF THE SIZE
@@ -209,7 +209,7 @@ int main()
     glEnable(GL_STENCIL_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    glEnable(GL_POINT_SPRITE);
+    glEnable(GL_PROGRAM_POINT_SIZE);
 
     //--- SET CLEAR COLOR
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -575,33 +575,39 @@ int main()
 
         pointsShader.Use();
 
+        glm::mat4 pointMatrix = glm::mat4(1.0f);
+        pointMatrix = glm::translate(pointMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+
+        glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+
         //--- SET POINTS SIZE
         glPointSize(100.0f);
 
         glUniform1i(glGetUniformLocation(pointsShader.Program, "tex"), 1);
 
-        //--- LIST OF POINTS
-        float vertices_position[] = {
-            -0.5f,  0.5f, // top-left
-            0.5f,  0.5f, // top-right
-            0.5f, -0.5f, // bottom-right
-            -0.5f, -0.5f  // bottom-left
-        };
+        //--- CREATE BUFFERS
+        GLuint VAO, VBO;
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
 
-        //--- CREATE VBO
-        GLuint vbo;
-        glGenBuffers(1, &vbo);
-    
-        //--- ALLOCATE BUFFER
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_position), vertices_position, GL_STATIC_DRAW);
+        //--- BIND VAO
+        glBindVertexArray(VAO);
+
+        //--- PUT VERTICES IN VBO
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Point), &points[0], GL_STATIC_DRAW);
+
+        //--- ACTIVATE FIRST ATTRIBUTE
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Point), (GLvoid*)0);
 
         //--- SET TEXTURE
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, textures[TREE_INDEX]);
 
-        //--- DRAW POINTS
-        glDrawArrays(GL_POINTS, 0, 4);
+        //--- DRAW
+        glDrawArrays(GL_POINTS, 0, points.size());
 
         baseShader.Use();
 
@@ -894,9 +900,9 @@ void interpolateOdorPath() {
     slopes.push_back(glm::vec2((rand() % 50) / 10.0f, (rand() % 20) / 10.0f));
 
     for (std::size_t i = 0; i != odor.size() - 1; ++i) {
-        points.push_back(odor[i].x);
-        points.push_back(odor[i].y);
-        points.push_back(2.0f);
+        Point first = Point();
+        first.Position = glm::vec3(odor[i].x, 2.0f, odor[i].y);
+        points.push_back(first);
         for(int index = 1; index < 10; ++index) {
             float value = index / 10.0f;
             glm::vec2 p0 = ((float)((2 * pow(value, 3) - 3 * pow(value, 2) + 1))) * odor[i];
@@ -905,19 +911,18 @@ void interpolateOdorPath() {
             glm::vec2 p1 = ((float)((-2 * pow(value, 3) + 3 * pow(value, 2)))) * odor[i + 1];
             float y = 2.0f;
             glm::vec3 result = glm::vec3(p0 + m0 + m1 + p1, y);
-            points.push_back(result.x);
-            points.push_back(result.y);
-            points.push_back(result.z);
+            Point point = Point();
+            point.Position = glm::vec3(result.x, result.z, result.y);
+            points.push_back(point);
         }
     }
-    points.push_back(odor[numPoints - 1].x);
-    points.push_back(odor[numPoints - 1].y);
-    points.push_back(2.0f);
+    Point last = Point();
+    last.Position = glm::vec3(odor[numPoints - 1].x, 2.0f, odor[numPoints - 1].y);
+    points.push_back(last);
 
-    for (int i = 0; i < points.size() ; i++) {
-        cout << points[i] << "\t" << points[i+1] << "\t" << points[i+2] << endl;
-        i++;
-        i++;
+    for (auto i=points.begin(); i!=points.end(); ++i) {
+        Point current = *i;
+        cout << current.Position.x << "\t" << current.Position.y << "\t" << current.Position.z << endl;
     }
 }
 

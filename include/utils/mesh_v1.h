@@ -45,6 +45,11 @@ struct Vertex {
     glm::vec3 Bitangent;
 };
 
+struct Point {
+    // vertex coordinates
+    glm::vec3 Position;
+};
+
 /////////////////// MESH class ///////////////////////
 class Mesh {
 public:
