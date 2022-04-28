@@ -481,6 +481,8 @@ int main()
 
         //--- GET POSITION OF CAMERA BASED ON DISTANCE FROM PLAYER
         glm::vec2 currentCamera = buildCameraPosition(cameraDistance);
+
+        //--- TODO OPTIMIZE BY LAZY CALCULATING FAR CAMERA
         glm::vec2 farCamera = buildCameraPosition(min(maxCameraDistance, cameraDistance + CAMERA_DISTANCE_DELTA));
 
         //--- CHECK IF CURRENT AND FAR CAMERA COLLIDES
@@ -884,43 +886,68 @@ void setTexture(int index, GLint repeatLocation, float repeatValue) {
     glUniform1f(repeatLocation, repeatValue);
 }
 
+double random() {
+    return ((double) rand() / (RAND_MAX));
+}
+
+glm::vec2 randomTangent() {
+    return glm::vec2((rand() % 30 - 15), (rand() % 30 - 15));
+}
+
+glm::vec2 randomInUnitCircle() {
+    double theta = random() * 2 * 3.14159;
+    return glm::vec2(cos(theta), sin(theta));
+}
+
 void interpolateOdorPath() {
     int numPoints = odor.size();
     vector<glm::vec2> tangents;
     vector<glm::vec2> slopes;
-    tangents.push_back(glm::vec2((rand() % 30 - 15), (rand() % 30 - 15)));
-    slopes.push_back(glm::vec2((rand() % 50) / 10.0f, (rand() % 20) / 10.0f));
+    tangents.push_back(randomTangent());
+    slopes.push_back(randomInUnitCircle());
     for (std::size_t i = 1; i != odor.size() - 1; ++i) {
         tangents.push_back(glm::vec2(odor[i].x - odor[i-1].x, odor[i].y - odor[i-1].y) + glm::vec2(odor[i+1].x - odor[i].x, odor[i+1].y - odor[i].y));
-        slopes.push_back(glm::vec2((rand() % 50) / 10.0f, (rand() % 20) / 10.0f));
+        slopes.push_back(randomInUnitCircle());
     }
-    tangents.push_back(glm::vec2((rand() % 30 - 15), (rand() % 30 - 15)));
-    slopes.push_back(glm::vec2((rand() % 50) / 10.0f, (rand() % 20) / 10.0f));
-
+    tangents.push_back(randomTangent());
+    slopes.push_back(randomInUnitCircle());
+    float y = 1.0f;
     for (std::size_t i = 0; i != odor.size() - 1; ++i) {
         Point first = Point();
-        first.Position = glm::vec3(odor[i].x, 2.0f, odor[i].y);
+        first.Position = glm::vec3(odor[i].x, y, odor[i].y);
         points.push_back(first);
         for(int index = 1; index < 10; ++index) {
+            if(random() < 0.5 && y > 0.1f) {
+                y -= 0.1f;
+            } else if(y < 2.0f){
+                y += 0.1f;
+            } else {
+                y -= 0.1f;
+            }
             float value = index / 10.0f;
             glm::vec2 p0 = ((float)((2 * pow(value, 3) - 3 * pow(value, 2) + 1))) * odor[i];
             glm::vec2 m0 = ((float)((pow(value, 3) - 2 * pow(value, 2) + value))) * tangents[i];
             glm::vec2 m1 = ((float)((pow(value, 3) - pow(value, 2)))) * tangents[i + 1];
             glm::vec2 p1 = ((float)((-2 * pow(value, 3) + 3 * pow(value, 2)))) * odor[i + 1];
-            float y = 2.0f;
             glm::vec3 result = glm::vec3(p0 + m0 + m1 + p1, y);
+
             Point point = Point();
             point.Position = glm::vec3(result.x, result.z, result.y);
             points.push_back(point);
         }
     }
     Point last = Point();
-    last.Position = glm::vec3(odor[numPoints - 1].x, 2.0f, odor[numPoints - 1].y);
+    last.Position = glm::vec3(odor[numPoints - 1].x, y, odor[numPoints - 1].y);
     points.push_back(last);
 
     for (auto i=points.begin(); i!=points.end(); ++i) {
         Point current = *i;
         cout << current.Position.x << "\t" << current.Position.y << "\t" << current.Position.z << endl;
+    }
+
+    for (auto i=slopes.begin(); i!=slopes.end(); ++i) {
+        glm::vec2 current = *i;
+        cout << current.x << "\t" << current.y << endl;
     }
 }
 

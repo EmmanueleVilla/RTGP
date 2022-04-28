@@ -207,6 +207,7 @@ class AABB {
     //--- WITH AABB TO AABB COLLISION CHECK TO PRUNE RESULTS
     bool checkSegmentXZCollision(glm::vec2 start, glm::vec2 end) {
         AABB collider = AABB(start, end);
+        //--- TODO: OPTIMIZE BY LAZY CALCULATIN THE EQUATION
         //--- CALCULATING EQUATION FROM POINTS IN FORM y = mx + c
         GLfloat m = (end.y - start.y) / (end.x - start.x);
         GLfloat c = start.y - m * start.x;
