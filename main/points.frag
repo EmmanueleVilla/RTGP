@@ -6,6 +6,7 @@ layout(location = 0) out vec4 color;
 //--- INPUT FROM APP
 uniform sampler2D tex;
 uniform float time;
+uniform float distorsion;
 
 //--- INPUT FROM GEOMETRY SHADER
 in vec2 tex_coord;
@@ -95,5 +96,5 @@ void main() {
     if(baseColor.x < 0.1f && baseColor.y < 0.1f && baseColor.z < 0.1f) {
         discard;
     }
-    color = vec4(1.0f, 0.0f, 0.0f, snoise(vec3(tex_coord * 5, time)));
+    color = vec4(1.0f, 0.0f, 0.0f, -distorsion * snoise(vec3(tex_coord * 5, time)));
 }

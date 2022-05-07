@@ -350,6 +350,14 @@ int main()
 
     cout << "Move mouse while pressing mouseR to rotate camera" << endl;
 
+    cout << "*********" << endl;
+
+    cout << "You have been hired to investigate a merchant cart that never arrived at its destination." << endl;
+
+    cout << "Find the cart using your senses by keeping the space button pressed!" << endl;
+
+    cout << "While investigating the cart, press enter to confirm the finding." << endl;
+
     //--- TO APPLY THE LENS EFFECT, WE RENDER TO A RENDER TARGET
     //--- LATER TO BE USED AS A TEXTURE
 
@@ -575,39 +583,43 @@ int main()
 
         drawPlayer(baseShader, locations, 1.0f);
 
-        pointsShader.Use();
 
-        glm::mat4 pointMatrix = glm::mat4(1.0f);
-        pointMatrix = glm::translate(pointMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
+        if((questState == QuestStates::CartInspected || questState == QuestStates::Odor) && distorsion < 0.0f) {
+            pointsShader.Use();
 
-        glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+            glm::mat4 pointMatrix = glm::mat4(1.0f);
+            pointMatrix = glm::translate(pointMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
 
-        glUniform1i(glGetUniformLocation(pointsShader.Program, "tex"), 1);
-        glUniform1f(glGetUniformLocation(pointsShader.Program, "time"), glfwGetTime());
+            glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+            glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
 
-        //--- CREATE BUFFERS
-        GLuint VAO, VBO;
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
+            glUniform1i(glGetUniformLocation(pointsShader.Program, "tex"), 1);
+            glUniform1f(glGetUniformLocation(pointsShader.Program, "time"), glfwGetTime());
+            glUniform1f(glGetUniformLocation(pointsShader.Program, "distorsion"), distorsion);
 
-        //--- BIND VAO
-        glBindVertexArray(VAO);
+            //--- CREATE BUFFERS
+            GLuint VAO, VBO;
+            glGenVertexArrays(1, &VAO);
+            glGenBuffers(1, &VBO);
 
-        //--- PUT VERTICES IN VBO
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Point), &points[0], GL_STATIC_DRAW);
+            //--- BIND VAO
+            glBindVertexArray(VAO);
 
-        //--- ACTIVATE FIRST ATTRIBUTE
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Point), (GLvoid*)0);
+            //--- PUT VERTICES IN VBO
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(Point), &points[0], GL_STATIC_DRAW);
 
-        //--- SET TEXTURE
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, textures[ODOR_INDEX]);
+            //--- ACTIVATE FIRST ATTRIBUTE
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Point), (GLvoid*)0);
 
-        //--- DRAW
-        glDrawArrays(GL_POINTS, 0, points.size());
+            //--- SET TEXTURE
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, textures[ODOR_INDEX]);
+
+            //--- DRAW
+            glDrawArrays(GL_POINTS, 0, points.size());
+        }
 
         baseShader.Use();
 
@@ -620,6 +632,9 @@ int main()
 
         if((distorsion > -0.99f || keys[GLFW_KEY_SPACE]) && distancePlayerCart < 7.5) {
             if(questState == QuestStates::Cart && keys[GLFW_KEY_ENTER]) {
+                cout << "*********" << endl;
+                cout << "The cart was attacked and its merchandise made up of fine perfumes broke!" << endl;
+                cout << "With your senses you can now follow the perfume trail!" << endl;
                 questState = QuestStates::CartInspected;
             }
             glColorMask(false, false, false, false);
@@ -894,37 +909,33 @@ glm::vec2 randomTangent() {
     return glm::vec2((rand() % 30 - 15), (rand() % 30 - 15));
 }
 
-glm::vec2 randomInUnitCircle() {
-    double theta = random() * 2 * 3.14159;
-    return glm::vec2(cos(theta), sin(theta));
+double randomHeight() {
+    return (rand()%(20-5+1) + 5) / 10.f;
 }
 
 void interpolateOdorPath() {
     int numPoints = odor.size();
     vector<glm::vec2> tangents;
-    vector<glm::vec2> slopes;
+    vector<float> heights;
     tangents.push_back(randomTangent());
-    slopes.push_back(randomInUnitCircle());
+    heights.push_back(0.0f);
     for (std::size_t i = 1; i != odor.size() - 1; ++i) {
         tangents.push_back(glm::vec2(odor[i].x - odor[i-1].x, odor[i].y - odor[i-1].y) + glm::vec2(odor[i+1].x - odor[i].x, odor[i+1].y - odor[i].y));
-        slopes.push_back(randomInUnitCircle());
+        float h = randomHeight();
+        cout << h << endl;
+        heights.push_back(h);
     }
     tangents.push_back(randomTangent());
-    slopes.push_back(randomInUnitCircle());
-    float y = 1.0f;
+    heights.push_back(0.0f);
     for (std::size_t i = 0; i != odor.size() - 1; ++i) {
         Point first = Point();
-        first.Position = glm::vec3(odor[i].x, y, odor[i].y);
+        first.Position = glm::vec3(odor[i].x, heights[i], odor[i].y);
         points.push_back(first);
+        float startY = heights[i];
+        float endY = heights[i + 1];
         for(int index = 1; index < 10; ++index) {
-            if(random() < 0.5 && y > 0.1f) {
-                y -= 0.1f;
-            } else if(y < 2.0f){
-                y += 0.1f;
-            } else {
-                y -= 0.1f;
-            }
             float value = index / 10.0f;
+            float y = (1.0 - value) * startY + value * endY;
             glm::vec2 p0 = ((float)((2 * pow(value, 3) - 3 * pow(value, 2) + 1))) * odor[i];
             glm::vec2 m0 = ((float)((pow(value, 3) - 2 * pow(value, 2) + value))) * tangents[i];
             glm::vec2 m1 = ((float)((pow(value, 3) - pow(value, 2)))) * tangents[i + 1];
@@ -937,17 +948,12 @@ void interpolateOdorPath() {
         }
     }
     Point last = Point();
-    last.Position = glm::vec3(odor[numPoints - 1].x, y, odor[numPoints - 1].y);
+    last.Position = glm::vec3(odor[numPoints - 1].x, 0.0f, odor[numPoints - 1].y);
     points.push_back(last);
 
     for (auto i=points.begin(); i!=points.end(); ++i) {
         Point current = *i;
         cout << current.Position.x << "\t" << current.Position.y << "\t" << current.Position.z << endl;
-    }
-
-    for (auto i=slopes.begin(); i!=slopes.end(); ++i) {
-        glm::vec2 current = *i;
-        cout << current.x << "\t" << current.y << endl;
     }
 }
 
