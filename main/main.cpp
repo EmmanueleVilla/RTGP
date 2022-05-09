@@ -101,7 +101,7 @@ GLfloat distorsionSpeed = 0.75f;
 enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, InterpolateOdorPath, Loaded };
 AppStates appState = AppStates::LoadingMap;
 
-enum class QuestStates { Cart, CartInspected, Odor };
+enum class QuestStates { Cart, CartInspected, Odor, BodyInspected };
 QuestStates questState = QuestStates::Cart;
 
 //--- MATRIXES FOR INSTANCED DRAWING 
@@ -119,6 +119,10 @@ float cartZ = 0.0f;
 float houseX = 0.0f;
 float houseZ = 0.0f;
 
+//--- DEAD BODY
+float bodyX = 0.0f;
+float bodyZ = 0.0f;
+
 //--- INDEX TO KEEP TRACK OF THE CURRENT ROW TO LOAD ONE ROW PER RENDER LOOP
 int currentCell = 0;
 
@@ -128,6 +132,9 @@ vector<glm::vec2> paths;
 //--- ODOR PATH DATA
 vector<glm::vec2> odor;
 vector<Point> points;
+
+//--- FOOTPRINT DATA
+vector<Point> footprint;
 
 //--- LOAD CSV DATA FILE
 //--- I EXPECT A 32x32 CSV LIKE THE PLANE OF THE SIZE
@@ -158,7 +165,9 @@ void addToAABBsHierarchy(vector<AABB> aabb);
 void loadNextRow();
 void interpolateOdorPath();
 void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier);
+void drawBody(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine);
 void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine);
+void drawPlane(Shader shader, glm::mat4 projection, glm::mat4 view, vector<GLint> locations);
 glm::vec2 buildCameraPosition(GLfloat distance);
 string vecToString(glm::vec2 vector);
 string vecToString(glm::vec3 vector);
@@ -534,22 +543,7 @@ int main()
 
         glUniform1i(locations[LOCATION_TEXTURE], 1);
 
-        setTexture(PLANE_INDEX, locations[LOCATION_REPEAT], 80.0f);
-
-        //--- PASS VALUES TO SHADER 
-        glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
-        glUniform1f(locations[LOCATION_DISTORSION], distorsion);
-        glUniform1f(locations[LOCATION_TIME], glfwGetTime());
-        
-        //---  SET PLANE MATRIX
-        glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLANE_INDEX]));
-
-        GLuint vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "standard");
-        glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
-
-        //---  DRAW PLANE 
-        models[PLANE_INDEX].Draw();
+        drawPlane(baseShader, projection, view, locations);
 
         GLuint fragmSubIndex = glGetSubroutineIndex(baseShader.Program, GL_FRAGMENT_SHADER, "textured");
         glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
@@ -575,7 +569,7 @@ int main()
         glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIXES], treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
 
         //---  DRAW TREE
-        vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "instanced");
+        GLuint vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "instanced");
         glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
         models[TREE_INDEX].DrawInstanced(treesMatrixes.size());
 
@@ -583,12 +577,10 @@ int main()
 
         drawPlayer(baseShader, locations, 1.0f);
 
+        drawBody(baseShader, locations, 1.0f, "textured");
 
         if((questState == QuestStates::CartInspected || questState == QuestStates::Odor) && distorsion < 0.0f) {
             pointsShader.Use();
-
-            glm::mat4 pointMatrix = glm::mat4(1.0f);
-            pointMatrix = glm::translate(pointMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
 
             glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
             glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
@@ -596,6 +588,10 @@ int main()
             glUniform1i(glGetUniformLocation(pointsShader.Program, "tex"), 1);
             glUniform1f(glGetUniformLocation(pointsShader.Program, "time"), glfwGetTime());
             glUniform1f(glGetUniformLocation(pointsShader.Program, "distorsion"), distorsion);
+            glUniform1i(glGetUniformLocation(pointsShader.Program, "billboard"), 1);
+            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaX"), 0.5625);
+            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaY"), 1);
+            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaZ"), 0);
 
             //--- CREATE BUFFERS
             GLuint VAO, VBO;
@@ -621,6 +617,44 @@ int main()
             glDrawArrays(GL_POINTS, 0, points.size());
         }
 
+        if((questState == QuestStates::BodyInspected && distorsion < 0.0f)) {
+            pointsShader.Use();
+
+            glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
+            glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
+
+            glUniform1i(glGetUniformLocation(pointsShader.Program, "tex"), 1);
+            glUniform1f(glGetUniformLocation(pointsShader.Program, "time"), glfwGetTime());
+            glUniform1f(glGetUniformLocation(pointsShader.Program, "distorsion"), distorsion);
+            glUniform1i(glGetUniformLocation(pointsShader.Program, "billboard"), 0);
+            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaX"), 0.5625);
+            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaY"), 0);
+            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaZ"), 1);
+
+            //--- CREATE BUFFERS
+            GLuint VAO, VBO;
+            glGenVertexArrays(1, &VAO);
+            glGenBuffers(1, &VBO);
+
+            //--- BIND VAO
+            glBindVertexArray(VAO);
+
+            //--- PUT VERTICES IN VBO
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, footprint.size() * sizeof(Point), &footprint[0], GL_STATIC_DRAW);
+
+            //--- ACTIVATE FIRST ATTRIBUTE
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Point), (GLvoid*)0);
+
+            //--- SET TEXTURE
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, textures[ODOR_INDEX]);
+
+            //--- DRAW
+            glDrawArrays(GL_POINTS, 0, footprint.size());
+        }
+
         baseShader.Use();
 
         //--- CLEAR SECOND TEXTURE OF FRAME BUFFER
@@ -628,8 +662,70 @@ int main()
         glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
         clear();
 
+        float distancePlayerBody = distance(glm::vec2(playerPos.x, playerPos.z), glm::vec2(bodyX, bodyZ));
+
+        //--- BODY HIGHLIGHT
+        if((distorsion > -0.99f || keys[GLFW_KEY_SPACE]) && distancePlayerBody < 7.5) {
+            if(questState == QuestStates::Odor && keys[GLFW_KEY_ENTER]) {
+                cout << "*********" << endl;
+                cout << "Someone killed the merchant and run away" << endl;
+                cout << "With your senses you can now follow their footprints!" << endl;
+                questState = QuestStates::BodyInspected;
+            }
+            glColorMask(false, false, false, false);
+            glDepthMask(false);
+
+            //--- IN THE FIRST PASS, ALL FRAGMENTS PASS THE STENCIL TEST
+            //--- ACTION WHEN STENCIL FAILS, DEPTH FAILS AND BOTH PASS
+            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilMask(0xFF);
+
+            drawBody(baseShader, locations, 1.0f, "textured");
+
+            //--- REMOVE PLAYER FROM STENCIL
+            glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
+
+            drawPlayer(baseShader, locations, 1.0f);
+
+            glColorMask(true, true, true, true);
+            glDepthMask(true);
+
+            glStencilMask(0x00);
+
+            //--- DRAW PLANE ONLY WHERE STENCIL IS !=1
+            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+            glStencilFunc(GL_EQUAL, 1, 0xFF);
+
+            view = glm::lookAt(glm::vec3(0.0f, 1.0f, 7.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+             //--- PASS VALUES TO SHADER 
+            glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
+            glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
+
+            fragmSubIndex = glGetSubroutineIndex(baseShader.Program, GL_FRAGMENT_SHADER, "fixedColor");
+            glUniform3fv(locations[LOCATION_COLOR], 1, questState == QuestStates::Odor ? redColor : yellowColor);
+            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
+
+            glm::mat4 planeModelMatrix2 = glm::mat4(1.0f);
+            planeModelMatrix2 = glm::translate(planeModelMatrix2, glm::vec3(0.0f, 1.0f, -10.0f));
+            planeModelMatrix2 = glm::rotate(planeModelMatrix2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            planeModelMatrix2 = glm::scale(planeModelMatrix2, glm::vec3(1/16.0f * 17.0f, 1.0f, 1/16.0f * 10.0f));
+
+            //---  SET PLANE MATRIX
+            glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(planeModelMatrix2));
+
+            //---  DRAW PLANE
+            vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "standard");
+            glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
+            models[PLANE_INDEX].Draw();
+
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        }
+
         float distancePlayerCart = distance(glm::vec2(playerPos.x, playerPos.z), glm::vec2(cartX, cartZ));
 
+        //--- CART HIGHLIGHT
         if((distorsion > -0.99f || keys[GLFW_KEY_SPACE]) && distancePlayerCart < 7.5) {
             if(questState == QuestStates::Cart && keys[GLFW_KEY_ENTER]) {
                 cout << "*********" << endl;
@@ -1000,6 +1096,10 @@ void loadNextRow() {
             treeMatrix = glm::scale(treeMatrix, glm::vec3(randomScale, randomScale, randomScale));
             treesMatrixes.push_back(treeMatrix);
         }
+        if(*i == "D") {
+            bodyX = currentCell * 2;
+            bodyZ = position * 2;
+        }
         if(*i == "S") {
             deltaX = currentCell * 2;
             deltaZ = position * 2;
@@ -1017,6 +1117,11 @@ void loadNextRow() {
         }
         if(*i == "O") {
             odor.push_back(glm::vec2(currentCell * 2, position * 2));
+        }
+        if(*i == "F") {
+            Point point = Point();
+            point.Position = glm::vec3(currentCell * 2, 1.0f, position * 2);
+            footprint.push_back(point);
         }
     }
 }
@@ -1040,6 +1145,46 @@ void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier) {
     GLuint vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "standard");
     glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
     models[PLAYER_INDEX].Draw();
+}
+
+void drawBody(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine) {
+    //--- CHECK SUBROUTINES
+    GLuint subroutineIndex = glGetSubroutineIndex(shader.Program, GL_FRAGMENT_SHADER, subroutine.c_str());
+    glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &subroutineIndex);
+
+    //--- SET BODY TEXTURE 
+    setTexture(PLAYER_INDEX, locations[LOCATION_REPEAT], 1.0f);
+
+    //---  SET BODY MATRICES 
+    matrices[PLAYER_INDEX] = glm::mat4(1.0f);
+    matrices[PLAYER_INDEX] = glm::translate(matrices[PLAYER_INDEX], glm::vec3(bodyX, 0.0f, bodyZ));
+    matrices[PLAYER_INDEX] = glm::rotate(matrices[PLAYER_INDEX], glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    matrices[PLAYER_INDEX] = glm::scale(matrices[PLAYER_INDEX], glm::vec3(0.03f * scaleModifier, 0.03f * scaleModifier, 0.03f * scaleModifier));
+    glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLAYER_INDEX]));
+
+    //---  DRAW BODY 
+    GLuint vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "standard");
+    glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
+    models[PLAYER_INDEX].Draw();
+}
+
+void drawPlane(Shader shader, glm::mat4 projection, glm::mat4 view, vector<GLint> locations) {
+    setTexture(PLANE_INDEX, locations[LOCATION_REPEAT], 80.0f);
+
+    //--- PASS VALUES TO SHADER 
+    glUniformMatrix4fv(locations[LOCATION_PROJECTION_MATRIX], 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(locations[LOCATION_VIEW_MATRIX], 1, GL_FALSE, glm::value_ptr(view));
+    glUniform1f(locations[LOCATION_DISTORSION], distorsion);
+    glUniform1f(locations[LOCATION_TIME], glfwGetTime());
+    
+    //---  SET PLANE MATRIX
+    glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIX], 1, GL_FALSE, glm::value_ptr(matrices[PLANE_INDEX]));
+
+    GLuint vertSubIndex = glGetSubroutineIndex(shader.Program, GL_VERTEX_SHADER, "standard");
+    glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
+
+    //---  DRAW PLANE 
+    models[PLANE_INDEX].Draw();
 }
 
 void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine) {

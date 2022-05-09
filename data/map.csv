@@ -1,4 +1,4 @@
-T,T,T,T,T,T,T,T,P,T,T,T,T,T,T,T,T,T,T,T,P,T,T,T,T,T,T,T,T,T,T,T
+T,T,T,T,T,T,T,,P,,,T,T,T,T,T,T,T,T,,P,,T,T,T,T,T,T,T,T,T,T
 T,T,T,T,,T,T,,P,,,T,T,T,T,T,T,T,T,,P,,T,T,T,T,T,T,T,T,T,T
 T,T,T,T,T,T,T,,P,S,,T,T,T,T,T,T,T,,,P,,T,T,T,T,T,T,T,T,T,T
 T,T,,T,T,T,T,,P,P,,T,T,T,T,T,T,T,,P,P,,T,T,T,T,T,T,T,T,T,T
@@ -18,10 +18,10 @@ T,T,T,T,T,T,,T,T,T,T,,T,T,T,T,T,T,,,,,T,T,,T,T,T,T,T,T,T
 T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,,T,T,T,,,,,,,T,T,,T,T,T,T
 T,T,T,T,T,T,T,,T,T,T,T,T,T,T,T,T,T,T,,,,,,O,,,T,T,T,T,T
 T,T,T,T,T,T,T,,T,T,T,,,T,T,T,T,T,T,,T,O,,,,,,T,T,T,T,T
-T,T,,,T,T,T,T,,,,,,,,T,,,,,,,,,T,,,T,T,T,T,T
-T,T,,,T,T,T,T,,,,,,,,T,,T,T,,O,,,,,,,T,T,T,T,T
-T,T,T,T,T,T,,T,,,,,,,,T,,T,T,,,,,,,T,T,T,T,T,T,T
-T,T,T,T,T,T,T,T,,,,H,,,,,,T,T,,,,O,,,T,T,T,T,T,T,T
+T,T,,,T,T,T,T,,,,,,,,T,F,F,F,F,F,F,,,T,,,T,T,T,T,T
+T,T,,,T,T,T,T,,,,,,,,T,F,T,T,,O,,F,,,,,T,T,T,T,T
+T,T,T,T,T,T,,T,,,,,,,,T,F,T,T,,,,,F,,T,T,T,T,T,T,T
+T,T,T,T,T,T,T,T,,,,H,,,,F,F,T,T,,,,O,D,,T,T,T,T,T,T,T
 T,T,T,T,T,T,T,,,,,,,,,T,,T,T,,,T,,,T,T,T,,T,T,T,T
 T,T,,T,T,T,T,T,,,,,,,,T,T,T,,,,,,,T,T,T,T,T,T,T,T
 T,T,,T,,T,T,T,,,,,,,,T,T,T,T,T,T,T,T,T,T,T,T,T,,T,T,T
