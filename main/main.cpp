@@ -106,6 +106,7 @@ QuestStates questState = QuestStates::Cart;
 
 //--- MATRIXES FOR INSTANCED DRAWING 
 vector<glm::mat4> treesMatrixes;
+vector<glm::mat4> footprintsMatrixes;
 
 //--- AABBs list
 vector<AABB> AABBs;
@@ -132,9 +133,6 @@ vector<glm::vec2> paths;
 //--- ODOR PATH DATA
 vector<glm::vec2> odor;
 vector<Point> points;
-
-//--- FOOTPRINT DATA
-vector<Point> footprint;
 
 //--- LOAD CSV DATA FILE
 //--- I EXPECT A 32x32 CSV LIKE THE PLANE OF THE SIZE
@@ -333,23 +331,6 @@ int main()
     cout << "Loading ended, binding new loop values" << endl;
 
     //delete &coinModel;
-
-    //---  INIT UNIFORM BUFFER FOR TREES
-    GLint uniformTreesMatrixBlockLocation = glGetUniformBlockIndex(baseShader.Program, "Matrices");
-    glUniformBlockBinding(baseShader.Program, uniformTreesMatrixBlockLocation, 0);
-
-    GLuint uboTreesMatrixBlock;
-    glGenBuffers(1, &uboTreesMatrixBlock);
-    glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
-    glBufferData(GL_UNIFORM_BUFFER, treesMatrixes.size() * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboTreesMatrixBlock, 0, treesMatrixes.size() * sizeof(glm::mat4));
-
-    //---  FILL UNIFORM BUFFER
-    glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, treesMatrixes.size() * sizeof(glm::mat4), glm::value_ptr(treesMatrixes[0]));
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     cout << "Starting game loop" << endl;
 
@@ -562,11 +543,24 @@ int main()
         //---  DRAW HOUSE 
         models[HOUSE_INDEX].Draw();
 
+        //---  UNIFORM BUFFER FOR TREES. Can it be moved before the render loop?
+        GLint uniformTreesMatrixBlockLocation = glGetUniformBlockIndex(baseShader.Program, "Matrices");
+        glUniformBlockBinding(baseShader.Program, uniformTreesMatrixBlockLocation, 0);
+
+        GLuint uboTreesMatrixBlock;
+        glGenBuffers(1, &uboTreesMatrixBlock);
+        glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
+        glBufferData(GL_UNIFORM_BUFFER, treesMatrixes.size() * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboTreesMatrixBlock, 0, treesMatrixes.size() * sizeof(glm::mat4));
+
+        glBindBuffer(GL_UNIFORM_BUFFER, uboTreesMatrixBlock);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, treesMatrixes.size() * sizeof(glm::mat4), glm::value_ptr(treesMatrixes[0]));
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
         //--- SET TREE TEXTURE 
         setTexture(TREE_INDEX, locations[LOCATION_REPEAT], 1.0f);
-
-        //---  SET TREE MATRICES 
-        glUniformMatrix4fv(locations[LOCATION_MODEL_MATRIXES], treesMatrixes.size(), GL_FALSE, glm::value_ptr(treesMatrixes[0]));
 
         //---  DRAW TREE
         GLuint vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "instanced");
@@ -617,7 +611,26 @@ int main()
         baseShader.Use();
 
         if((questState == QuestStates::BodyInspected && distorsion < 0.0f)) {
-            //TODO: instantiate planes with footprint textures
+            //---  UNIFORM BUFFER FOR FOOTPRINTS. Can it be moved before the render loop?
+            GLuint uboFootprintsMatrixBlock;
+            glGenBuffers(1, &uboFootprintsMatrixBlock);
+            glBindBuffer(GL_UNIFORM_BUFFER, uboFootprintsMatrixBlock);
+            glBufferData(GL_UNIFORM_BUFFER, footprintsMatrixes.size() * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboFootprintsMatrixBlock, 0, footprintsMatrixes.size() * sizeof(glm::mat4));
+
+            glBindBuffer(GL_UNIFORM_BUFFER, uboFootprintsMatrixBlock);
+            glBufferSubData(GL_UNIFORM_BUFFER, 0, footprintsMatrixes.size() * sizeof(glm::mat4), glm::value_ptr(footprintsMatrixes[0]));
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+            //--- SET TREE TEXTURE 
+            setTexture(CART_INDEX, locations[LOCATION_REPEAT], 1.0f);
+
+            //---  DRAW TREE
+            GLuint vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "instanced");
+            glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
+            models[CART_INDEX].DrawInstanced(footprintsMatrixes.size());
         }
 
         //--- CLEAR SECOND TEXTURE OF FRAME BUFFER
@@ -1082,9 +1095,10 @@ void loadNextRow() {
             odor.push_back(glm::vec2(currentCell * 2, position * 2));
         }
         if(*i == "F") {
-            Point point = Point();
-            point.Position = glm::vec3(currentCell * 2, 1.0f, position * 2);
-            footprint.push_back(point);
+            glm::mat4 footprintMatrix = glm::mat4(1.0f);
+            footprintMatrix = glm::translate(footprintMatrix, glm::vec3(currentCell * 2, 0.0f, position * 2));
+            footprintMatrix = glm::scale(footprintMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
+            footprintsMatrixes.push_back(footprintMatrix);
         }
     }
 }
