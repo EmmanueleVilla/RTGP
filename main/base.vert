@@ -8,12 +8,13 @@ layout (location = 2) in vec2 UV;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
+uniform mat4 modelMatrices[10];
 uniform mat3 normalMatrix;
 
 //--- UBO INPUT FROM APP
 layout (std140) uniform Matrices {
     //--- HANDLING A MAXIMUM OF 1024 ELEMENTS
-    mat4 modelMatrices[1024];
+    mat4 modelMatricesUbo[1024];
 };
 
 //--- OUTPUT TO FRAGMENT SHADER
@@ -29,7 +30,12 @@ vec4 standard() {
 }
 
 subroutine(vertshader)
-vec4 instanced() {
+vec4 instancedUbo() {
+    return projectionMatrix * viewMatrix * modelMatricesUbo[gl_InstanceID] * vec4(position, 1.0);
+}
+
+subroutine(vertshader)
+vec4 instancedBase() {
     return projectionMatrix * viewMatrix * modelMatrices[gl_InstanceID] * vec4(position, 1.0);
 }
 
