@@ -589,9 +589,6 @@ int main()
             glUniform1f(glGetUniformLocation(pointsShader.Program, "time"), glfwGetTime());
             glUniform1f(glGetUniformLocation(pointsShader.Program, "distorsion"), distorsion);
             glUniform1i(glGetUniformLocation(pointsShader.Program, "billboard"), 1);
-            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaX"), 0.5625);
-            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaY"), 1);
-            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaZ"), 0);
 
             //--- CREATE BUFFERS
             GLuint VAO, VBO;
@@ -617,45 +614,11 @@ int main()
             glDrawArrays(GL_POINTS, 0, points.size());
         }
 
-        if((questState == QuestStates::BodyInspected && distorsion < 0.0f)) {
-            pointsShader.Use();
-
-            glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(projection));
-            glUniformMatrix4fv(glGetUniformLocation(pointsShader.Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(view));
-
-            glUniform1i(glGetUniformLocation(pointsShader.Program, "tex"), 1);
-            glUniform1f(glGetUniformLocation(pointsShader.Program, "time"), glfwGetTime());
-            glUniform1f(glGetUniformLocation(pointsShader.Program, "distorsion"), distorsion);
-            glUniform1i(glGetUniformLocation(pointsShader.Program, "billboard"), 0);
-            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaX"), 0.5625);
-            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaY"), 0);
-            glUniform1f(glGetUniformLocation(pointsShader.Program, "deltaZ"), 1);
-
-            //--- CREATE BUFFERS
-            GLuint VAO, VBO;
-            glGenVertexArrays(1, &VAO);
-            glGenBuffers(1, &VBO);
-
-            //--- BIND VAO
-            glBindVertexArray(VAO);
-
-            //--- PUT VERTICES IN VBO
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, footprint.size() * sizeof(Point), &footprint[0], GL_STATIC_DRAW);
-
-            //--- ACTIVATE FIRST ATTRIBUTE
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Point), (GLvoid*)0);
-
-            //--- SET TEXTURE
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, textures[ODOR_INDEX]);
-
-            //--- DRAW
-            glDrawArrays(GL_POINTS, 0, footprint.size());
-        }
-
         baseShader.Use();
+
+        if((questState == QuestStates::BodyInspected && distorsion < 0.0f)) {
+            //TODO: instantiate planes with footprint textures
+        }
 
         //--- CLEAR SECOND TEXTURE OF FRAME BUFFER
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
