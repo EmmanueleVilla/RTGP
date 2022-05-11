@@ -566,7 +566,7 @@ int main()
         //---  DRAW TREE
         GLuint vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "instancedUbo");
         glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
-        //models[TREE_INDEX].DrawInstanced(treesMatrixes.size());
+        models[TREE_INDEX].DrawInstanced(treesMatrixes.size());
 
         drawCart(baseShader, locations, 1.0f, "textured");
 
@@ -612,16 +612,19 @@ int main()
         baseShader.Use();
 
         if((questState == QuestStates::BodyInspected && distorsion < 0.0f)) {
+            
             //--- SET FOOTPRINT TEXTURE 
             setTexture(ODOR_INDEX, locations[LOCATION_REPEAT], 1.0f);
-
+            
             //---  DRAW FOOTPRINT
             GLuint vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "instancedBase");
             glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
-
             glUniformMatrix4fv(glGetUniformLocation(baseShader.Program, "modelMatrices"), 1, GL_FALSE, glm::value_ptr(footprintsMatrixes[0]));
 
             models[TREE_INDEX].DrawInstanced(footprintsMatrixes.size());
+
+            vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "standard");
+            glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
         }
 
         //--- CLEAR SECOND TEXTURE OF FRAME BUFFER
