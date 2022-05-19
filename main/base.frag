@@ -104,6 +104,62 @@ vec4 textured() {
     return vec4(texture(tex, repeatedUV).xyz, 1.0f);
 }
 
+//--- SUBROUTINE FOR THE FOOTPRINT
+subroutine(fragshader)
+vec4 footprint() {
+    vec4 baseColor = texture(tex, interp_UV);
+
+    if(baseColor.x < 0.1f && baseColor.y < 0.1f && baseColor.z < 0.1f) {
+        discard;
+    }
+
+    float texel = 1.0f / 512.0f * 2.0f;
+
+    vec2 topTexel = interp_UV + vec2(0.0f, texel);
+    vec4 topColor = texture(tex, topTexel);
+
+    vec2 bottomTexel = interp_UV + vec2(0.0f, -texel);
+    vec4 bottomColor = texture(tex, bottomTexel);
+
+    vec2 leftTexel = interp_UV + vec2(-texel, 0.0f);
+    vec4 leftColor = texture(tex, leftTexel);
+
+    vec2 rightTexel = interp_UV + vec2(-texel, 0.0f);
+    vec4 rightColor = texture(tex, rightTexel);
+
+    vec2 topLeftTexel = interp_UV + vec2(-texel, texel);
+    vec4 topLeftColor = texture(tex, topLeftTexel);
+
+    vec2 topRightTexel = interp_UV + vec2(texel, texel);
+    vec4 topRightColor = texture(tex, topRightTexel);
+
+    vec2 bottomLeftTexel = interp_UV + vec2(-texel, -texel);
+    vec4 bottomLeftColor = texture(tex, bottomLeftTexel);
+
+    vec2 bottomRightTexel = interp_UV + vec2(texel, -texel);
+    vec4 bottomRightColor = texture(tex, bottomRightTexel);
+
+    bool variableAlpha = false;
+
+    if(topColor.r > 0.1
+            && bottomColor.r > 0.1
+            && leftColor.r > 0.1
+            && rightColor.r > 0.1
+            && topRightColor.r > 0.1
+            && topLeftColor.r > 0.1
+            && bottomRightColor.r > 0.1
+            && bottomLeftColor.r > 0.1) {
+            variableAlpha = true;
+    }
+
+    float alpha = 1.0f;
+    if(variableAlpha) {
+        alpha = snoise(vec3(interp_UV * 5, time));
+    }
+
+    return vec4(1.0f, 0.0f, 0.0f, -distorsion * alpha);
+}
+
 
 //--- SUBROUTING THAT APPLIES A PINCUSHION DISTORSION
 subroutine(fragshader)

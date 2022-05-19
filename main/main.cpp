@@ -45,6 +45,7 @@
 #define TREE_INDEX 4
 #define HOUSE_INDEX 5
 #define ODOR_INDEX 6
+#define FOOTPRINT_INDEX 7
 
 //---  APPLICATION WINDOW 
 GLuint screenWidth = 1280, screenHeight = 720;
@@ -98,14 +99,21 @@ GLfloat distorsion = MAX_DISTORSION;
 GLfloat distorsionSpeed = 0.75f;
 
 //---  APP_STATE 
-enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, InterpolateOdorPath, Loaded };
+enum class AppStates { LoadingMap, LoadingAABBs, CreatingAABBsHierarchy, CreatePaths, Loaded };
 AppStates appState = AppStates::LoadingMap;
 
 enum class QuestStates { Cart, CartInspected, Odor, BodyInspected };
 QuestStates questState = QuestStates::Cart;
 
+struct Footprint {
+    glm::vec2 Position;
+    int Order;
+};
+
+
 //--- MATRIXES FOR INSTANCED DRAWING 
 vector<glm::mat4> treesMatrixes;
+vector<Footprint> footprintsPoints;
 vector<glm::mat4> footprintsMatrixes;
 
 //--- AABBs list
@@ -162,6 +170,7 @@ void loadAABBs();
 void addToAABBsHierarchy(vector<AABB> aabb);
 void loadNextRow();
 void interpolateOdorPath();
+void createFootprintsPath();
 void drawPlayer(Shader shader, vector<GLint> locations, float scaleModifier);
 void drawBody(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine);
 void drawCart(Shader shader, vector<GLint> locations, float scaleModifier, string subroutine);
@@ -226,7 +235,7 @@ int main()
     Shader pointsShader = Shader("points.vert", "points.frag", "points.geom");
 
     //--- LOAD TEXTURES MODELS, MATRICES
-    string names[] { "coin", "plane", "dog", "cart", "tree", "house", "odor" }; 
+    string names[] { "coin", "plane", "dog", "cart", "tree", "house", "odor", "footprints" }; 
     for (string name : names) {
         textures.push_back(LoadTexture(("../textures/" + name + ".jpg").c_str()));
         models.push_back(Model("../models/" + name + ".obj"));
@@ -263,7 +272,8 @@ int main()
             return 0;
         }
 
-        if(appState == AppStates::InterpolateOdorPath) {
+        if(appState == AppStates::CreatePaths) {
+            createFootprintsPath();
             interpolateOdorPath();
             appState = AppStates::Loaded;
         }
@@ -271,7 +281,7 @@ int main()
 
         if(appState == AppStates::CreatingAABBsHierarchy) {
             addToAABBsHierarchy( { AABBs.begin(), AABBs.end() } );
-            appState = AppStates::InterpolateOdorPath;
+            appState = AppStates::CreatePaths;
         }
 
         if(appState == AppStates::LoadingAABBs) {
@@ -613,19 +623,25 @@ int main()
 
         if((questState == QuestStates::BodyInspected && distorsion < 0.0f)) {
             
+            fragmSubIndex = glGetSubroutineIndex(baseShader.Program, GL_FRAGMENT_SHADER, "footprint");
+            glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
+
             //--- SET FOOTPRINT TEXTURE 
-            setTexture(ODOR_INDEX, locations[LOCATION_REPEAT], 1.0f);
+            setTexture(FOOTPRINT_INDEX, locations[LOCATION_REPEAT], 1.0f);
             
             //---  DRAW FOOTPRINT
             GLuint vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "instancedBase");
             glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
-            glUniformMatrix4fv(glGetUniformLocation(baseShader.Program, "modelMatrices"), 1, GL_FALSE, glm::value_ptr(footprintsMatrixes[0]));
+            glUniformMatrix4fv(glGetUniformLocation(baseShader.Program, "modelMatrices"), footprintsMatrixes.size(), GL_FALSE, glm::value_ptr(footprintsMatrixes[0]));
 
-            models[TREE_INDEX].DrawInstanced(footprintsMatrixes.size());
+            models[PLANE_INDEX].DrawInstanced(footprintsMatrixes.size());
 
             vertSubIndex = glGetSubroutineIndex(baseShader.Program, GL_VERTEX_SHADER, "standard");
             glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &vertSubIndex);
         }
+
+        fragmSubIndex = glGetSubroutineIndex(baseShader.Program, GL_FRAGMENT_SHADER, "textured");
+        glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &fragmSubIndex);
 
         //--- CLEAR SECOND TEXTURE OF FRAME BUFFER
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, secondTexture, 0);
@@ -979,6 +995,35 @@ double randomHeight() {
     return (rand()%(20-5+1) + 5) / 10.f;
 }
 
+bool compareFootPrints(Footprint i1, Footprint i2)
+{
+    return (i1.Order < i2.Order);
+}
+
+void createFootprintsPath() {
+    sort(footprintsPoints.begin(), footprintsPoints.end(), compareFootPrints);
+    for (std::size_t i = 1; i != footprintsPoints.size() - 1; ++i) {
+        glm::vec2 point = footprintsPoints[i].Position;
+        float rotation = 0.0f;
+        if(i < footprintsPoints.size() - 2) {
+            glm::vec2 next = footprintsPoints[i+1].Position;
+            rotation = atan2( point.y - next.y, point.x - next.x ) * ( 180 / 3.14 );
+            if(rotation > 80 && rotation < 100) {
+                rotation -= 90;
+            }
+            if(rotation > 170 && rotation < 190) {
+                rotation -= 270;
+            }
+            cout << point.x << ":" << point.y << " -- " << next.x << ":" << next.y << " === " << rotation << endl;
+        }
+        glm::mat4 footprintMatrix = glm::mat4(1.0f);
+        footprintMatrix = glm::translate(footprintMatrix, glm::vec3(point.x, 0.1f, point.y));
+        footprintMatrix = glm::rotate(footprintMatrix, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 0.0f));
+        footprintMatrix = glm::scale(footprintMatrix, glm::vec3(0.05f, 1.0f, 0.05f));
+        footprintsMatrixes.push_back(footprintMatrix);
+    }
+}
+
 void interpolateOdorPath() {
     int numPoints = odor.size();
     vector<glm::vec2> tangents;
@@ -988,7 +1033,6 @@ void interpolateOdorPath() {
     for (std::size_t i = 1; i != odor.size() - 1; ++i) {
         tangents.push_back(glm::vec2(odor[i].x - odor[i-1].x, odor[i].y - odor[i-1].y) + glm::vec2(odor[i+1].x - odor[i].x, odor[i+1].y - odor[i].y));
         float h = randomHeight();
-        cout << h << endl;
         heights.push_back(h);
     }
     tangents.push_back(randomTangent());
@@ -1016,11 +1060,6 @@ void interpolateOdorPath() {
     Point last = Point();
     last.Position = glm::vec3(odor[numPoints - 1].x, 0.0f, odor[numPoints - 1].y);
     points.push_back(last);
-
-    for (auto i=points.begin(); i!=points.end(); ++i) {
-        Point current = *i;
-        cout << current.Position.x << "\t" << current.Position.y << "\t" << current.Position.z << endl;
-    }
 }
 
 void addToAABBsHierarchy(vector<AABB> AABBlist) {
@@ -1088,11 +1127,11 @@ void loadNextRow() {
         if(*i == "O") {
             odor.push_back(glm::vec2(currentCell * 2, position * 2));
         }
-        if(*i == "F") {
-            glm::mat4 footprintMatrix = glm::mat4(1.0f);
-            footprintMatrix = glm::translate(footprintMatrix, glm::vec3(currentCell * 2, 0.0f, position * 2));
-            footprintMatrix = glm::scale(footprintMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
-            footprintsMatrixes.push_back(footprintMatrix);
+        if((*i).find("F") != std::string::npos) {
+            Footprint f = Footprint();
+            f.Position = glm::vec2(currentCell * 2, position * 2);
+            f.Order = stoi((*i).substr(1));
+            footprintsPoints.push_back(f);
         }
     }
 }
