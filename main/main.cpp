@@ -113,7 +113,8 @@ struct Footprint {
 
 //--- MATRIXES FOR INSTANCED DRAWING 
 vector<glm::mat4> treesMatrixes;
-vector<Footprint> footprintsPoints;
+vector<Footprint> footprints;
+vector<Point> footprintsPoints;
 vector<glm::mat4> footprintsMatrixes;
 
 //--- AABBs list
@@ -1001,26 +1002,49 @@ bool compareFootPrints(Footprint i1, Footprint i2)
 }
 
 void createFootprintsPath() {
-    sort(footprintsPoints.begin(), footprintsPoints.end(), compareFootPrints);
-    for (std::size_t i = 1; i != footprintsPoints.size() - 1; ++i) {
-        glm::vec2 point = footprintsPoints[i].Position;
-        float rotation = 0.0f;
-        if(i < footprintsPoints.size() - 2) {
-            glm::vec2 next = footprintsPoints[i+1].Position;
-            rotation = atan2( point.y - next.y, point.x - next.x ) * ( 180 / 3.14 );
-            if(rotation > 80 && rotation < 100) {
-                rotation -= 90;
-            }
-            if(rotation > 170 && rotation < 190) {
-                rotation -= 270;
-            }
-            cout << point.x << ":" << point.y << " -- " << next.x << ":" << next.y << " === " << rotation << endl;
+    sort(footprints.begin(), footprints.end(), compareFootPrints);
+    vector<glm::vec2> tangents;
+    tangents.push_back(randomTangent());
+    for (std::size_t i = 1; i != footprints.size() - 1; ++i) {
+        tangents.push_back(glm::vec2(
+            footprints[i].Position.x - footprints[i-1].Position.x,
+            footprints[i].Position.y - footprints[i-1].Position.y) 
+            + glm::vec2(
+                footprints[i+1].Position.x - footprints[i].Position.x,
+                footprints[i+1].Position.y - footprints[i].Position.y));
+    }
+    tangents.push_back(randomTangent());
+    
+    for (std::size_t i = 0; i != footprints.size() - 1; ++i) {
+        Point first = Point();
+        first.Position = glm::vec3(footprints[i].Position.x, 0.01f, footprints[i].Position.y);
+        footprintsPoints.push_back(first);
+
+        for(int index = 1; index < 3; ++index) {
+            float value = index / 3.0f;
+            glm::vec2 p0 = ((float)((2 * pow(value, 3) - 3 * pow(value, 2) + 1))) * footprints[i].Position;
+            glm::vec2 m0 = ((float)((pow(value, 3) - 2 * pow(value, 2) + value))) * tangents[i];
+            glm::vec2 m1 = ((float)((pow(value, 3) - pow(value, 2)))) * tangents[i + 1];
+            glm::vec2 p1 = ((float)((-2 * pow(value, 3) + 3 * pow(value, 2)))) * footprints[i + 1].Position;
+            glm::vec3 result = glm::vec3(p0 + m0 + m1 + p1, 0.01f);
+
+            Point point = Point();
+            point.Position = glm::vec3(result.x, result.z, result.y);
+            footprintsPoints.push_back(point);
         }
+    }
+    Point last = Point();
+    last.Position = glm::vec3(footprints[footprints.size() - 1].Position.x, 0.01f, footprints[footprints.size() - 1].Position.y);
+    footprintsPoints.push_back(last);
+
+    for (std::size_t i = 0; i != footprintsPoints.size() - 1; ++i) {
+        Point point = footprintsPoints[i];
         glm::mat4 footprintMatrix = glm::mat4(1.0f);
-        footprintMatrix = glm::translate(footprintMatrix, glm::vec3(point.x, 0.1f, point.y));
-        footprintMatrix = glm::rotate(footprintMatrix, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 0.0f));
-        footprintMatrix = glm::scale(footprintMatrix, glm::vec3(0.05f, 1.0f, 0.05f));
+        footprintMatrix = glm::translate(footprintMatrix, glm::vec3(point.Position.x, 0.1f, point.Position.y));
+        footprintMatrix = glm::rotate(footprintMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        footprintMatrix = glm::scale(footprintMatrix, glm::vec3(0.01f, 0.01f, 0.01f));
         footprintsMatrixes.push_back(footprintMatrix);
+        cout << point.Position.x << " -- " << point.Position.z << endl;
     }
 }
 
@@ -1131,7 +1155,7 @@ void loadNextRow() {
             Footprint f = Footprint();
             f.Position = glm::vec2(currentCell * 2, position * 2);
             f.Order = stoi((*i).substr(1));
-            footprintsPoints.push_back(f);
+            footprints.push_back(f);
         }
     }
 }
