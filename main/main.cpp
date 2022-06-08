@@ -1005,11 +1005,7 @@ double bearing(double a1, double a2, double b1, double b2) {
     const double TWOPI = 6.2831853071795865;
     const double RAD2DEG = 57.2957795130823209;
     double theta = atan2(b1 - a1, a2 - b2);
-    //if (theta < 0.0) {
-    //    theta += TWOPI;
-    //}
     double deg = RAD2DEG * theta * -1;
-    cout << a1 << ":" << a2 << " and " << b1 << ":" << b2 << " = " << deg << endl;
     return deg;
 }
 
@@ -1067,13 +1063,13 @@ void createFootprintsPath() {
         if(abs(distance(point.Position, prevPoint.Position)) < 1) {
             continue;
         }
+        cout << point.Position.x << " -- " << point.Position.z << endl;
         glm::mat4 footprintMatrix = glm::mat4(1.0f);
         footprintMatrix = glm::translate(footprintMatrix, glm::vec3(point.Position.x, 0.1f, point.Position.z));
         float rotation = bearing(point.Position.x, point.Position.z, footprintsPoints[i+1].Position.x, footprintsPoints[i+1].Position.z);
         footprintMatrix = glm::rotate(footprintMatrix, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 0.0f));
         footprintMatrix = glm::scale(footprintMatrix, glm::vec3(0.03f, 1.0f, 0.03f));
         footprintsMatrixes.push_back(footprintMatrix);
-        //cout << point.Position.x << " -- " << point.Position.z << " -- " << rotation << endl;
         prevPoint = point;
     }
 }
@@ -1125,7 +1121,7 @@ void addToAABBsHierarchy(vector<AABB> AABBlist) {
 }
 
 void loadAABBs() {
-    cout << "Calculating trees AABBs" << endl;
+    cout << "Calculating AABBs" << endl;
     for (auto i=treesMatrixes.begin(); i!=treesMatrixes.end(); ++i) {
         glm::mat4 matrix = *i;
         glm::vec3 treePos = glm::vec3(matrix[3].x, matrix[3].y, matrix[3].z);
@@ -1138,8 +1134,13 @@ void loadAABBs() {
     glm::vec3 cartPos = glm::vec3(cartX, 0.0f, cartZ);
     float dy = 2.0f;
     glm::vec3 cartSize = glm::vec3(1.75f, 0.0f, 1.25f);
-    AABB aabb = AABB(VerticesBuilder().build(cartPos, dy, glm::vec3(cartSize)));
+    AABB aabb = AABB(VerticesBuilder().build(cartPos, dy, cartSize));
     AABBs.push_back(aabb);
+
+    glm::vec3 housePos = glm::vec3(houseX, 0.0f, houseZ);
+    glm::vec3 houseSize = glm::vec3(2.75f, 1.0f, 4.0f);
+    AABB houseAABB = AABB(VerticesBuilder().build(housePos, dy, houseSize));
+    AABBs.push_back(houseAABB);
 
     appState = AppStates::CreatingAABBsHierarchy;
 }
