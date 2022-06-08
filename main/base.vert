@@ -8,7 +8,7 @@ layout (location = 2) in vec2 UV;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
-uniform mat4 modelMatrices[20];
+uniform mat4 modelMatrices[64];
 uniform mat3 normalMatrix;
 
 //--- UBO INPUT FROM APP

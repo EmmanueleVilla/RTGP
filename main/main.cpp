@@ -1004,6 +1004,7 @@ bool compareFootPrints(Footprint i1, Footprint i2)
 void createFootprintsPath() {
     sort(footprints.begin(), footprints.end(), compareFootPrints);
     vector<glm::vec2> tangents;
+    int lastIndex = footprints.size() - 1;
     tangents.push_back(randomTangent());
     for (std::size_t i = 1; i != footprints.size() - 1; ++i) {
         tangents.push_back(glm::vec2(
@@ -1013,15 +1014,19 @@ void createFootprintsPath() {
                 footprints[i+1].Position.x - footprints[i].Position.x,
                 footprints[i+1].Position.y - footprints[i].Position.y));
     }
-    tangents.push_back(randomTangent());
+    tangents.push_back(glm::vec2(
+            footprints[lastIndex].Position.x - footprints[lastIndex-1].Position.x,
+            footprints[lastIndex].Position.y - footprints[lastIndex-1].Position.y) 
+            + glm::vec2(
+                houseX - footprints[lastIndex].Position.x,
+                houseZ - footprints[lastIndex].Position.y));
     
     for (std::size_t i = 0; i != footprints.size() - 1; ++i) {
         Point first = Point();
         first.Position = glm::vec3(footprints[i].Position.x, 0.01f, footprints[i].Position.y);
         footprintsPoints.push_back(first);
-
-        for(int index = 1; index < 3; ++index) {
-            float value = index / 3.0f;
+        for(int index = 1; index < 100; ++index) {
+            float value = index / 100.0f;
             glm::vec2 p0 = ((float)((2 * pow(value, 3) - 3 * pow(value, 2) + 1))) * footprints[i].Position;
             glm::vec2 m0 = ((float)((pow(value, 3) - 2 * pow(value, 2) + value))) * tangents[i];
             glm::vec2 m1 = ((float)((pow(value, 3) - pow(value, 2)))) * tangents[i + 1];
@@ -1037,12 +1042,23 @@ void createFootprintsPath() {
     last.Position = glm::vec3(footprints[footprints.size() - 1].Position.x, 0.01f, footprints[footprints.size() - 1].Position.y);
     footprintsPoints.push_back(last);
 
-    for (std::size_t i = 0; i != footprintsPoints.size() - 1; ++i) {
+    Point firstPoint = footprintsPoints[0];
+    glm::mat4 footprintMatrix = glm::mat4(1.0f);
+    footprintMatrix = glm::translate(footprintMatrix, glm::vec3(firstPoint.Position.x, 0.1f, firstPoint.Position.z));
+    footprintMatrix = glm::rotate(footprintMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    footprintMatrix = glm::scale(footprintMatrix, glm::vec3(0.02f, 1.0f, 0.02f));
+    footprintsMatrixes.push_back(footprintMatrix);
+    Point prevPoint = firstPoint;
+    for (std::size_t i = 1; i != footprintsPoints.size() - 1; ++i) {
         Point point = footprintsPoints[i];
+        if(abs(distance(point.Position, prevPoint.Position)) < 1) {
+            continue;
+        }
+        prevPoint = point;
         glm::mat4 footprintMatrix = glm::mat4(1.0f);
-        footprintMatrix = glm::translate(footprintMatrix, glm::vec3(point.Position.x, 0.1f, point.Position.y));
+        footprintMatrix = glm::translate(footprintMatrix, glm::vec3(point.Position.x, 0.1f, point.Position.z));
         footprintMatrix = glm::rotate(footprintMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        footprintMatrix = glm::scale(footprintMatrix, glm::vec3(0.01f, 0.01f, 0.01f));
+        footprintMatrix = glm::scale(footprintMatrix, glm::vec3(0.02f, 1.0f, 0.02f));
         footprintsMatrixes.push_back(footprintMatrix);
         cout << point.Position.x << " -- " << point.Position.z << endl;
     }
