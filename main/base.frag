@@ -237,7 +237,7 @@ vec4 tracePlane() {
     vec3 bottomRightColor = distortedColorByUv(bottomRightTexel);
 
     if(color.z > 0) {
-        //--- IF IT'S A BLUE PIXEL SURROUNDED BY ONLY GREEN PIXELS, I DISCARD IT
+        //--- IF IT'S A BLUE PIXEL SURROUNDED BY ONLY BLUE PIXELS, I DISCARD IT
         if(topColor.r < 0.01
             && bottomColor.r < 0.9
             && leftColor.r < 0.9
