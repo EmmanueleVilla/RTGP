@@ -1001,6 +1001,18 @@ bool compareFootPrints(Footprint i1, Footprint i2)
     return (i1.Order < i2.Order);
 }
 
+double bearing(double a1, double a2, double b1, double b2) {
+    const double TWOPI = 6.2831853071795865;
+    const double RAD2DEG = 57.2957795130823209;
+    double theta = atan2(b1 - a1, a2 - b2);
+    //if (theta < 0.0) {
+    //    theta += TWOPI;
+    //}
+    double deg = RAD2DEG * theta * -1;
+    cout << a1 << ":" << a2 << " and " << b1 << ":" << b2 << " = " << deg << endl;
+    return deg;
+}
+
 void createFootprintsPath() {
     sort(footprints.begin(), footprints.end(), compareFootPrints);
     vector<glm::vec2> tangents;
@@ -1045,8 +1057,9 @@ void createFootprintsPath() {
     Point firstPoint = footprintsPoints[0];
     glm::mat4 footprintMatrix = glm::mat4(1.0f);
     footprintMatrix = glm::translate(footprintMatrix, glm::vec3(firstPoint.Position.x, 0.1f, firstPoint.Position.z));
-    footprintMatrix = glm::rotate(footprintMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    footprintMatrix = glm::scale(footprintMatrix, glm::vec3(0.02f, 1.0f, 0.02f));
+    float rotation = bearing(firstPoint.Position.x, firstPoint.Position.z, footprintsPoints[1].Position.x, footprintsPoints[1].Position.z);
+    footprintMatrix = glm::rotate(footprintMatrix, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 0.0f));
+    footprintMatrix = glm::scale(footprintMatrix, glm::vec3(0.03f, 1.0f, 0.03f));
     footprintsMatrixes.push_back(footprintMatrix);
     Point prevPoint = firstPoint;
     for (std::size_t i = 1; i != footprintsPoints.size() - 1; ++i) {
@@ -1054,13 +1067,14 @@ void createFootprintsPath() {
         if(abs(distance(point.Position, prevPoint.Position)) < 1) {
             continue;
         }
-        prevPoint = point;
         glm::mat4 footprintMatrix = glm::mat4(1.0f);
         footprintMatrix = glm::translate(footprintMatrix, glm::vec3(point.Position.x, 0.1f, point.Position.z));
-        footprintMatrix = glm::rotate(footprintMatrix, glm::radians(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        footprintMatrix = glm::scale(footprintMatrix, glm::vec3(0.02f, 1.0f, 0.02f));
+        float rotation = bearing(point.Position.x, point.Position.z, footprintsPoints[i+1].Position.x, footprintsPoints[i+1].Position.z);
+        footprintMatrix = glm::rotate(footprintMatrix, glm::radians(rotation), glm::vec3(0.0f, 1.0f, 0.0f));
+        footprintMatrix = glm::scale(footprintMatrix, glm::vec3(0.03f, 1.0f, 0.03f));
         footprintsMatrixes.push_back(footprintMatrix);
-        cout << point.Position.x << " -- " << point.Position.z << endl;
+        //cout << point.Position.x << " -- " << point.Position.z << " -- " << rotation << endl;
+        prevPoint = point;
     }
 }
 
